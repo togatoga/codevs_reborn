@@ -72,7 +72,7 @@ fn solve() {
         let player = Solver::read_game_status(&mut sc);
         let enemy = Solver::read_game_status(&mut sc);
         let mut solver = Solver::new(&packs, player, enemy);
-        println!("{:?}", solver);
+        println!("0 0");
     }
 }
 
