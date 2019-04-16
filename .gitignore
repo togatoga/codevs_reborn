@@ -10,3 +10,11 @@ Cargo.lock
 **/*.rs.bk
 
 codevs/
+
+
+#Added by cargo
+#
+#already existing elements are commented out
+
+/target
+#**/*.rs.bk
