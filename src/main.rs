@@ -6,10 +6,11 @@ const FIELD_HEIGHT: usize = 16;
 
 
 type Field = Vec<Vec<u8>>;
+type Block = u8;
 
 #[derive(Debug)]
 struct Pack {
-    block: Vec<u8>,
+    blocks: Vec<Block>,
 }
 
 
@@ -35,13 +36,13 @@ impl<'a> Solver<'a> {
     }
     fn read_packs(sc: &mut Scanner<StdinLock>) -> Vec<Pack> {
         (0..MAX_TURN).map(|_| {
-            let mut block = vec![0; 4];
+            let mut blocks = vec![0; 4];
             for i in 0..4 {
-                block[i] = sc.read::<u8>();
+                blocks[i] = sc.read::<u8>();
             }
             let end: String = sc.read();
             assert_eq!(end, "END");
-            Pack { block }
+            Pack { blocks }
         }).collect::<Vec<Pack>>()
     }
 
