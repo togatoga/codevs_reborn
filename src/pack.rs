@@ -1,4 +1,4 @@
-type Block = u8;
+pub type Block = u8;
 #[derive(Debug)]
 pub struct Pack {
     pub blocks: Vec<Block>,

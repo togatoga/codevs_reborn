@@ -1,15 +1,14 @@
 mod pack;
+mod simulator;
+mod field;
+
 use std::io::{StdinLock, Stdin};
 
 
 use crate::pack::Pack;
+use crate::field::{Field, FIELD_WIDTH, FIELD_HEIGHT};
 
 const MAX_TURN: usize = 500;
-const FIELD_WIDTH: usize = 10;
-const FIELD_HEIGHT: usize = 16;
-
-
-type Field = Vec<Vec<u8>>;
 
 #[derive(Debug)]
 struct GameStatus {
@@ -49,12 +48,17 @@ impl<'a> Solver<'a> {
         let dead_block_count: u32 = sc.read();
         let skill_point: u32 = sc.read();
         let game_score: u32 = sc.read();
-        let field: Field = (0..FIELD_HEIGHT).map(|_| {
-            sc.vec::<u8>(FIELD_WIDTH)
-        }).collect();
+
+        let mut input_field: [[u8; FIELD_WIDTH]; FIELD_HEIGHT] = [[0; FIELD_WIDTH]; FIELD_HEIGHT];
+        for y in 0..FIELD_HEIGHT {
+            for x in 0..FIELD_WIDTH {
+                input_field[y][x] = sc.read::<u8>();
+            }
+        }
         let end: String = sc.read();
         assert_eq!(end, "END");
-        GameStatus { rest_time_milliseconds, dead_block_count, skill_point, game_score, field }
+        let field = field::new(input_field);
+        GameStatus { rest_time_milliseconds, dead_block_count, skill_point, game_score, field}
     }
 
     pub fn think(&mut self) -> (usize, usize){
