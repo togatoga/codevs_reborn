@@ -62,7 +62,7 @@ impl<'a> Solver<'a> {
     }
 
     pub fn think(&mut self) -> (usize, usize){
-        (0, 0)
+
     }
 }
 
