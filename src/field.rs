@@ -117,6 +117,6 @@ fn drop_obstacles() {
         [0, 11, 1, 1, 1, 1, 1, 1, 1, 1],
         [11, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     ];
-    let mut dropped_obstacles_field = new(dropped_obstacles_field);
+    let dropped_obstacles_field = new(dropped_obstacles_field);
     assert_eq!(field, dropped_obstacles_field);
 }
