@@ -6,7 +6,7 @@ use std::io::{StdinLock, Stdin};
 
 
 use crate::pack::Pack;
-use crate::field::{Field, FIELD_WIDTH, FIELD_HEIGHT, INPUT_FIELD_HEIGHT};
+use crate::field::{Field, FIELD_WIDTH, INPUT_FIELD_HEIGHT};
 
 const MAX_TURN: usize = 500;
 

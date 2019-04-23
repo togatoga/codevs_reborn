@@ -27,7 +27,7 @@ fn is_on_field(y: i8, x: i8) -> bool {
 }
 
 fn drop_pack(field: &mut field::Field, point: usize, pack: pack::Pack) -> Vec<(usize, usize)> {
-    assert!(0 <= point && point <= 8);
+    assert!(point <= 8);
 
     let mut modified_blocks: Vec<(usize, usize)> = Vec::new(); //(y, x)
     for y in (0..2).rev() {
