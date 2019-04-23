@@ -15,6 +15,7 @@ impl Pack {
     }
 }
 
+
 #[test]
 fn test_rotate() {
     let mut p = Pack {blocks: vec![9, 5, 0, 3]};
