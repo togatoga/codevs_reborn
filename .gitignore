@@ -18,3 +18,5 @@ codevs/
 
 /target
 #**/*.rs.bk
+
+*.txt

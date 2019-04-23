@@ -6,7 +6,7 @@ use std::io::{StdinLock, Stdin};
 
 
 use crate::pack::Pack;
-use crate::field::{Field, FIELD_WIDTH, FIELD_HEIGHT};
+use crate::field::{Field, FIELD_WIDTH, FIELD_HEIGHT, INPUT_FIELD_HEIGHT};
 
 const MAX_TURN: usize = 500;
 
@@ -49,8 +49,8 @@ impl<'a> Solver<'a> {
         let skill_point: u32 = sc.read();
         let game_score: u32 = sc.read();
 
-        let mut input_field: [[u8; FIELD_WIDTH]; FIELD_HEIGHT] = [[0; FIELD_WIDTH]; FIELD_HEIGHT];
-        for y in 0..FIELD_HEIGHT {
+        let mut input_field: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT] = [[0; FIELD_WIDTH]; INPUT_FIELD_HEIGHT];
+        for y in 0..INPUT_FIELD_HEIGHT {
             for x in 0..FIELD_WIDTH {
                 input_field[y][x] = sc.read::<u8>();
             }
