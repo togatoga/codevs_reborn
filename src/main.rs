@@ -72,37 +72,32 @@ impl<'a> Solver<'a> {
     }
 
     pub fn think(&mut self, current_turn: usize) -> Option<Command> {
-        let mut player = &mut self.player;
-        let mut enemy = &mut self.enemy;
-        //calculate obstacle blocks
-        if player.obstacle_block_count >= enemy.obstacle_block_count {
-            player.obstacle_block_count -= enemy.obstacle_block_count;
-            enemy.obstacle_block_count = 0;
-        } else {
-            enemy.obstacle_block_count -= player.obstacle_block_count;
-            player.obstacle_block_count = 0;
-        }
-        //If enemy obstacle block count is over a line
-        //Drop a line of obstacle blocks
-        if player.obstacle_block_count >= FIELD_WIDTH as u32 {
-            player.field.drop_obstacles();
-            player.obstacle_block_count -= FIELD_WIDTH as u32;
-        }
+        let player = &self.player;
+        let enemy = &self.enemy;
+
+        let root_search_state =
+            SearchStatus::new(&player.field)
+            .with_obstacle_block_count(player.obstacle_block_count)
+            .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
+            .with_cumulative_game_score(player.cumulative_game_score);
+
         const FIRE_MAX_CHAIN_COUNT: u8 = 10;
         //Fire if chain count is over threshold
-        for rotate_count in 0..5 {
-            let mut pack = self.packs[current_turn].clone();
-            //rotate
-            pack.rotates(rotate_count);
-            for point in 0..9 {
-                let mut field = player.field.clone();
-                let (score, chain_count) = simulator::simulate(&mut field, point, &pack);
-                if chain_count >= FIRE_MAX_CHAIN_COUNT {
-                    return Some(Command::Drop((point, rotate_count)));
+        {
+            let mut search_state = root_search_state.clone();
+            search_state.update_obstacle_block();
+            for rotate_count in 0..5 {
+                let mut pack = self.packs[current_turn].clone();
+                //rotate
+                pack.rotates(rotate_count);
+                for point in 0..9 {
+                    let (score, chain_count) = simulator::simulate(&mut search_state.field.clone(), point, &pack);
+                    if chain_count >= FIRE_MAX_CHAIN_COUNT {
+                        return Some(Command::Drop((point, rotate_count)));
+                    }
                 }
             }
         }
-
 
         // beam search for a command
         const BEAM_DEPTH: usize = 5;
@@ -110,14 +105,16 @@ impl<'a> Solver<'a> {
         let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH + 1).map(|_| BinaryHeap::new()).collect();
 
         //push an initial search state
-        search_state_heap[0].push(SearchStatus::new(&player.field));
+        search_state_heap[0].push(root_search_state);
         let mut rnd = Xorshift::with_seed(current_turn as u64);
         for depth in 0..BEAM_DEPTH {
             //next state
             let search_turn = current_turn + depth;
             let mut iter = 0;
-            while let Some(search_state) = search_state_heap[depth].pop() {
+            while let Some( search_state) = &mut search_state_heap[depth].pop() {
                 iter += 1;
+                //Update obstacle block
+                search_state.update_obstacle_block();
                 for rotate_count in 0..5 {
                     let mut pack = self.packs[search_turn].clone();
                     //rotate
@@ -132,12 +129,11 @@ impl<'a> Solver<'a> {
                         let mut next_search_state = search_state.clone()
                             .with_field(field)
                             .with_command(Command::Drop((point, rotate_count)))
-                            .with_cumulative_game_score(search_state.cumulative_game_score + score);
+                            .add_cumulative_game_score(score)
+                            .add_spawn_obstacle_block_count(simulator::calculate_obstacle_count(chain_count, 0));
                         // Add a tiny value(0.0 ~ 1.0) to search score
                         // To randomize search score for the diversity of search
-                        let mut search_score = evaluation::evaluate_search_score(&next_search_state) + rnd.randf();
-                        //eprintln!("search_score = {}", search_score);
-                        next_search_state.with_search_score(search_score);
+                        next_search_state.with_search_score(evaluation::evaluate_search_score(&next_search_state) + rnd.randf());
                         search_state_heap[depth + 1].push(next_search_state);
                     }
                 }
@@ -154,6 +150,7 @@ impl<'a> Solver<'a> {
         None
     }
 }
+
 #[test]
 fn test_think_must_be_dead() {
 
