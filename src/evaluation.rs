@@ -38,13 +38,13 @@ pub fn evaluate_search_score(search_state: &SearchStatus) -> f64 {
     search_score += estimated_max_chain_count as f64;
     search_score *= 10e5;
     // count live block
-    search_score += (field.count_live_blocks() as f64 * 100.0) as f64;
+    search_score += (field.count_live_blocks() as f64 * 1000.0) as f64;
     // penalty for heights
+    let mut max_height = 0;
     for &height in field.heights.iter() {
         //near danger line
-        if height >= DANGER_LINE_HEIGHT - 3 {
-            search_score -= 10.0;
-        }
+        search_score -= height as f64 * 1.5;
+        max_height = std::cmp::max(max_height, height);
     }
     search_score
 }

@@ -7,7 +7,7 @@ pub const OBSTACLE_BLOCK: u8 = 11;
 pub const ERASING_SUM: u8 = 10;
 use std::fmt;
 
-#[derive(Debug, Copy, Clone, Eq)]
+#[derive(Debug, Copy, Clone, Eq, Hash)]
 pub struct Field {
     pub field: [[u8; FIELD_WIDTH]; FIELD_HEIGHT],
     //y starts from under left point
