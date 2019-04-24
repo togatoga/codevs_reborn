@@ -67,7 +67,7 @@ impl<'a> Solver<'a> {
         }
         let end: String = sc.read();
         assert_eq!(end, "END");
-        let field = field::new(input_field);
+        let field = Field::new(input_field);
         GameStatus { rest_time_milliseconds, obstacle_block_count, skill_point, cumulative_game_score, field }
     }
 
@@ -90,8 +90,8 @@ impl<'a> Solver<'a> {
 
 
         // beam search for a command
-        const BEAM_DEPTH: usize = 10;
-        const BEAM_WIDTH: usize = 30;
+        const BEAM_DEPTH: usize = 5;
+        const BEAM_WIDTH: usize = 20;
         let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH + 1).map(|_| BinaryHeap::new()).collect();
 
         //push an initial search state
@@ -115,10 +115,13 @@ impl<'a> Solver<'a> {
                             continue;
                         }
 
-                        let mut next_search_state = search_state.clone().with_command(Command::Drop((point, rotate_count)));
+                        let mut next_search_state = search_state.clone()
+                            .with_command(Command::Drop((point, rotate_count)))
+                            .with_cumulative_game_score(search_state.cumulative_game_score + score);
                         // Add a tiny value(0.0 ~ 1.0) to search score
                         // To randomize search score for the diversity of search
                         let mut search_score = evaluation::evaluate_search_score(&next_search_state) + rnd.randf();
+                        eprintln!("search_score = {}", search_score);
                         next_search_state.with_search_score(search_score);
                         search_state_heap[depth + 1].push(next_search_state);
                     }
@@ -128,7 +131,9 @@ impl<'a> Solver<'a> {
                 }
             }
         }
-        if let Some(result) = search_state_heap[BEAM_WIDTH + 1].pop() {
+
+        if let Some(result) = search_state_heap[BEAM_DEPTH].pop() {
+            eprintln!("cumulative_score = {}, search_score = {}", result.cumulative_game_score, result.search_score);
             return result.command;
         }
         None
