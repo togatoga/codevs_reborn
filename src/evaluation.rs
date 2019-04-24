@@ -29,11 +29,15 @@ pub fn evaluate_search_score(search_state: &SearchStatus) -> f64 {
     let field = search_state.field;
     // max chain count
     let (estimated_max_chain_count, estimated_field) = estimate_max_chain_count(&field);
+
     search_score += estimated_max_chain_count as f64;
     search_score *= 10e5;
     // count live block
-    search_score += (field.count_live_blocks() * 100) as f64;
-    //penalty
-    search_score -= (estimated_field.count_live_blocks() * 5) as f64;
+    search_score += (field.count_live_blocks() as f64 * 100.0) as f64;
     search_score
+}
+
+#[test]
+fn test_estimate_max_chain_count() {
+
 }

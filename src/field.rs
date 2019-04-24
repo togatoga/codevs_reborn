@@ -15,6 +15,25 @@ pub struct Field {
 }
 
 impl Field {
+    pub fn new(input_field: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT]) -> Field {
+        let mut heights: [usize; FIELD_WIDTH] = [0; FIELD_WIDTH];
+        for x in 0..FIELD_WIDTH {
+            let mut y = 0;
+            while y < INPUT_FIELD_HEIGHT && input_field[INPUT_FIELD_HEIGHT - 1 - y][x] != EMPTY_BLOCK {
+                y += 1;
+            }
+            heights[x] = y;
+        }
+        let mut field: [[u8; FIELD_WIDTH]; FIELD_HEIGHT] = [[0; FIELD_WIDTH]; FIELD_HEIGHT];
+        for y in 0..INPUT_FIELD_HEIGHT {
+            for x in 0..FIELD_WIDTH {
+                field[y][x] = input_field[INPUT_FIELD_HEIGHT - 1 - y][x];
+            }
+        }
+
+        Field { field, heights }
+    }
+
     pub fn drop_obstacles(&mut self) {
         for x in 0..FIELD_WIDTH {
             assert!(self.heights[x] < FIELD_HEIGHT);
@@ -49,27 +68,29 @@ impl PartialEq for Field {
     }
 }
 
-
-pub fn new(input_field: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT]) -> Field {
-    let mut heights: [usize; FIELD_WIDTH] = [0; FIELD_WIDTH];
-    for x in 0..FIELD_WIDTH {
-        let mut y = 0;
-        while y < INPUT_FIELD_HEIGHT && input_field[INPUT_FIELD_HEIGHT - 1 - y][x] != EMPTY_BLOCK {
-            y += 1;
-        }
-        heights[x] = y;
-    }
-    let mut field: [[u8; FIELD_WIDTH]; FIELD_HEIGHT] = [[0; FIELD_WIDTH]; FIELD_HEIGHT];
-    for y in 0..INPUT_FIELD_HEIGHT {
-        for x in 0..FIELD_WIDTH {
-            field[y][x] = input_field[INPUT_FIELD_HEIGHT - 1 - y][x];
-        }
-    }
-
-    Field { field, heights }
+#[test]
+fn test_count_live_blocks() {
+    let field = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 4, 0, 0, 0, 0, 0],
+        [0, 0, 0, 7, 4, 0, 0, 0, 0, 0],
+        [0, 0, 0, 4, 4, 8, 0, 0, 0, 0],
+        [0, 0, 0, 9, 8, 4, 0, 0, 0, 0],
+        [0, 0, 0, 3, 4, 8, 9, 0, 0, 0],
+        [0, 0, 0, 5, 9, 4, 8, 0, 0, 0],
+        [0, 0, 1, 6, 3, 4, 1, 0, 11, 0],
+        [0, 0, 6, 5, 1, 2, 3, 4, 11, 0],
+        [0, 0, 1, 3, 6, 2, 2, 1, 11, 0]
+    ];
+    let field = Field::new(field);
+    assert_eq!(field.count_live_blocks(), 35);
 }
-
-
 #[test]
 fn test_heights() {
     let field = [
@@ -90,7 +111,7 @@ fn test_heights() {
         [0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
         [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     ];
-    let field = new(field);
+    let field = Field::new(field);
     assert_eq!(field.heights, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 }
 
@@ -114,7 +135,7 @@ fn drop_obstacles() {
         [0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
         [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     ];
-    let mut field = new(field);
+    let mut field = Field::new(field);
     //drop
     field.drop_obstacles();
     //
@@ -136,6 +157,6 @@ fn drop_obstacles() {
         [0, 11, 1, 1, 1, 1, 1, 1, 1, 1],
         [11, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     ];
-    let dropped_obstacles_field = new(dropped_obstacles_field);
+    let dropped_obstacles_field = Field::new(dropped_obstacles_field);
     assert_eq!(field, dropped_obstacles_field);
 }
