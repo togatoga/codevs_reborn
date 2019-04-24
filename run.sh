@@ -1,3 +1,2 @@
 #!/bin/bash
-cd `dirname $0`
-./togatogAI
+find -name "togatogAI" -exec {} \;
