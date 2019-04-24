@@ -90,7 +90,7 @@ impl<'a> Solver<'a> {
 
 
         // beam search for a command
-        const BEAM_DEPTH: usize = 5;
+        const BEAM_DEPTH: usize = 20;
         const BEAM_WIDTH: usize = 20;
         let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH + 1).map(|_| BinaryHeap::new()).collect();
 
@@ -114,14 +114,15 @@ impl<'a> Solver<'a> {
                         if field.is_game_over() {
                             continue;
                         }
-
+                        assert_ne!(field, search_state.field);
                         let mut next_search_state = search_state.clone()
+                            .with_field(field)
                             .with_command(Command::Drop((point, rotate_count)))
                             .with_cumulative_game_score(search_state.cumulative_game_score + score);
                         // Add a tiny value(0.0 ~ 1.0) to search score
                         // To randomize search score for the diversity of search
                         let mut search_score = evaluation::evaluate_search_score(&next_search_state) + rnd.randf();
-                        eprintln!("search_score = {}", search_score);
+                        //eprintln!("search_score = {}", search_score);
                         next_search_state.with_search_score(search_score);
                         search_state_heap[depth + 1].push(next_search_state);
                     }

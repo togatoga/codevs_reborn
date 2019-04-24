@@ -32,6 +32,10 @@ impl SearchStatus {
     pub fn new(field: &Field) -> SearchStatus {
         SearchStatus { field: *field, obstacle_block_count: 0, skill_point: 0, cumulative_game_score: 0, command: None, search_score: 0.0 }
     }
+    pub fn with_field(&mut self, field: Field) -> SearchStatus {
+        self.field = field;
+        *self
+    }
     pub fn with_cumulative_game_score(&mut self, cumulative_game_score: u32) -> SearchStatus {
         self.cumulative_game_score = cumulative_game_score;
         *self
