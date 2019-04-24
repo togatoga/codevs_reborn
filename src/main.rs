@@ -15,6 +15,7 @@ use crate::search_state::SearchStatus;
 use crate::field::{Field, FIELD_WIDTH, INPUT_FIELD_HEIGHT};
 use crate::xorshift::Xorshift;
 use std::collections::BinaryHeap;
+use crate::evaluation::evaluate_search_score;
 
 
 const MAX_TURN: usize = 500;
@@ -87,7 +88,6 @@ impl<'a> Solver<'a> {
         {
             let mut search_state = root_search_state.clone();
             let mut max_chain_count = 0;
-            let mut max_score = 0;
             let mut command: Option<Command> = None;
             search_state.update_obstacle_block();
             for rotate_count in 0..5 {
@@ -95,12 +95,10 @@ impl<'a> Solver<'a> {
                 //rotate
                 pack.rotates(rotate_count);
                 for point in 0..9 {
-                    let (score, chain_count) = simulator::simulate(&mut search_state.field.clone(), point, &pack);
-                    if chain_count >= FIRE_MAX_CHAIN_COUNT && chain_count >= max_chain_count {
+                    let (_, chain_count) = simulator::simulate(&mut search_state.field.clone(), point, &pack);
+                    if chain_count >= FIRE_MAX_CHAIN_COUNT && chain_count > max_chain_count {
                         max_chain_count = chain_count;
-                        if score >= max_score {
-                            command = Some(Command::Drop((point, rotate_count)));
-                        }
+                        command = Some(Command::Drop((point, rotate_count)));
                     }
                 }
             }
