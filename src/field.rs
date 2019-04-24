@@ -1,7 +1,7 @@
 pub const FIELD_WIDTH: usize = 10;
 pub const INPUT_FIELD_HEIGHT: usize = 16;
 pub const FIELD_HEIGHT: usize = 18;
-pub const DANGER_LINE_HEIGHT: usize = FIELD_HEIGHT + 1;
+pub const DANGER_LINE_HEIGHT: usize = INPUT_FIELD_HEIGHT + 1;
 pub const EMPTY_BLOCK: u8 = 0;
 pub const OBSTACLE_BLOCK: u8 = 11;
 pub const ERASING_SUM: u8 = 10;
@@ -69,6 +69,32 @@ impl PartialEq for Field {
 }
 
 #[test]
+fn test_is_game_over() {
+    let field = [
+        [0, 0, 9, 11, 11, 4, 8, 8, 0, 0],
+        [0, 2, 3, 11, 11, 11, 7, 9, 0, 0],
+        [0, 2, 1, 1, 11, 11, 11, 11, 11, 0],
+        [0, 3, 11, 6, 6, 11, 11, 11, 1, 0],
+        [0, 8, 11, 11, 6, 6, 11, 11, 11, 0],
+        [8, 7, 9, 2, 9, 7, 7, 7, 11, 0],
+        [9, 5, 11, 4, 11, 9, 2, 9, 5, 11],
+        [3, 8, 7, 8, 11, 11, 3, 9, 7, 9],
+        [5, 9, 7, 11, 11, 11, 8, 11, 5, 6],
+        [11, 11, 11, 11, 4, 3, 11, 9, 3, 11],
+        [11, 11, 11, 11, 5, 11, 11, 5, 11, 11],
+        [11, 11, 11, 2, 11, 11, 8, 11, 1, 7],
+        [11, 11, 11, 4, 7, 4, 7, 11, 8, 11],
+        [11, 11, 3, 11, 8, 7, 11, 11, 11, 11],
+        [11, 11, 2, 5, 9, 5, 11, 5, 11, 11],
+        [11, 11, 2, 3, 3, 2, 7, 1, 11, 11]
+    ];
+    let mut field = Field::new(field);
+    assert!(!field.is_game_over());
+    field.drop_obstacles();
+    assert!(field.is_game_over());
+}
+
+#[test]
 fn test_count_live_blocks() {
     let field = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -91,6 +117,7 @@ fn test_count_live_blocks() {
     let field = Field::new(field);
     assert_eq!(field.count_live_blocks(), 35);
 }
+
 #[test]
 fn test_heights() {
     let field = [

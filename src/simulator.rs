@@ -40,6 +40,7 @@ fn drop_pack(field: &mut field::Field, point: usize, pack: &pack::Pack) -> Vec<(
             let nx = point + x;
             assert!(nx < FIELD_WIDTH);
             let ny = field.heights[nx];
+            assert!(ny < FIELD_HEIGHT);
             field.field[ny][nx] = block;
             field.heights[nx] += 1;
             modified_blocks.push((ny, nx));
