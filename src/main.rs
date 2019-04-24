@@ -90,8 +90,8 @@ impl<'a> Solver<'a> {
 
 
         // beam search for a command
-        const BEAM_DEPTH: usize = 20;
-        const BEAM_WIDTH: usize = 20;
+        const BEAM_DEPTH: usize = 5;
+        const BEAM_WIDTH: usize = 10;
         let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH + 1).map(|_| BinaryHeap::new()).collect();
 
         //push an initial search state
