@@ -10,8 +10,8 @@ submit:
 	# debug
 	cargo build
 	cp target/debug/codevs_reborn togatogAI
-	zip -r submit_debug.zip togatogAI run.sh
+	zip submit_debug.zip togatogAI run.sh
 	# release
 	cargo build --release
 	cp target/release/codevs_reborn togatogAI
-	zip -r submit_release.zip togatogAI run.sh
+	zip submit_release.zip togatogAI run.sh
