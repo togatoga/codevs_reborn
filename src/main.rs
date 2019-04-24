@@ -14,7 +14,7 @@ use crate::command::Command;
 use crate::search_state::SearchStatus;
 use crate::field::{Field, FIELD_WIDTH, INPUT_FIELD_HEIGHT};
 use crate::xorshift::Xorshift;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, HashSet};
 use crate::evaluation::evaluate_search_score;
 
 
@@ -112,6 +112,7 @@ impl<'a> Solver<'a> {
         const BEAM_DEPTH: usize = 15;
         const BEAM_WIDTH: usize = 80;
         let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH + 1).map(|_| BinaryHeap::new()).collect();
+        let mut searched_field: Vec<HashSet<Field>> = (0..BEAM_DEPTH + 1).map(|_| HashSet::new()).collect();
 
         //push an initial search state
         search_state_heap[0].push(root_search_state);
@@ -121,9 +122,15 @@ impl<'a> Solver<'a> {
             let search_turn = current_turn + depth;
             let mut iter = 0;
             while let Some( search_state) = &mut search_state_heap[depth].pop() {
-                iter += 1;
                 //Update obstacle block
                 search_state.update_obstacle_block();
+                //skip duplicate
+                if searched_field[depth].contains(&search_state.field) {
+                    continue
+                }
+                //insert
+                searched_field[depth].insert(search_state.field);
+                iter += 1;
                 for rotate_count in 0..5 {
                     let mut pack = self.packs[search_turn].clone();
                     //rotate
