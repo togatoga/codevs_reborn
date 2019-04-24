@@ -10,14 +10,19 @@ fn estimate_max_chain_count(field: &Field) -> (u8, Field) {
     //drop single block and evaluate chain count
     for point in 0..9 {
         for num in 1..10 {
-            let pack =  Pack {blocks: vec![0, 0, num, 0]};
+            let mut pack = Pack { blocks: vec![0, 0, num, 0] };
+            //right
+            if point == 8 {
+                pack = Pack {blocks: vec![0, 0, 0, num]};
+            }
+
+
             let mut simulated_field = field.clone();
             let (score, chain_count) = simulator::simulate(&mut simulated_field, point, &pack);
             if chain_count > estimated_max_chain_count {
                 estimated_max_chain_count = chain_count;
                 estimated_field = simulated_field;
             }
-
         }
     }
     (estimated_max_chain_count, estimated_field)
@@ -39,5 +44,43 @@ pub fn evaluate_search_score(search_state: &SearchStatus) -> f64 {
 
 #[test]
 fn test_estimate_max_chain_count() {
-
+    let field = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 11, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 11, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 11, 9],
+    ];
+    let (max_chain_count, estimated_field) = estimate_max_chain_count(&Field::new(field));
+    let field = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 11, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 11, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 11, 0],
+    ];
+    assert_eq!(max_chain_count, 1);
+    assert_eq!(estimated_field, Field::new(field));
 }

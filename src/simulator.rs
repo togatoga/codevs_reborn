@@ -50,6 +50,11 @@ fn drop_pack(field: &mut field::Field, point: usize, pack: &pack::Pack) -> Vec<(
     modified_blocks
 }
 
+
+pub fn calculate_obstacle_count(chain_count: u8, skill_chain_count: u32) -> u32 {
+    (chain_count / 2) as u32 + skill_chain_count / 2
+}
+
 fn calculate_erase_blocks(field: &field::Field, modified_blocks: &Vec<(usize, usize)>) -> HashSet<(usize, usize)> {
     let mut erase_blocks: HashSet<(usize, usize)> = HashSet::new();
     for &(y, x) in modified_blocks.iter() {
