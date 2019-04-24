@@ -86,6 +86,9 @@ impl<'a> Solver<'a> {
         //Fire if chain count is over threshold
         {
             let mut search_state = root_search_state.clone();
+            let mut max_chain_count = 0;
+            let mut max_score = 0;
+            let mut command: Option<Command> = None;
             search_state.update_obstacle_block();
             for rotate_count in 0..5 {
                 let mut pack = self.packs[current_turn].clone();
@@ -93,16 +96,23 @@ impl<'a> Solver<'a> {
                 pack.rotates(rotate_count);
                 for point in 0..9 {
                     let (score, chain_count) = simulator::simulate(&mut search_state.field.clone(), point, &pack);
-                    if chain_count >= FIRE_MAX_CHAIN_COUNT {
-                        return Some(Command::Drop((point, rotate_count)));
+                    if chain_count >= FIRE_MAX_CHAIN_COUNT && chain_count >= max_chain_count {
+                        max_chain_count = chain_count;
+                        if score >= max_score {
+                            command = Some(Command::Drop((point, rotate_count)));
+                        }
                     }
                 }
+            }
+            //Fire!!
+            if command.is_some() {
+                return command;
             }
         }
 
         // beam search for a command
         const BEAM_DEPTH: usize = 15;
-        const BEAM_WIDTH: usize = 100;
+        const BEAM_WIDTH: usize = 80;
         let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH + 1).map(|_| BinaryHeap::new()).collect();
 
         //push an initial search state
