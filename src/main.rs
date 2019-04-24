@@ -13,11 +13,28 @@ const MAX_TURN: usize = 500;
 #[derive(Debug)]
 struct GameStatus {
     rest_time_milliseconds: u32,
-    dead_block_count: u32,
+    obstacle_block_count: u32,
     skill_point: u32,
-    game_score: u32,
+    cumulative_game_score: u32,
     field: Field,
 }
+
+#[derive(Debug)]
+enum Command {
+    Drop((usize, usize)),
+    Spell,
+}
+
+#[derive(Debug)]
+struct SearchStatus {
+    field: Field,
+    obstacle_block_count: u32,
+    skill_point: u32,
+    cumulative_game_score: u32,
+    command: Command,
+    search_score: f64,
+}
+
 
 #[derive(Debug)]
 struct Solver<'a> {
@@ -45,9 +62,9 @@ impl<'a> Solver<'a> {
     fn read_game_status(sc: &mut Scanner<StdinLock>) -> GameStatus {
         //read player data
         let rest_time_milliseconds: u32 = sc.read();
-        let dead_block_count: u32 = sc.read();
+        let obstacle_block_count: u32 = sc.read();
         let skill_point: u32 = sc.read();
-        let game_score: u32 = sc.read();
+        let cumulative_game_score: u32 = sc.read();
 
         let mut input_field: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT] = [[0; FIELD_WIDTH]; INPUT_FIELD_HEIGHT];
         for y in 0..INPUT_FIELD_HEIGHT {
@@ -58,11 +75,25 @@ impl<'a> Solver<'a> {
         let end: String = sc.read();
         assert_eq!(end, "END");
         let field = field::new(input_field);
-        GameStatus { rest_time_milliseconds, dead_block_count, skill_point, game_score, field}
+        GameStatus { rest_time_milliseconds, obstacle_block_count, skill_point, cumulative_game_score, field }
     }
 
-    pub fn think(&mut self) -> (usize, usize){
+    pub fn think(&mut self, current_turn: usize) -> Command {
+        const BEAM_DEPTH: usize = 10;
+        const BEAM_WIDTH: usize = 30;
+        let mut command = Command::Drop((0, 0));
+        for depth in 0..BEAM_DEPTH {
+            let search_turn = current_turn + depth;
 
+            //next state
+            for point in 0..9 {
+                for rotate_count in 0..5 {
+                    let mut pack = self.packs[search_turn];
+                    pack.rotates(rotate_count);
+                }
+            }
+        }
+        command
     }
 }
 
@@ -78,8 +109,18 @@ fn solve() {
         let player = Solver::read_game_status(&mut sc);
         let enemy = Solver::read_game_status(&mut sc);
         let mut solver = Solver::new(&packs, player, enemy);
-        let action = solver.think();
-        println!("{} {}", action.0, action.1);
+        let command = solver.think(current_turn);
+        match command {
+            Command::Drop(v) => {
+                println!("{} {}", v.0, v.1);
+            }
+            Command::Spell => {
+                println!("S");
+            },
+            _ => {
+                assert!(false);
+            }
+        }
     }
 }
 
