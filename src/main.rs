@@ -72,7 +72,22 @@ impl<'a> Solver<'a> {
     }
 
     pub fn think(&mut self, current_turn: usize) -> Option<Command> {
-        let player = &self.player;
+        let mut player = &mut self.player;
+        let mut enemy = &mut self.enemy;
+        //calculate obstacle blocks
+        if player.obstacle_block_count >= enemy.obstacle_block_count {
+            player.obstacle_block_count -= enemy.obstacle_block_count;
+            enemy.obstacle_block_count = 0;
+        } else {
+            enemy.obstacle_block_count -= player.obstacle_block_count;
+            player.obstacle_block_count = 0;
+        }
+        //If enemy obstacle block count is over a line
+        //Drop a line of obstacle blocks
+        if player.obstacle_block_count >= FIELD_WIDTH as u32 {
+            player.field.drop_obstacles();
+            player.obstacle_block_count -= FIELD_WIDTH as u32;
+        }
         const FIRE_MAX_CHAIN_COUNT: u8 = 10;
         //Fire if chain count is over threshold
         for rotate_count in 0..5 {
@@ -114,7 +129,6 @@ impl<'a> Solver<'a> {
                         if field.is_game_over() {
                             continue;
                         }
-                        assert_ne!(field, search_state.field);
                         let mut next_search_state = search_state.clone()
                             .with_field(field)
                             .with_command(Command::Drop((point, rotate_count)))
@@ -140,16 +154,20 @@ impl<'a> Solver<'a> {
         None
     }
 }
+#[test]
+fn test_think_must_be_dead() {
+
+}
 
 fn solve() {
     let s = std::io::stdin();
     let mut sc = Scanner { stdin: s.lock() };
     println!("togatogAI");
-//parse packn
+
     let packs: Vec<Pack> = Solver::read_packs(&mut sc);
     loop {
         let current_turn: usize = sc.read();
-//read player data
+        //read player data
         let player = Solver::read_game_status(&mut sc);
         let enemy = Solver::read_game_status(&mut sc);
         let mut solver = Solver::new(&packs, player, enemy);
