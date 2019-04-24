@@ -1,10 +1,17 @@
 pub type Block = u8;
-#[derive(Debug)]
+
+#[derive(Clone, Debug)]
 pub struct Pack {
     pub blocks: Vec<Block>,
 }
+
 impl Pack {
-    pub fn rotate(&mut self)  {
+    pub fn rotates(&mut self, rotate_count: usize) {
+        for i in 0..rotate_count {
+            self.rotate();
+        }
+    }
+    fn rotate(&mut self) {
         let tmp1 = self.blocks[0];
         let tmp2 = self.blocks[1];
         self.blocks[0] = self.blocks[2];
@@ -18,7 +25,7 @@ impl Pack {
 
 #[test]
 fn test_rotate() {
-    let mut p = Pack {blocks: vec![9, 5, 0, 3]};
+    let mut p = Pack { blocks: vec![9, 5, 0, 3] };
     p.rotate();
     assert_eq!(p.blocks, vec![0, 9, 3, 5]);
     p.rotate();
