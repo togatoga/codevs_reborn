@@ -110,7 +110,7 @@ impl<'a> Solver<'a> {
 
         // beam search for a command
         const BEAM_DEPTH: usize = 15;
-        const BEAM_WIDTH: usize = 80;
+        const BEAM_WIDTH: usize = 200;
         let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH + 1).map(|_| BinaryHeap::new()).collect();
         let mut searched_field: Vec<HashSet<Field>> = (0..BEAM_DEPTH + 1).map(|_| HashSet::new()).collect();
 
