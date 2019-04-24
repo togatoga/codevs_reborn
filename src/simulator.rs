@@ -26,7 +26,7 @@ fn is_on_field(y: i8, x: i8) -> bool {
     return true;
 }
 
-fn drop_pack(field: &mut field::Field, point: usize, pack: pack::Pack) -> Vec<(usize, usize)> {
+fn drop_pack(field: &mut field::Field, point: usize, pack: &pack::Pack) -> Vec<(usize, usize)> {
     assert!(point <= 8);
 
     let mut modified_blocks: Vec<(usize, usize)> = Vec::new(); //(y, x)
@@ -108,8 +108,8 @@ fn apply_erase_blocks(field: &mut field::Field, erase_blocks: &HashSet<(usize, u
     modified_blocks
 }
 
-pub fn simulate(field: &mut field::Field, point: usize, pack: pack::Pack) -> (u32, usize) {
-    let mut modified_blocks = drop_pack(field, point, pack);
+pub fn simulate(field: &mut field::Field, point: usize, pack: &pack::Pack) -> (u32, usize) {
+    let mut modified_blocks = drop_pack(field, point, &pack);
     let mut score: u32 = 0;
     let mut chain_count: usize = 0;
     while !modified_blocks.is_empty() {
@@ -150,7 +150,7 @@ fn test_simulate_with_obstacles() {
     let pack = pack::Pack { blocks: vec![6, 7, 2, 0] };
     //drop
     field.drop_obstacles();
-    let (score, chain_count) = simulate(&mut field, 7, pack);
+    let (score, chain_count) = simulate(&mut field, 7, &pack);
     assert_eq!((score, chain_count), (210, 15));
 
     let simulated_field = [
@@ -200,7 +200,7 @@ fn test_simulate() {
 
     let mut field = field::new(raw_field);
     let pack = pack::Pack { blocks: vec![7, 6, 6, 9] };
-    let (score, chain_count) = simulate(&mut field, 6, pack);
+    let (score, chain_count) = simulate(&mut field, 6, &pack);
     assert_eq!((score, chain_count), (120, 13));
 
 
@@ -251,7 +251,7 @@ fn test_drop_pack() {
     let mut field = field::new(raw_field);
     let raw_blocks = vec![0, 9, 1, 2];
     let pack = pack::Pack { blocks: raw_blocks };
-    let modified_blocks = drop_pack(&mut field, 1, pack);
+    let modified_blocks = drop_pack(&mut field, 1, &pack);
     assert_eq!(modified_blocks, vec![(3, 2), (1, 1), (4, 2)]);
 
     let dropped_field = [
