@@ -22,6 +22,25 @@ impl Field {
             self.heights[x] += 1;
         }
     }
+    pub fn count_live_blocks(&self) -> u8 {
+        let mut count = 0;
+        for y in 0..FIELD_HEIGHT {
+            for x in 0..FIELD_WIDTH {
+                if self.field[y][x] != EMPTY_BLOCK && self.field[y][x] != OBSTACLE_BLOCK {
+                    count += 1;
+                }
+            }
+        }
+        count
+    }
+    pub fn is_game_over(&self) -> bool {
+        for &x in self.heights.iter() {
+            if x >= DANGER_LINE_HEIGHT {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 impl PartialEq for Field {

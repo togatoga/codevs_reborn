@@ -1,14 +1,21 @@
 mod pack;
 mod simulator;
 mod field;
+mod search_state;
+mod command;
+mod evaluation;
+mod xorshift;
 
 use std::io::{StdinLock, Stdin};
 
 
 use crate::pack::Pack;
+use crate::command::Command;
+use crate::search_state::SearchStatus;
 use crate::field::{Field, FIELD_WIDTH, INPUT_FIELD_HEIGHT};
+use crate::xorshift::Xorshift;
 use std::collections::BinaryHeap;
-use std::cmp::Ordering;
+
 
 const MAX_TURN: usize = 500;
 
@@ -19,46 +26,6 @@ struct GameStatus {
     skill_point: u32,
     cumulative_game_score: u32,
     field: Field,
-}
-
-#[derive(Debug, Copy, Clone, Eq)]
-enum Command {
-    Drop((usize, usize)),
-    Spell,
-}
-
-impl PartialEq for Command {
-    fn eq(&self, other: &Command) -> bool {
-        match (self, other) {
-            (&Command::Drop(ref a), &Command::Drop(ref b)) => a == b,
-            (&Command::Spell, &Command::Spell) => true,
-            _ => false
-        }
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-struct SearchStatus {
-    field: Field,
-    obstacle_block_count: u32,
-    skill_point: u32,
-    cumulative_game_score: u32,
-    command: Command,
-    search_score: f64,
-}
-
-impl Eq for SearchStatus {}
-
-impl PartialOrd for SearchStatus {
-    fn partial_cmp(&self, other: &SearchStatus) -> Option<Ordering> {
-        self.search_score.partial_cmp(&other.search_score)
-    }
-}
-
-impl Ord for SearchStatus {
-    fn cmp(&self, other: &SearchStatus) -> Ordering {
-        self.search_score.partial_cmp(&other.search_score).unwrap()
-    }
 }
 
 
@@ -104,26 +71,56 @@ impl<'a> Solver<'a> {
         GameStatus { rest_time_milliseconds, obstacle_block_count, skill_point, cumulative_game_score, field }
     }
 
-    pub fn think(&mut self, current_turn: usize) -> Command {
+    pub fn think(&mut self, current_turn: usize) -> Option<Command> {
+        let player = &self.player;
+        const FIRE_MAX_CHAIN_COUNT: u8 = 10;
+        //Fire if chain count is over threshold
+        for rotate_count in 0..5 {
+            let mut pack = self.packs[current_turn].clone();
+            //rotate
+            pack.rotates(rotate_count);
+            for point in 0..9 {
+                let mut field = player.field.clone();
+                let (score, chain_count) = simulator::simulate(&mut field, point, &pack);
+                if chain_count >= FIRE_MAX_CHAIN_COUNT {
+                    return Some(Command::Drop((point, rotate_count)));
+                }
+            }
+        }
+
+
+        // beam search for a command
         const BEAM_DEPTH: usize = 10;
         const BEAM_WIDTH: usize = 30;
-        let mut command = Command::Drop((0, 0));
         let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH + 1).map(|_| BinaryHeap::new()).collect();
 
+        //push an initial search state
+        search_state_heap[0].push(SearchStatus::new(&player.field));
+        let mut rnd = Xorshift::with_seed(current_turn as u64);
         for depth in 0..BEAM_DEPTH {
             //next state
             let search_turn = current_turn + depth;
             let mut iter = 0;
-            while let Some(search_state) = search_state_heap[depth].pop(){
+            while let Some(search_state) = search_state_heap[depth].pop() {
                 iter += 1;
-
                 for rotate_count in 0..5 {
                     let mut pack = self.packs[search_turn].clone();
+                    //rotate
+                    pack.rotates(rotate_count);
                     for point in 0..9 {
-                        //rotate
-                        pack.rotates(rotate_count);
                         let mut field = search_state.field.clone();
-                        simulator::simulate(&mut field, point, &pack);
+                        let (score, chain_count) = simulator::simulate(&mut field, point, &pack);
+                        //Next field is dead and not to put it in state heap
+                        if field.is_game_over() {
+                            continue;
+                        }
+
+                        let mut next_search_state = search_state.clone().with_command(Command::Drop((point, rotate_count)));
+                        // Add a tiny value(0.0 ~ 1.0) to search score
+                        // To randomize search score for the diversity of search
+                        let mut search_score = evaluation::evaluate_search_score(&next_search_state) + rnd.randf();
+                        next_search_state.with_search_score(search_score);
+                        search_state_heap[depth + 1].push(next_search_state);
                     }
                 }
                 if iter >= BEAM_WIDTH {
@@ -131,7 +128,10 @@ impl<'a> Solver<'a> {
                 }
             }
         }
-        command
+        if let Some(result) = search_state_heap[BEAM_WIDTH + 1].pop() {
+            return result.command;
+        }
+        None
     }
 }
 
@@ -139,15 +139,15 @@ fn solve() {
     let s = std::io::stdin();
     let mut sc = Scanner { stdin: s.lock() };
     println!("togatogAI");
-    //parse packn
+//parse packn
     let packs: Vec<Pack> = Solver::read_packs(&mut sc);
     loop {
         let current_turn: usize = sc.read();
-        //read player data
+//read player data
         let player = Solver::read_game_status(&mut sc);
         let enemy = Solver::read_game_status(&mut sc);
         let mut solver = Solver::new(&packs, player, enemy);
-        let command = solver.think(current_turn);
+        let command = solver.think(current_turn).unwrap_or(Command::Drop((0, 0)));
         match command {
             Command::Drop(v) => {
                 println!("{} {}", v.0, v.1);
