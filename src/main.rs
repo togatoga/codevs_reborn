@@ -7,6 +7,8 @@ use std::io::{StdinLock, Stdin};
 
 use crate::pack::Pack;
 use crate::field::{Field, FIELD_WIDTH, INPUT_FIELD_HEIGHT};
+use std::collections::BinaryHeap;
+use std::cmp::Ordering;
 
 const MAX_TURN: usize = 500;
 
@@ -19,13 +21,13 @@ struct GameStatus {
     field: Field,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 enum Command {
     Drop((usize, usize)),
     Spell,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 struct SearchStatus {
     field: Field,
     obstacle_block_count: u32,
@@ -33,6 +35,17 @@ struct SearchStatus {
     cumulative_game_score: u32,
     command: Command,
     search_score: f64,
+}
+
+impl PartialOrd for SearchStatus {
+    fn partial_cmp(&self, other: &SearchStatus) -> Option<Ordering> {
+        Some(self.search_score.partial_cmp(&other.search_score))
+    }
+}
+impl Ord for SearchStatus {
+    fn cmp(&self, other: &SearchStatus) -> Ordering {
+        self.search_score.partial_cmp(&other.search_score)
+    }
 }
 
 
@@ -82,6 +95,8 @@ impl<'a> Solver<'a> {
         const BEAM_DEPTH: usize = 10;
         const BEAM_WIDTH: usize = 30;
         let mut command = Command::Drop((0, 0));
+        let search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH).map(|_| BinaryHeap::new()).collect();
+
         for depth in 0..BEAM_DEPTH {
             let search_turn = current_turn + depth;
 
@@ -90,6 +105,7 @@ impl<'a> Solver<'a> {
                 for rotate_count in 0..5 {
                     let mut pack = self.packs[search_turn];
                     pack.rotates(rotate_count);
+
                 }
             }
         }
