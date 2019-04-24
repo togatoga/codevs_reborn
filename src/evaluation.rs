@@ -1,4 +1,4 @@
-use crate::field::Field;
+use crate::field::{Field, FIELD_HEIGHT, DANGER_LINE_HEIGHT};
 use crate::pack::Pack;
 use crate::simulator;
 use crate::search_state::SearchStatus;
@@ -39,6 +39,13 @@ pub fn evaluate_search_score(search_state: &SearchStatus) -> f64 {
     search_score *= 10e5;
     // count live block
     search_score += (field.count_live_blocks() as f64 * 100.0) as f64;
+    // penalty for heights
+    for &height in field.heights.iter() {
+        //near danger line
+        if height >= DANGER_LINE_HEIGHT - 3 {
+            search_score -= 10.0;
+        }
+    }
     search_score
 }
 
