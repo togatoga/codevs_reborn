@@ -1,11 +1,11 @@
 pub const FIELD_WIDTH: usize = 10;
 pub const INPUT_FIELD_HEIGHT: usize = 16;
-pub const FIELD_HEIGHT: usize = 18;
+pub const FIELD_HEIGHT: usize = 19;
 pub const DANGER_LINE_HEIGHT: usize = INPUT_FIELD_HEIGHT + 1;
 pub const EMPTY_BLOCK: u8 = 0;
 pub const OBSTACLE_BLOCK: u8 = 11;
 pub const ERASING_SUM: u8 = 10;
-
+use std::fmt;
 
 #[derive(Debug, Copy, Clone, Eq)]
 pub struct Field {
@@ -14,6 +14,15 @@ pub struct Field {
     pub heights: [usize; FIELD_WIDTH],
 }
 
+impl fmt::Display for Field {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut field = vec![];
+        for y in 0..FIELD_HEIGHT {
+            field.push(format!("{:?}", self.field[FIELD_HEIGHT - 1 - y]));
+        }
+        write!(f, "Field {{ field: [{}], heights: [{:?}] }}", field.join(",\n"), self.heights)
+    }
+}
 impl Field {
     pub fn new(input_field: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT]) -> Field {
         let mut heights: [usize; FIELD_WIDTH] = [0; FIELD_WIDTH];
