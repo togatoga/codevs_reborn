@@ -21,10 +21,20 @@ struct GameStatus {
     field: Field,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq)]
 enum Command {
     Drop((usize, usize)),
     Spell,
+}
+
+impl PartialEq for Command {
+    fn eq(&self, other: &Command) -> bool {
+        match (self, other) {
+            (&Command::Drop(ref a), &Command::Drop(ref b)) => a == b,
+            (&Command::Spell, &Command::Spell) => true,
+            _ => false
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -37,14 +47,17 @@ struct SearchStatus {
     search_score: f64,
 }
 
+impl Eq for SearchStatus {}
+
 impl PartialOrd for SearchStatus {
     fn partial_cmp(&self, other: &SearchStatus) -> Option<Ordering> {
-        Some(self.search_score.partial_cmp(&other.search_score))
+        self.search_score.partial_cmp(&other.search_score)
     }
 }
+
 impl Ord for SearchStatus {
     fn cmp(&self, other: &SearchStatus) -> Ordering {
-        self.search_score.partial_cmp(&other.search_score)
+        self.search_score.partial_cmp(&other.search_score).unwrap()
     }
 }
 
@@ -95,17 +108,26 @@ impl<'a> Solver<'a> {
         const BEAM_DEPTH: usize = 10;
         const BEAM_WIDTH: usize = 30;
         let mut command = Command::Drop((0, 0));
-        let search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH).map(|_| BinaryHeap::new()).collect();
+        let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH + 1).map(|_| BinaryHeap::new()).collect();
 
         for depth in 0..BEAM_DEPTH {
-            let search_turn = current_turn + depth;
-
             //next state
-            for point in 0..9 {
-                for rotate_count in 0..5 {
-                    let mut pack = self.packs[search_turn];
-                    pack.rotates(rotate_count);
+            let search_turn = current_turn + depth;
+            let mut iter = 0;
+            while let Some(search_state) = search_state_heap[depth].pop(){
+                iter += 1;
 
+                for rotate_count in 0..5 {
+                    let mut pack = self.packs[search_turn].clone();
+                    for point in 0..9 {
+                        //rotate
+                        pack.rotates(rotate_count);
+                        let mut field = search_state.field.clone();
+                        simulator::simulate(&mut field, point, &pack);
+                    }
+                }
+                if iter >= BEAM_WIDTH {
+                    break;
                 }
             }
         }
@@ -132,7 +154,7 @@ fn solve() {
             }
             Command::Spell => {
                 println!("S");
-            },
+            }
             _ => {
                 assert!(false);
             }
