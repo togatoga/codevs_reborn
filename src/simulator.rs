@@ -108,10 +108,10 @@ fn apply_erase_blocks(field: &mut field::Field, erase_blocks: &HashSet<(usize, u
     modified_blocks
 }
 
-pub fn simulate(field: &mut field::Field, point: usize, pack: &pack::Pack) -> (u32, usize) {
+pub fn simulate(field: &mut field::Field, point: usize, pack: &pack::Pack) -> (u32, u8) {
     let mut modified_blocks = drop_pack(field, point, &pack);
     let mut score: u32 = 0;
-    let mut chain_count: usize = 0;
+    let mut chain_count: u8 = 0;
     while !modified_blocks.is_empty() {
         let erase_blocks = calculate_erase_blocks(&field, &modified_blocks);
         if erase_blocks.is_empty() {
@@ -120,7 +120,7 @@ pub fn simulate(field: &mut field::Field, point: usize, pack: &pack::Pack) -> (u
         chain_count += 1;
         modified_blocks = apply_erase_blocks(field, &erase_blocks);
     }
-    score += CHAIN_CUMULATIVE_SCORES[chain_count];
+    score += CHAIN_CUMULATIVE_SCORES[chain_count as usize];
     (score, chain_count)
 }
 
