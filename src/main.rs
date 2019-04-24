@@ -72,16 +72,17 @@ impl<'a> Solver<'a> {
     }
 
     pub fn think(&mut self, current_turn: usize) -> Option<Command> {
+
         let player = &self.player;
         let enemy = &self.enemy;
-
+        eprintln!("rest time {}", player.rest_time_milliseconds);
         let root_search_state =
             SearchStatus::new(&player.field)
             .with_obstacle_block_count(player.obstacle_block_count)
             .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
             .with_cumulative_game_score(player.cumulative_game_score);
 
-        const FIRE_MAX_CHAIN_COUNT: u8 = 10;
+        const FIRE_MAX_CHAIN_COUNT: u8 = 11;
         //Fire if chain count is over threshold
         {
             let mut search_state = root_search_state.clone();
@@ -100,8 +101,8 @@ impl<'a> Solver<'a> {
         }
 
         // beam search for a command
-        const BEAM_DEPTH: usize = 5;
-        const BEAM_WIDTH: usize = 10;
+        const BEAM_DEPTH: usize = 15;
+        const BEAM_WIDTH: usize = 100;
         let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH + 1).map(|_| BinaryHeap::new()).collect();
 
         //push an initial search state
@@ -144,6 +145,7 @@ impl<'a> Solver<'a> {
         }
 
         if let Some(result) = search_state_heap[BEAM_DEPTH].pop() {
+
             eprintln!("cumulative_score = {}, search_score = {}", result.cumulative_game_score, result.search_score);
             return result.command;
         }
