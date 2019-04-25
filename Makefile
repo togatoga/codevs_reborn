@@ -1,3 +1,4 @@
+TARGET=x86_64-unknown-linux-musl
 all:
 	cargo build
 	cargo build --release
