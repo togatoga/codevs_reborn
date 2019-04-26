@@ -24,7 +24,7 @@ const MAX_TURN: usize = 500;
 impl<'a> Solver<'a> {
     pub fn new(packs: &'a Vec<Pack>, player: GameStatus, enemy: GameStatus) -> Solver {
         let config = SolverConfig::new(DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT);
-        Solver { packs, player, enemy, config}
+        Solver { packs, player, enemy, config }
     }
     pub fn read_packs<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> Vec<Pack> {
         (0..MAX_TURN).map(|_| {
@@ -56,7 +56,16 @@ impl<'a> Solver<'a> {
         let field = Field::new(input_field);
         GameStatus { rest_time_milliseconds, obstacle_block_count, skill_point, cumulative_game_score, field }
     }
-
+    pub fn output_command(command: Command) {
+        match command {
+            Command::Drop(v) => {
+                println!("{} {}", v.0, v.1);
+            }
+            Command::Spell => {
+                println!("S");
+            }
+        }
+    }
     pub fn think(&mut self, current_turn: usize) -> Option<Command> {
         let player = &self.player;
         let enemy = &self.enemy;
