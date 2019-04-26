@@ -25,6 +25,7 @@ fn bench(pack: std::fs::File, info: std::fs::File) {
     let player = Solver::read_game_status(&mut information);
     let enemy = Solver::read_game_status(&mut information);
     let mut solver = Solver::new(&packs, player, enemy);
+
     let command = solver.think(current_turn).unwrap_or(Command::Drop((0, 0)));
     println!("{:?}", command);
 }
