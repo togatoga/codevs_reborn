@@ -24,10 +24,12 @@ def cmd(solver, pack, info, num):
     with concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
         now = datetime.datetime.now()
         now = now.strftime("%Y%m%d_%H%M%S")
-        output_dir = f'data/time/{now}'
+        output_dir = f'data/result/{now}'
         os.makedirs(output_dir)
         for file in files:
-            exec_cmd = f'{solver} bench --pack {file} --info {info}'
+            file_name = f'{os.path.basename(solver)}_{os.path.basename(file)}_{os.path.basename(info)}_result'
+            print(file_name)
+            exec_cmd = f'{solver} bench --pack {file} --info {info} --output {output_dir}/{file_name}.csv'
             executor.submit(task, exec_cmd)
     print("Done!!")
 
