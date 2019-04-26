@@ -82,14 +82,15 @@ impl<'a> Solver<'a> {
                 .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
                 .with_cumulative_game_score(player.cumulative_game_score);
 
-        /*
+        
         let fire_max_chain_count: u8 = self.config.fire_max_chain_count;
         //Fire if chain count is over threshold
         {
             let mut search_state = root_search_state.clone();
             let mut max_chain_count = 0;
-            let mut command: Option<Command> = None;
+
             search_state.update_obstacle_block();
+            let mut fire = false;
             for rotate_count in 0..5 {
                 let mut pack = self.packs[current_turn].clone();
                 //rotate
@@ -98,15 +99,16 @@ impl<'a> Solver<'a> {
                     let (_, chain_count) = simulator::simulate(&mut search_state.field.clone(), point, &pack);
                     if chain_count >= fire_max_chain_count && chain_count > max_chain_count {
                         max_chain_count = chain_count;
-                        command = Some(Command::Drop((point, rotate_count)));
+                        best_search_result.command = Command::Drop((point, rotate_count));
+                        fire = true;
                     }
                 }
             }
             //Fire!!
-            if command.is_some() {
-                return command;
+            if fire {
+                return best_search_result;
             }
-        }*/
+        }
 
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.config.beam();
@@ -154,7 +156,7 @@ impl<'a> Solver<'a> {
                         next_search_state.with_search_score(evaluation::evaluate_search_score(&next_search_state) + rnd.randf());
                         search_state_heap[depth + 1].push(next_search_state);
 
-                        if next_search_state.cumulative_game_score > best_search_result.cumulative_game_score{
+                        if next_search_state.cumulative_game_score > best_search_result.cumulative_game_score {
                             best_search_result.cumulative_game_score = next_search_state.cumulative_game_score;
                             best_search_result.last_chain_count = chain_count;
                             best_search_result.turn = search_turn;
