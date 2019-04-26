@@ -4,7 +4,7 @@ use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct SearchStatus {
+pub struct SearchState {
     pub field: Field,
     pub obstacle_block_count: u32,
     pub spawn_obstacle_block_count: u32,
@@ -14,24 +14,24 @@ pub struct SearchStatus {
     pub search_score: f64,
 }
 
-impl Eq for SearchStatus {}
+impl Eq for SearchState {}
 
-impl PartialOrd for SearchStatus {
-    fn partial_cmp(&self, other: &SearchStatus) -> Option<Ordering> {
+impl PartialOrd for SearchState {
+    fn partial_cmp(&self, other: &SearchState) -> Option<Ordering> {
         self.search_score.partial_cmp(&other.search_score)
     }
 }
 
-impl Ord for SearchStatus {
-    fn cmp(&self, other: &SearchStatus) -> Ordering {
+impl Ord for SearchState {
+    fn cmp(&self, other: &SearchState) -> Ordering {
         self.search_score.partial_cmp(&other.search_score).unwrap()
     }
 }
 
 
-impl SearchStatus {
-    pub fn new(field: &Field) -> SearchStatus {
-        SearchStatus { field: *field, obstacle_block_count: 0, spawn_obstacle_block_count: 0, skill_point: 0, cumulative_game_score: 0, command: None, search_score: 0.0 }
+impl SearchState {
+    pub fn new(field: &Field) -> SearchState {
+        SearchState { field: *field, obstacle_block_count: 0, spawn_obstacle_block_count: 0, skill_point: 0, cumulative_game_score: 0, command: None, search_score: 0.0 }
     }
     pub fn update_obstacle_block(&mut self) {
         if self.spawn_obstacle_block_count >= self.obstacle_block_count {
@@ -47,35 +47,35 @@ impl SearchStatus {
             self.obstacle_block_count -= FIELD_WIDTH as u32;
         }
     }
-    pub fn with_obstacle_block_count(&mut self, count: u32) -> SearchStatus {
+    pub fn with_obstacle_block_count(&mut self, count: u32) -> SearchState {
         self.obstacle_block_count = count;
         *self
     }
-    pub fn add_spawn_obstacle_block_count(&mut self, count: u32) -> SearchStatus {
+    pub fn add_spawn_obstacle_block_count(&mut self, count: u32) -> SearchState {
         self.spawn_obstacle_block_count += count;
         *self
     }
-    pub fn with_spawn_obstacle_block_count(&mut self, count: u32) -> SearchStatus {
+    pub fn with_spawn_obstacle_block_count(&mut self, count: u32) -> SearchState {
         self.spawn_obstacle_block_count = count;
         *self
     }
-    pub fn with_field(&mut self, field: Field) -> SearchStatus {
+    pub fn with_field(&mut self, field: Field) -> SearchState {
         self.field = field;
         *self
     }
-    pub fn add_cumulative_game_score(&mut self, score: u32) -> SearchStatus {
+    pub fn add_cumulative_game_score(&mut self, score: u32) -> SearchState {
         self.cumulative_game_score += score;
         *self
     }
-    pub fn with_cumulative_game_score(&mut self, cumulative_game_score: u32) -> SearchStatus {
+    pub fn with_cumulative_game_score(&mut self, cumulative_game_score: u32) -> SearchState {
         self.cumulative_game_score = cumulative_game_score;
         *self
     }
-    pub fn with_search_score(&mut self, search_score: f64) -> SearchStatus {
+    pub fn with_search_score(&mut self, search_score: f64) -> SearchState {
         self.search_score = search_score;
         *self
     }
-    pub fn with_command(&mut self, command: Command) -> SearchStatus {
+    pub fn with_command(&mut self, command: Command) -> SearchState {
         if self.command.is_none() {
             self.command = Some(command);
         }
@@ -105,9 +105,9 @@ fn test_compare_search_state() {
         [11, 11, 6, 6, 11, 6, 2, 6, 11, 11]
     ];
 
-    let lower = SearchStatus::new(&Field::new(field)).with_search_score(-1000.0);
-    let med = SearchStatus::new(&Field::new(field)).with_search_score(0.0);
-    let higher = SearchStatus::new(&Field::new(field)).with_search_score(100000.0);
+    let lower = SearchState::new(&Field::new(field)).with_search_score(-1000.0);
+    let med = SearchState::new(&Field::new(field)).with_search_score(0.0);
+    let higher = SearchState::new(&Field::new(field)).with_search_score(100000.0);
     let mut heaps = BinaryHeap::new();
     heaps.push(med);
     heaps.push(higher);

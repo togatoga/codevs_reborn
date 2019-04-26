@@ -1,7 +1,7 @@
 use crate::field::{Field, FIELD_HEIGHT, DANGER_LINE_HEIGHT};
 use crate::pack::Pack;
 use crate::simulator;
-use crate::search_state::SearchStatus;
+use crate::search_state::SearchState;
 
 
 fn estimate_max_chain_count(field: &Field) -> (u8, Field) {
@@ -15,8 +15,6 @@ fn estimate_max_chain_count(field: &Field) -> (u8, Field) {
             if point == 8 {
                 pack = Pack {blocks: vec![0, 0, 0, num]};
             }
-
-
             let mut simulated_field = field.clone();
             let (score, chain_count) = simulator::simulate(&mut simulated_field, point, &pack);
             if chain_count > estimated_max_chain_count {
@@ -28,7 +26,7 @@ fn estimate_max_chain_count(field: &Field) -> (u8, Field) {
     (estimated_max_chain_count, estimated_field)
 }
 
-pub fn evaluate_search_score(search_state: &SearchStatus) -> f64 {
+pub fn evaluate_search_score(search_state: &SearchState) -> f64 {
     let mut search_score: f64 = 0.0;
 
     let field = search_state.field;

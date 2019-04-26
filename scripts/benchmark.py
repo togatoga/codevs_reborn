@@ -22,13 +22,11 @@ def cmd(solver, pack, info, num):
     assert(len(files) == num)
     print("Start")
     with concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
-        solver_name = os.path.basename(solver)
         now = datetime.datetime.now()
         now = now.strftime("%Y%m%d_%H%M%S")
         output_dir = f'data/time/{now}'
         os.makedirs(output_dir)
         for file in files:
-            file_name = os.path.basename(file)
             exec_cmd = f'{solver} bench --pack {file} --info {info}'
             executor.submit(task, exec_cmd)
     print("Done!!")

@@ -15,6 +15,7 @@ extern crate clap;
 use crate::command::Command;
 use crate::solver::Solver;
 use clap::{SubCommand, ArgMatches};
+use crate::solver_config::SolverConfig;
 
 fn bench(pack: std::fs::File, info: std::fs::File) {
     let mut pack = scanner::Scanner { stdin: pack };
@@ -24,7 +25,9 @@ fn bench(pack: std::fs::File, info: std::fs::File) {
     let current_turn: usize = information.read();
     let player = Solver::read_game_status(&mut information);
     let enemy = Solver::read_game_status(&mut information);
+    let config = SolverConfig::new(20, 250, 10);
     let mut solver = Solver::new(&packs, player, enemy);
+    solver.set_config(config);
 
     let command = solver.think(current_turn).unwrap_or(Command::Drop((0, 0)));
     println!("{:?}", command);
