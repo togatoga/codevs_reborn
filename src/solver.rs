@@ -9,19 +9,22 @@ use crate::xorshift::Xorshift;
 use crate::evaluation;
 use crate::simulator;
 use crate::game_status::GameStatus;
+use crate::solver_config::{SolverConfig, DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT};
 
 #[derive(Debug)]
 pub struct Solver<'a> {
     packs: &'a Vec<Pack>,
     player: GameStatus,
     enemy: GameStatus,
+    config: SolverConfig,
 }
 
 const MAX_TURN: usize = 500;
 
 impl<'a> Solver<'a> {
     pub fn new(packs: &'a Vec<Pack>, player: GameStatus, enemy: GameStatus) -> Solver {
-        Solver { packs, player, enemy }
+        let config = SolverConfig::new(DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT);
+        Solver { packs, player, enemy, config}
     }
     pub fn read_packs<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> Vec<Pack> {
         (0..MAX_TURN).map(|_| {
@@ -64,7 +67,7 @@ impl<'a> Solver<'a> {
                 .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
                 .with_cumulative_game_score(player.cumulative_game_score);
 
-        const FIRE_MAX_CHAIN_COUNT: u8 = 11;
+        let FIRE_MAX_CHAIN_COUNT: u8 = self.config.fire_max_chain_count;
         //Fire if chain count is over threshold
         {
             let mut search_state = root_search_state.clone();
@@ -90,8 +93,8 @@ impl<'a> Solver<'a> {
         }
 
         // beam search for a command
-        const BEAM_DEPTH: usize = 10;
-        const BEAM_WIDTH: usize = 100;
+        let (BEAM_DEPTH, BEAM_WIDTH): (usize, usize) = self.config.beam();
+
         let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH + 1).map(|_| BinaryHeap::new()).collect();
         let mut searched_field: Vec<HashSet<Field>> = (0..BEAM_DEPTH + 1).map(|_| HashSet::new()).collect();
 
