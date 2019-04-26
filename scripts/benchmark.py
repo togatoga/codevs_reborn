@@ -14,14 +14,14 @@ def task(exec_cmd):
 @click.argument("solver", required=True)
 @click.argument("pack", required=True)
 @click.argument("info", required=True)
-@click.option("--num", "-n", default=10)
+@click.option("--num", "-n", default=500)
 def cmd(solver, pack, info, num):
     files = [os.path.join(pack, p) for p in os.listdir(pack)]
     files.sort()
     files = files[:num]
     assert(len(files) == num)
     print("Start")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
         solver_name = os.path.basename(solver)
         now = datetime.datetime.now()
         now = now.strftime("%Y%m%d_%H%M%S")
@@ -29,7 +29,7 @@ def cmd(solver, pack, info, num):
         os.makedirs(output_dir)
         for file in files:
             file_name = os.path.basename(file)
-            exec_cmd = f'hyperfine --warmup 3 \'{solver} bench --pack {file} --info {info}\' --export-csv {output_dir}/{solver_name}_{file_name}.csv'
+            exec_cmd = f'{solver} bench --pack {file} --info {info}'
             executor.submit(task, exec_cmd)
     print("Done!!")
 

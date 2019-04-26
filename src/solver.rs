@@ -140,6 +140,7 @@ impl<'a> Solver<'a> {
                             .with_command(Command::Drop((point, rotate_count)))
                             .add_cumulative_game_score(score)
                             .add_spawn_obstacle_block_count(simulator::calculate_obstacle_count(chain_count, 0));
+                        assert_eq!(search_state.cumulative_game_score + score, next_search_state.cumulative_game_score);
                         // Add a tiny value(0.0 ~ 1.0) to search score
                         // To randomize search score for the diversity of search
                         next_search_state.with_search_score(evaluation::evaluate_search_score(&next_search_state) + rnd.randf());
@@ -153,6 +154,7 @@ impl<'a> Solver<'a> {
         }
 
         if let Some(result) = search_state_heap[beam_depth].pop() {
+            eprintln!("{:?}", result);
             eprintln!("cumulative_score = {}, search_score = {}", result.cumulative_game_score, result.search_score);
             return result.command;
         }
