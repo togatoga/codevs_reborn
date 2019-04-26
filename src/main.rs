@@ -29,7 +29,7 @@ fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
     let current_turn: usize = information.read();
     let player = Solver::read_game_status(&mut information);
     let enemy = Solver::read_game_status(&mut information);
-    let config = SolverConfig::new(20, 500, 10);
+    let config = SolverConfig::new(15, 500, 10);
     let mut solver = Solver::new(&packs, player, enemy);
     solver.set_config(config);
     let best_result = solver.think(current_turn);
