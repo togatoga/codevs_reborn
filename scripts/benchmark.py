@@ -26,11 +26,16 @@ def cmd(solver, pack, info, num):
         now = now.strftime("%Y%m%d_%H%M%S")
         output_dir = f'data/result/{now}'
         os.makedirs(output_dir)
+
         for file in files:
             file_name = f'{os.path.basename(solver)}_{os.path.basename(file)}_{os.path.basename(info)}_result'
-            print(file_name)
             exec_cmd = f'{solver} bench --pack {file} --info {info} --output {output_dir}/{file_name}.csv'
-            executor.submit(task, exec_cmd)
+            try:
+                executor.submit(task, exec_cmd)
+            except KeyboardInterrupt:
+                executor._threads.clear()
+                concurrent.futures.thread._threads_queues.clear()
+                raise
     print("Done!!")
 
 
