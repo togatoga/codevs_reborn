@@ -23,9 +23,8 @@ impl<'a> Solver<'a> {
     pub fn new(packs: &'a Vec<Pack>, player: GameStatus, enemy: GameStatus) -> Solver {
         Solver { packs, player, enemy }
     }
-    pub fn read_packs(sc: &mut scanner::Scanner<StdinLock>) -> Vec<Pack> {
+    pub fn read_packs<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> Vec<Pack> {
         (0..MAX_TURN).map(|_| {
-
             let mut blocks = vec![0; 4];
             for i in 0..4 {
                 blocks[i] = sc.read::<u8>();
@@ -36,7 +35,7 @@ impl<'a> Solver<'a> {
         }).collect::<Vec<Pack>>()
     }
 
-    pub fn read_game_status(sc: &mut scanner::Scanner<StdinLock>) -> GameStatus {
+    pub fn read_game_status<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> GameStatus {
         //read player data
         let rest_time_milliseconds: u32 = sc.read();
         let obstacle_block_count: u32 = sc.read();
@@ -56,15 +55,14 @@ impl<'a> Solver<'a> {
     }
 
     pub fn think(&mut self, current_turn: usize) -> Option<Command> {
-
         let player = &self.player;
         let enemy = &self.enemy;
         eprintln!("rest time {}", player.rest_time_milliseconds);
         let root_search_state =
             SearchStatus::new(&player.field)
-            .with_obstacle_block_count(player.obstacle_block_count)
-            .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
-            .with_cumulative_game_score(player.cumulative_game_score);
+                .with_obstacle_block_count(player.obstacle_block_count)
+                .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
+                .with_cumulative_game_score(player.cumulative_game_score);
 
         const FIRE_MAX_CHAIN_COUNT: u8 = 11;
         //Fire if chain count is over threshold
@@ -104,12 +102,12 @@ impl<'a> Solver<'a> {
             //next state
             let search_turn = current_turn + depth;
             let mut iter = 0;
-            while let Some( search_state) = &mut search_state_heap[depth].pop() {
+            while let Some(search_state) = &mut search_state_heap[depth].pop() {
                 //Update obstacle block
                 search_state.update_obstacle_block();
                 //skip duplicate
                 if searched_field[depth].contains(&search_state.field) {
-                    continue
+                    continue;
                 }
                 //insert
                 searched_field[depth].insert(search_state.field);
@@ -143,7 +141,6 @@ impl<'a> Solver<'a> {
         }
 
         if let Some(result) = search_state_heap[BEAM_DEPTH].pop() {
-
             eprintln!("cumulative_score = {}, search_score = {}", result.cumulative_game_score, result.search_score);
             return result.command;
         }

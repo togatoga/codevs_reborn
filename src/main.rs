@@ -15,7 +15,7 @@ use crate::solver::Solver;
 fn solve() {
     let s = std::io::stdin();
     let mut sc = scanner::Scanner { stdin: s.lock() };
-    println!("togatogAI");
+    println!("togatoga_ai");
 
     let packs: Vec<pack::Pack> = Solver::read_packs(&mut sc);
     loop {
