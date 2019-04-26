@@ -7,7 +7,7 @@ pub struct Pack {
 
 impl Pack {
     pub fn rotates(&mut self, rotate_count: usize) {
-        for i in 0..rotate_count {
+        for _ in 0..rotate_count {
             self.rotate();
         }
     }
