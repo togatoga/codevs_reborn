@@ -3,7 +3,7 @@ use std::collections::{BinaryHeap, HashSet};
 use crate::scanner;
 use crate::pack::Pack;
 use crate::command::Command;
-use crate::search_state::SearchStatus;
+use crate::search_state::SearchState;
 use crate::field::{Field, FIELD_WIDTH, INPUT_FIELD_HEIGHT};
 use crate::xorshift::Xorshift;
 use crate::evaluation;
@@ -25,6 +25,9 @@ impl<'a> Solver<'a> {
     pub fn new(packs: &'a Vec<Pack>, player: GameStatus, enemy: GameStatus) -> Solver {
         let config = SolverConfig::new(DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT);
         Solver { packs, player, enemy, config }
+    }
+    pub fn set_config(&mut self, config: SolverConfig) {
+        self.config = config;
     }
     pub fn read_packs<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> Vec<Pack> {
         (0..MAX_TURN).map(|_| {
@@ -71,7 +74,7 @@ impl<'a> Solver<'a> {
         let enemy = &self.enemy;
         eprintln!("rest time {}", player.rest_time_milliseconds);
         let root_search_state =
-            SearchStatus::new(&player.field)
+            SearchState::new(&player.field)
                 .with_obstacle_block_count(player.obstacle_block_count)
                 .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
                 .with_cumulative_game_score(player.cumulative_game_score);
@@ -104,7 +107,7 @@ impl<'a> Solver<'a> {
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.config.beam();
 
-        let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..beam_depth + 1).map(|_| BinaryHeap::new()).collect();
+        let mut search_state_heap: Vec<BinaryHeap<SearchState>> = (0..beam_depth + 1).map(|_| BinaryHeap::new()).collect();
         let mut searched_field: Vec<HashSet<Field>> = (0..beam_depth + 1).map(|_| HashSet::new()).collect();
 
         //push an initial search state
@@ -155,7 +158,7 @@ impl<'a> Solver<'a> {
 
         if let Some(result) = search_state_heap[beam_depth].pop() {
             eprintln!("{:?}", result);
-            eprintln!("cumulative_score = {}, search_score = {}", result.cumulative_game_score, result.search_score);
+            //eprintln!("cumulative_score = {}, search_score = {}", result.cumulative_game_score, result.search_score);
             return result.command;
         }
         None
