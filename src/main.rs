@@ -9,36 +9,42 @@ mod scanner;
 mod solver;
 mod game_status;
 mod solver_config;
+mod search_result;
 
 extern crate clap;
-
+#[macro_use]
+extern crate serde_derive;
 use crate::command::Command;
 use crate::solver::Solver;
 use clap::{SubCommand, ArgMatches};
 use crate::solver_config::SolverConfig;
 
-fn bench(pack: std::fs::File, info: std::fs::File) {
+
+fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
     let mut pack = scanner::Scanner { stdin: pack };
     let mut information = scanner::Scanner { stdin: info };
     let packs: Vec<pack::Pack> = Solver::read_packs(&mut pack);
+
     //read information only one turn
     let current_turn: usize = information.read();
     let player = Solver::read_game_status(&mut information);
     let enemy = Solver::read_game_status(&mut information);
-    let config = SolverConfig::new(20, 250, 10);
+    let config = SolverConfig::new(20, 500, 10);
     let mut solver = Solver::new(&packs, player, enemy);
     solver.set_config(config);
+    let best_result = solver.think(current_turn);
+    eprintln!("{:?}", best_result);
+    best_result.to_csv(output_file);
 
-    let command = solver.think(current_turn).unwrap_or(Command::Drop((0, 0)));
-    println!("{:?}", command);
+
 }
 
 fn run(matches: ArgMatches) {
     if let Some(matches) = matches.subcommand_matches("bench") {
         let pack = std::fs::File::open(matches.value_of("pack").expect("Invalid for pack file")).expect("Can't open a file");
         let info = std::fs::File::open(matches.value_of("info").expect("Invalid for information file")).expect("Can't open a file");
-
-        bench(pack, info);
+        let output = std::fs::File::create(matches.value_of("output").expect("Invalid for output file")).expect("Can't create a file");
+        bench(pack, info, output);
         return;
     }
 
@@ -53,8 +59,8 @@ fn run(matches: ArgMatches) {
         let player = Solver::read_game_status(&mut sc);
         let enemy = Solver::read_game_status(&mut sc);
         let mut solver = Solver::new(&packs, player, enemy);
-        let command = solver.think(current_turn).unwrap_or(Command::Drop((0, 0)));
-        Solver::output_command(command);
+        let best_result = solver.think(current_turn);
+        Solver::output_command(best_result.command);
     }
 }
 
@@ -66,6 +72,7 @@ fn main() {
         .subcommand(SubCommand::with_name("bench").about("Run benchmarks")
             .arg(clap::Arg::with_name("pack").help("The path of a pack file").short("p").long("pack").value_name("PACK").required(true))
             .arg(clap::Arg::with_name("info").help("The path of an information file").short("i").long("info").value_name("INFORMATION").required(true))
+            .arg(clap::Arg::with_name("output").help("The path of an output csv file").short("o").long("output").value_name("OUTPUT").required(true))
         )
         .get_matches();
     std::thread::Builder::new()

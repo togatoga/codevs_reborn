@@ -4,8 +4,8 @@ pub struct SolverConfig {
     pub beam_width: usize,
     pub fire_max_chain_count: u8,
 }
-pub const DEFAULT_BEAM_DEPTH: usize = 11;
-pub const DEFAULT_BEAM_WIDTH: usize = 200;
+pub const DEFAULT_BEAM_DEPTH: usize = 15;
+pub const DEFAULT_BEAM_WIDTH: usize = 500;
 pub const DEFAULT_FIRE_MAX_CHAIN_COUNT: u8 = 11;
 impl SolverConfig {
     pub fn new(beam_depth: usize, beam_width: usize, fire_max_chain_count: u8) -> SolverConfig {

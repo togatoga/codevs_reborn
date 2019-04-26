@@ -10,6 +10,7 @@ use crate::evaluation;
 use crate::simulator;
 use crate::game_status::GameStatus;
 use crate::solver_config::{SolverConfig, DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT};
+use crate::search_result::SearchResult;
 
 #[derive(Debug)]
 pub struct Solver<'a> {
@@ -69,8 +70,10 @@ impl<'a> Solver<'a> {
             }
         }
     }
-    pub fn think(&mut self, current_turn: usize) -> Option<Command> {
+    pub fn think(&mut self, current_turn: usize) -> SearchResult {
+
         let player = &self.player;
+        let mut best_search_result = SearchResult{last_chain_count: 0, turn: current_turn, cumulative_game_score: player.cumulative_game_score, field: player.field.clone(), command: Command::Drop((0, 0))};
         let enemy = &self.enemy;
         eprintln!("rest time {}", player.rest_time_milliseconds);
         let root_search_state =
@@ -79,6 +82,7 @@ impl<'a> Solver<'a> {
                 .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
                 .with_cumulative_game_score(player.cumulative_game_score);
 
+        /*
         let fire_max_chain_count: u8 = self.config.fire_max_chain_count;
         //Fire if chain count is over threshold
         {
@@ -102,7 +106,7 @@ impl<'a> Solver<'a> {
             if command.is_some() {
                 return command;
             }
-        }
+        }*/
 
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.config.beam();
@@ -113,6 +117,7 @@ impl<'a> Solver<'a> {
         //push an initial search state
         search_state_heap[0].push(root_search_state);
         let mut rnd = Xorshift::with_seed(current_turn as u64);
+
         for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
@@ -148,6 +153,15 @@ impl<'a> Solver<'a> {
                         // To randomize search score for the diversity of search
                         next_search_state.with_search_score(evaluation::evaluate_search_score(&next_search_state) + rnd.randf());
                         search_state_heap[depth + 1].push(next_search_state);
+
+                        if next_search_state.cumulative_game_score > best_search_result.cumulative_game_score{
+                            best_search_result.cumulative_game_score = next_search_state.cumulative_game_score;
+                            best_search_result.last_chain_count = chain_count;
+                            best_search_result.turn = search_turn;
+                            best_search_result.field = next_search_state.field;
+                            best_search_result.command = next_search_state.command.unwrap();
+                        }
+                        assert!(next_search_state.cumulative_game_score <= best_search_result.cumulative_game_score);
                     }
                 }
                 if iter >= beam_width {
@@ -155,18 +169,10 @@ impl<'a> Solver<'a> {
                 }
             }
         }
-
-        if let Some(result) = search_state_heap[beam_depth].pop() {
-            eprintln!("{:?}", result);
-            //eprintln!("cumulative_score = {}, search_score = {}", result.cumulative_game_score, result.search_score);
-            return result.command;
-        }
-        None
+        best_search_result
     }
 }
 
 #[test]
-fn test_read_packs() {
-
-}
+fn test_read_packs() {}
 
