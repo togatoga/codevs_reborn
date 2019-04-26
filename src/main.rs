@@ -9,7 +9,6 @@ mod scanner;
 mod solver;
 mod game_status;
 
-use crate::pack::Pack;
 use crate::command::Command;
 use crate::solver::Solver;
 
@@ -32,9 +31,6 @@ fn solve() {
             }
             Command::Spell => {
                 println!("S");
-            }
-            _ => {
-                assert!(false);
             }
         }
     }

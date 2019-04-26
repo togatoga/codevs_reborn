@@ -1,5 +1,5 @@
 [package]
-name = "togatogAI"
+name = "togatog_ai"
 version = "0.1.0"
 authors = ["togatoga <togasakitogatoga@gmail.com>"]
 edition = "2018"
