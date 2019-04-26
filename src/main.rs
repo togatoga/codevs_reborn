@@ -19,7 +19,6 @@ fn solve() {
     println!("togatoga_ai");
 
     let packs: Vec<pack::Pack> = Solver::read_packs(&mut sc);
-
     loop {
         let current_turn: usize = sc.read();
         //read player data
@@ -27,14 +26,7 @@ fn solve() {
         let enemy = Solver::read_game_status(&mut sc);
         let mut solver = Solver::new(&packs, player, enemy);
         let command = solver.think(current_turn).unwrap_or(Command::Drop((0, 0)));
-        match command {
-            Command::Drop(v) => {
-                println!("{} {}", v.0, v.1);
-            }
-            Command::Spell => {
-                println!("S");
-            }
-        }
+        Solver::output_command(command);
     }
 }
 
