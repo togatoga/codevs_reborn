@@ -6,3 +6,10 @@ edition = "2018"
 
 [dependencies]
 clap = "~2.33"
+
+[dev-dependencies]
+criterion = "0.2"
+
+[[bench]]
+name = "my_benchmark"
+harness = false

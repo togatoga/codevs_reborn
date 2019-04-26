@@ -12,16 +12,13 @@ mod solver_config;
 
 extern crate clap;
 
-
 use crate::command::Command;
 use crate::solver::Solver;
 use clap::{SubCommand, ArgMatches};
 
-fn bench(matches: &ArgMatches) {
-    let info = std::fs::File::open(matches.value_of("info").expect("Invalid for information file")).expect("Can't open a file");
-    let pack = std::fs::File::open(matches.value_of("pack").expect("Invalid for pack file")).expect("Can't open a file");
-    let mut information = scanner::Scanner { stdin: info };
+fn bench(info: std::fs::File, pack: std::fs::File) {
     let mut pack = scanner::Scanner { stdin: pack };
+    let mut information = scanner::Scanner { stdin: info };
     let packs: Vec<pack::Pack> = Solver::read_packs(&mut pack);
     //read information only one turn
     let current_turn: usize = information.read();
@@ -34,7 +31,10 @@ fn bench(matches: &ArgMatches) {
 
 fn run(matches: ArgMatches) {
     if let Some(matches) = matches.subcommand_matches("bench") {
-        bench(matches);
+        let pack = std::fs::File::open(matches.value_of("pack").expect("Invalid for pack file")).expect("Can't open a file");
+        let info = std::fs::File::open(matches.value_of("info").expect("Invalid for information file")).expect("Can't open a file");
+
+        bench(pack, info);
         return;
     }
 
