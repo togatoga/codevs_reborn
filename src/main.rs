@@ -16,7 +16,7 @@ use crate::command::Command;
 use crate::solver::Solver;
 use clap::{SubCommand, ArgMatches};
 
-fn bench(info: std::fs::File, pack: std::fs::File) {
+fn bench(pack: std::fs::File, info: std::fs::File) {
     let mut pack = scanner::Scanner { stdin: pack };
     let mut information = scanner::Scanner { stdin: info };
     let packs: Vec<pack::Pack> = Solver::read_packs(&mut pack);
