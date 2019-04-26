@@ -8,6 +8,7 @@ mod xorshift;
 mod scanner;
 mod solver;
 mod game_status;
+mod solver_config;
 
 use crate::command::Command;
 use crate::solver::Solver;
@@ -18,6 +19,7 @@ fn solve() {
     println!("togatoga_ai");
 
     let packs: Vec<pack::Pack> = Solver::read_packs(&mut sc);
+
     loop {
         let current_turn: usize = sc.read();
         //read player data
