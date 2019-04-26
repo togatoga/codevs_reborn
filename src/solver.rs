@@ -76,7 +76,7 @@ impl<'a> Solver<'a> {
                 .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
                 .with_cumulative_game_score(player.cumulative_game_score);
 
-        let FIRE_MAX_CHAIN_COUNT: u8 = self.config.fire_max_chain_count;
+        let fire_max_chain_count: u8 = self.config.fire_max_chain_count;
         //Fire if chain count is over threshold
         {
             let mut search_state = root_search_state.clone();
@@ -89,7 +89,7 @@ impl<'a> Solver<'a> {
                 pack.rotates(rotate_count);
                 for point in 0..9 {
                     let (_, chain_count) = simulator::simulate(&mut search_state.field.clone(), point, &pack);
-                    if chain_count >= FIRE_MAX_CHAIN_COUNT && chain_count > max_chain_count {
+                    if chain_count >= fire_max_chain_count && chain_count > max_chain_count {
                         max_chain_count = chain_count;
                         command = Some(Command::Drop((point, rotate_count)));
                     }
@@ -102,15 +102,15 @@ impl<'a> Solver<'a> {
         }
 
         // beam search for a command
-        let (BEAM_DEPTH, BEAM_WIDTH): (usize, usize) = self.config.beam();
+        let (beam_depth, beam_width): (usize, usize) = self.config.beam();
 
-        let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..BEAM_DEPTH + 1).map(|_| BinaryHeap::new()).collect();
-        let mut searched_field: Vec<HashSet<Field>> = (0..BEAM_DEPTH + 1).map(|_| HashSet::new()).collect();
+        let mut search_state_heap: Vec<BinaryHeap<SearchStatus>> = (0..beam_depth + 1).map(|_| BinaryHeap::new()).collect();
+        let mut searched_field: Vec<HashSet<Field>> = (0..beam_depth + 1).map(|_| HashSet::new()).collect();
 
         //push an initial search state
         search_state_heap[0].push(root_search_state);
         let mut rnd = Xorshift::with_seed(current_turn as u64);
-        for depth in 0..BEAM_DEPTH {
+        for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
             let mut iter = 0;
@@ -146,16 +146,22 @@ impl<'a> Solver<'a> {
                         search_state_heap[depth + 1].push(next_search_state);
                     }
                 }
-                if iter >= BEAM_WIDTH {
+                if iter >= beam_width {
                     break;
                 }
             }
         }
 
-        if let Some(result) = search_state_heap[BEAM_DEPTH].pop() {
+        if let Some(result) = search_state_heap[beam_depth].pop() {
             eprintln!("cumulative_score = {}, search_score = {}", result.cumulative_game_score, result.search_score);
             return result.command;
         }
         None
     }
 }
+
+#[test]
+fn test_read_packs() {
+
+}
+
