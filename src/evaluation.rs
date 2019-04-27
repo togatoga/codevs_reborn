@@ -4,7 +4,7 @@ use crate::simulator;
 use crate::search_state::SearchState;
 
 
-fn estimate_max_chain_count(field: &Field) -> (u8, Field) {
+pub fn estimate_max_chain_count(field: &Field) -> (u8, Field) {
     let mut estimated_max_chain_count = 0;
     let mut estimated_field = field.clone();
     //drop single block and evaluate chain count
@@ -13,7 +13,7 @@ fn estimate_max_chain_count(field: &Field) -> (u8, Field) {
             let mut pack = Pack { blocks: vec![0, 0, num, 0] };
             //right
             if point == 8 {
-                pack = Pack {blocks: vec![0, 0, 0, num]};
+                pack = Pack { blocks: vec![0, 0, 0, num] };
             }
             let mut simulated_field = field.clone();
             let (score, chain_count) = simulator::simulate(&mut simulated_field, point, &pack);
@@ -88,4 +88,26 @@ fn test_estimate_max_chain_count() {
     ];
     assert_eq!(max_chain_count, 1);
     assert_eq!(estimated_field, Field::new(field));
+
+
+    let field = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 4, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 7, 0, 0, 0, 0],
+        [0, 0, 0, 0, 8, 9, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 6, 0, 0, 0, 0],
+        [0, 0, 0, 0, 7, 9, 0, 0, 0, 0],
+        [0, 0, 0, 0, 4, 9, 0, 0, 0, 0],
+        [0, 0, 0, 8, 3, 5, 0, 0, 0, 0],
+        [0, 0, 0, 5, 8, 1, 0, 0, 0, 0],
+        [0, 0, 0, 8, 6, 1, 5, 0, 0, 0],
+        [0, 0, 0, 1, 5, 3, 3, 0, 0, 0],
+        [0, 0, 0, 8, 1, 4, 8, 0, 0, 0],
+        [0, 0, 1, 5, 1, 7, 7, 0, 0, 0]
+    ];
+    let (max_chain_count, _) = estimate_max_chain_count(&Field::new(field));
+    assert_eq!(max_chain_count, 12);
 }

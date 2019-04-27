@@ -48,6 +48,38 @@ mod solver {
     }
 }
 
+mod simulator {
+    use togatog_ai::{evaluation, field};
+    use criterion::{Criterion, Benchmark};
 
-criterion_group!(benches,solver::think);
+
+    pub fn estimate_max_chain_count(c: &mut Criterion) {
+
+        let field = [
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 4, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 5, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 5, 7, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 8, 9, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 5, 6, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 7, 9, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 4, 9, 0, 0, 0, 0],
+                        [0, 0, 0, 8, 3, 5, 0, 0, 0, 0],
+                        [0, 0, 0, 5, 8, 1, 0, 0, 0, 0],
+                        [0, 0, 0, 8, 6, 1, 5, 0, 0, 0],
+                        [0, 0, 0, 1, 5, 3, 3, 0, 0, 0],
+                        [0, 0, 0, 8, 1, 4, 8, 0, 0, 0],
+                        [0, 0, 1, 5, 1, 7, 7, 0, 0, 0]
+                    ];
+        let field_12_chain = field::Field::new(field);
+        c.bench("estimate_max_chain_count",
+                Benchmark::new("estimate_max_chain_count", move |b| b.iter(|| {
+                    evaluation::estimate_max_chain_count(&field_12_chain.clone())
+                })),
+        );
+    }
+}
+criterion_group!(benches,solver::think, simulator::estimate_max_chain_count);
 criterion_main!(benches);
