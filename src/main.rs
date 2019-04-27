@@ -12,7 +12,7 @@ use togatog_ai::solver_config::SolverConfig;
 fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
     let mut pack = scanner::Scanner { stdin: pack };
     let mut information = scanner::Scanner { stdin: info };
-    let packs: Vec<pack::Pack> = Solver::read_packs(&mut pack);
+    let packs: Vec<Vec<(pack::Pack, usize)>> = Solver::read_packs(&mut pack);
 
     //read information only one turn
     let current_turn: usize = information.read();
@@ -38,7 +38,7 @@ fn run(matches: ArgMatches) {
     let s = std::io::stdin();
     let mut sc = scanner::Scanner { stdin: s.lock() };
     println!("togatoga_ai");
-    let packs: Vec<pack::Pack> = Solver::read_packs(&mut sc);
+    let packs: Vec<Vec<(pack::Pack, usize)>> = Solver::read_packs(&mut sc);
     loop {
         let current_turn: usize = sc.read();
         //read player data

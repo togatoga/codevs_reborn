@@ -14,7 +14,8 @@ use crate::search_result::SearchResult;
 
 #[derive(Debug)]
 pub struct Solver<'a> {
-    packs: &'a Vec<Pack>,
+    packs: &'a Vec<Vec<(Pack, usize)>>,
+    //(pack, rotate_count)
     player: GameStatus,
     enemy: GameStatus,
     config: SolverConfig,
@@ -23,14 +24,14 @@ pub struct Solver<'a> {
 const MAX_TURN: usize = 500;
 
 impl<'a> Solver<'a> {
-    pub fn new(packs: &'a Vec<Pack>, player: GameStatus, enemy: GameStatus) -> Solver {
+    pub fn new(packs: &'a Vec<Vec<(Pack, usize)>>, player: GameStatus, enemy: GameStatus) -> Solver {
         let config = SolverConfig::new(DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT);
         Solver { packs, player, enemy, config }
     }
     pub fn set_config(&mut self, config: SolverConfig) {
         self.config = config;
     }
-    pub fn read_packs<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> Vec<Pack> {
+    pub fn read_packs<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> Vec<Vec<(Pack, usize)>> {
         (0..MAX_TURN).map(|_| {
             let mut blocks = [0; 4];
             for i in 0..4 {
@@ -38,8 +39,20 @@ impl<'a> Solver<'a> {
             }
             let end: String = sc.read();
             assert_eq!(end, "END");
-            Pack::new(&blocks)
-        }).collect::<Vec<Pack>>()
+
+            let mut pack_set = HashSet::new();
+            let mut res = Vec::new();
+            for i in 0..4 {
+                let mut pack = Pack::new(&blocks);
+                pack.rotates(i);
+                if pack_set.contains(&pack) {
+                    continue;
+                }
+                res.push((pack.clone(), i));
+                pack_set.insert(pack);
+            }
+            res
+        }).collect()
     }
 
     pub fn read_game_status<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> GameStatus {
@@ -71,9 +84,8 @@ impl<'a> Solver<'a> {
         }
     }
     pub fn think(&mut self, current_turn: usize) -> SearchResult {
-
         let player = &self.player;
-        let mut best_search_result = SearchResult{last_chain_count: 0, turn: current_turn, cumulative_game_score: player.cumulative_game_score, board: player.board.clone(), command: Command::Drop((0, 0))};
+        let mut best_search_result = SearchResult { last_chain_count: 0, turn: current_turn, cumulative_game_score: player.cumulative_game_score, board: player.board.clone(), command: Command::Drop((0, 0)) };
         let enemy = &self.enemy;
         let root_search_state =
             SearchState::new(&player.board)
@@ -81,7 +93,7 @@ impl<'a> Solver<'a> {
                 .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
                 .with_cumulative_game_score(player.cumulative_game_score);
 
-        
+
         let fire_max_chain_count: u8 = self.config.fire_max_chain_count;
         //Fire if chain count is over threshold
         {
@@ -90,19 +102,17 @@ impl<'a> Solver<'a> {
 
             search_state.update_obstacle_block();
             let mut fire = false;
-            for rotate_count in 0..4 {
-                let mut pack = self.packs[current_turn].clone();
-                //rotate
-                pack.rotates(rotate_count);
+            for (pack, rotate_count) in self.packs[current_turn].iter() {
                 for point in 0..9 {
                     let (_, chain_count) = simulator::simulate(&mut search_state.board.clone(), point, &pack);
                     if chain_count >= fire_max_chain_count && chain_count > max_chain_count {
                         max_chain_count = chain_count;
-                        best_search_result.command = Command::Drop((point, rotate_count));
+                        best_search_result.command = Command::Drop((point, *rotate_count));
                         fire = true;
                     }
                 }
             }
+
             //Fire!!
             if fire {
                 return best_search_result;
@@ -133,10 +143,7 @@ impl<'a> Solver<'a> {
                 //insert
                 searched_board[depth].insert(search_state.board);
                 iter += 1;
-                for rotate_count in 0..4 {
-                    let mut pack = self.packs[search_turn].clone();
-                    //rotate
-                    pack.rotates(rotate_count);
+                for (pack, rotate_count) in self.packs[search_turn].iter() {
                     for point in 0..9 {
                         let mut board = search_state.board.clone();
                         let (score, chain_count) = simulator::simulate(&mut board, point, &pack);
@@ -146,7 +153,7 @@ impl<'a> Solver<'a> {
                         }
                         let mut next_search_state = search_state.clone()
                             .with_board(board)
-                            .with_command(Command::Drop((point, rotate_count)))
+                            .with_command(Command::Drop((point, *rotate_count)))
                             .add_cumulative_game_score(score)
                             .add_spawn_obstacle_block_count(simulator::calculate_obstacle_count(chain_count, 0));
                         assert_eq!(search_state.cumulative_game_score + score, next_search_state.cumulative_game_score);
@@ -168,6 +175,7 @@ impl<'a> Solver<'a> {
                 if iter >= beam_width {
                     break;
                 }
+
             }
         }
         best_search_result

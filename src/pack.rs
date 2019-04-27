@@ -4,7 +4,7 @@ pub type Block = u8;
 pub type BitBlock = u16;
 
 const BASE_BIT: u16 = 4;
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Hash)]
 pub struct Pack {
     //Board
     //9(0) 5(1)
@@ -14,6 +14,7 @@ pub struct Pack {
     //0000 0011
     bit_block: BitBlock,
 }
+impl Eq for Pack {}
 
 impl Pack {
     pub fn new(blocks: &[Block; 4]) -> Pack {
