@@ -5,11 +5,13 @@ pub const DANGER_LINE_HEIGHT: usize = INPUT_FIELD_HEIGHT + 1;
 pub const EMPTY_BLOCK: u8 = 0;
 pub const OBSTACLE_BLOCK: u8 = 11;
 pub const ERASING_SUM: u8 = 10;
+
 use std::fmt;
+use crate::bit_board::BitBoard;
 
 #[derive(Debug, Copy, Clone, Eq, Hash)]
 pub struct Board {
-    pub board: [[u8; FIELD_WIDTH]; FIELD_HEIGHT],
+    board: BitBoard,
     //y starts from under left point
     pub heights: [usize; FIELD_WIDTH],
 }
@@ -18,11 +20,14 @@ impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut board = vec![];
         for y in 0..FIELD_HEIGHT {
-            board.push(format!("{:?}", self.board[FIELD_HEIGHT - 1 - y]));
+            for x in 0..FIELD_WIDTH {
+                board.push(format!("{:?}", self.board.get(y, x)));
+            }
         }
         write!(f, "Board {{ board: [{}], heights: [{:?}] }}", board.join(",\n"), self.heights)
     }
 }
+
 impl Board {
     pub fn new(input_board: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT]) -> Board {
         let mut heights: [usize; FIELD_WIDTH] = [0; FIELD_WIDTH];
@@ -33,20 +38,24 @@ impl Board {
             }
             heights[x] = y;
         }
-        let mut board: [[u8; FIELD_WIDTH]; FIELD_HEIGHT] = [[0; FIELD_WIDTH]; FIELD_HEIGHT];
-        for y in 0..INPUT_FIELD_HEIGHT {
-            for x in 0..FIELD_WIDTH {
-                board[y][x] = input_board[INPUT_FIELD_HEIGHT - 1 - y][x];
-            }
-        }
 
+        let board = BitBoard::new(input_board);
         Board { board, heights }
     }
-
+    pub fn get(&self, y: usize, x: usize) -> u8 {
+        assert!(y < FIELD_HEIGHT);
+        assert!(x < FIELD_WIDTH);
+        self.board.get(y, x)
+    }
+    pub fn set(&mut self, y: usize, x: usize, value: u8) {
+        assert!(y < FIELD_HEIGHT);
+        assert!(x < FIELD_WIDTH);
+        self.board.set(y, x, value)
+    }
     pub fn drop_obstacles(&mut self) {
         for x in 0..FIELD_WIDTH {
             assert!(self.heights[x] < FIELD_HEIGHT);
-            self.board[self.heights[x]][x] = OBSTACLE_BLOCK;
+            self.board.set(self.heights[x], x, OBSTACLE_BLOCK);
             self.heights[x] += 1;
         }
     }
@@ -54,7 +63,8 @@ impl Board {
         let mut count = 0;
         for y in 0..FIELD_HEIGHT {
             for x in 0..FIELD_WIDTH {
-                if self.board[y][x] != EMPTY_BLOCK && self.board[y][x] != OBSTACLE_BLOCK {
+                let block = self.board.get(y, x);
+                if block != EMPTY_BLOCK && block != OBSTACLE_BLOCK {
                     count += 1;
                 }
             }

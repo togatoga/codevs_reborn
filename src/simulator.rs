@@ -4,6 +4,7 @@ use crate::board::{EMPTY_BLOCK, FIELD_WIDTH, FIELD_HEIGHT, OBSTACLE_BLOCK, ERASI
 use std::collections::HashSet;
 use crate::pack::Pack;
 
+
 const CHAIN_CUMULATIVE_SCORES: [u32; 50] = [0, 1, 2, 4, 6, 9, 13, 19, 27, 37, 50, 67, 90, 120, 159, 210, 276, 362, 474, 620, 810, 1057, 1378, 1795, 2337, 3042, 3959, 5151, 6701, 8716, 11335, 14740, 19167, 24923, 32405, 42132, 54778, 71218, 92590, 120373, 156491, 203445, 264485, 343838, 446997, 581103, 755441, 982081, 1276713, 1659735];
 
 const DIRECTION_YXS: [(i8, i8); 8] = [
@@ -42,7 +43,7 @@ fn drop_pack(board: &mut board::Board, point: usize, pack: &pack::Pack) -> Vec<(
             assert!(nx < FIELD_WIDTH);
             let ny = board.heights[nx];
             assert!(ny < FIELD_HEIGHT);
-            board.board[ny][nx] = block;
+            board.set(ny, nx, block);
             board.heights[nx] += 1;
             modified_blocks.push((ny, nx));
         }
@@ -58,7 +59,7 @@ pub fn calculate_obstacle_count(chain_count: u8, skill_chain_count: u32) -> u32 
 fn calculate_erase_blocks(board: &board::Board, modified_blocks: &Vec<(usize, usize)>) -> HashSet<(usize, usize)> {
     let mut erase_blocks: HashSet<(usize, usize)> = HashSet::new();
     for &(y, x) in modified_blocks.iter() {
-        let block = board.board[y][x];
+        let block = board.get(y, x);
         assert!(block != EMPTY_BLOCK && block != OBSTACLE_BLOCK);
         let y: i8 = y as i8;
         let x: i8 = x as i8;
@@ -68,7 +69,7 @@ fn calculate_erase_blocks(board: &board::Board, modified_blocks: &Vec<(usize, us
             }
             let ny: usize = (y + dyx.0) as usize;
             let nx: usize = (x + dyx.1) as usize;
-            let neighbor_block = board.board[ny][nx];
+            let neighbor_block = board.get(ny, nx);
             if neighbor_block == EMPTY_BLOCK || neighbor_block == OBSTACLE_BLOCK {
                 continue;
             }
@@ -88,7 +89,7 @@ fn apply_erase_blocks(board: &mut board::Board, erase_blocks: &HashSet<(usize, u
     let old_heights = board.heights;
     //erase
     for &(y, x) in erase_blocks.iter() {
-        board.board[y][x] = EMPTY_BLOCK;
+        board.set(y, x, EMPTY_BLOCK);
         //update heights
         board.heights[x] = std::cmp::min(board.heights[x], y);
     }
@@ -99,17 +100,17 @@ fn apply_erase_blocks(board: &mut board::Board, erase_blocks: &HashSet<(usize, u
         let new_height = board.heights[x];
         let old_height = old_heights[x];
         for y in new_height..old_height {
-            let drop_block = board.board[y][x];
+            let drop_block = board.get(y, x);
             if drop_block == EMPTY_BLOCK {
                 continue;
             }
             let ny = board.heights[x];
-            board.board[ny][x] = drop_block;
+            board.set(ny, x, drop_block);
             if drop_block != OBSTACLE_BLOCK {
                 modified_blocks.push((ny, x));
             }
             board.heights[x] += 1;
-            board.board[y][x] = EMPTY_BLOCK;
+            board.set(y, x, EMPTY_BLOCK);
         }
     }
     modified_blocks

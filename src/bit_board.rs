@@ -5,8 +5,14 @@ use crate::board::{FIELD_HEIGHT, INPUT_FIELD_HEIGHT, FIELD_WIDTH, Board};
 const BIT_FIELD_WIDTH: usize = 5;
 const BASE_BIT: u8 = 4;
 
-struct BitBoard {
+#[derive(Debug, Copy, Clone, Eq, Hash)]
+pub struct BitBoard {
     bits: [[u8; BIT_FIELD_WIDTH]; FIELD_HEIGHT]
+}
+impl PartialEq for BitBoard {
+    fn eq(&self, other: &BitBoard) -> bool {
+        self.bits == other.bits
+    }
 }
 
 impl BitBoard {
