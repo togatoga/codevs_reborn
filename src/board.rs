@@ -42,11 +42,13 @@ impl Board {
         let board = BitBoard::new(input_board);
         Board { board, heights }
     }
+    #[inline]
     pub fn get(&self, y: usize, x: usize) -> u8 {
         assert!(y < FIELD_HEIGHT);
         assert!(x < FIELD_WIDTH);
         self.board.get(y, x)
     }
+    #[inline]
     pub fn set(&mut self, y: usize, x: usize, value: u8) {
         assert!(y < FIELD_HEIGHT);
         assert!(x < FIELD_WIDTH);

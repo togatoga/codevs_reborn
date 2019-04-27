@@ -25,7 +25,7 @@ impl BitBoard {
         }
         bit_board
     }
-
+    #[inline]
     pub fn set(&mut self, y: usize, x: usize, value: u8) {
         assert!(value <= 11);
         let x_idx = x / 2;
@@ -42,6 +42,7 @@ impl BitBoard {
             self.bits[y][x_idx] |= value;
         }
     }
+    #[inline]
     pub fn get(&self, y: usize, x: usize) -> u8 {
         let x_idx = x / 2;
         let bit = self.bits[y][x_idx];

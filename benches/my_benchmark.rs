@@ -20,7 +20,7 @@ fn solver_think_from_file(pack_file_name: &str, info_file_name: &str, config: So
     //read from pack file
     let mut pack = togatog_ai::scanner::Scanner { stdin: pack_file };
     let mut info = togatog_ai::scanner::Scanner { stdin: info_file };
-    let packs: Vec<togatog_ai::pack::Pack> = togatog_ai::solver::Solver::read_packs(&mut pack);
+    let packs: Vec<Vec<(togatog_ai::pack::Pack, usize)>> = togatog_ai::solver::Solver::read_packs(&mut pack);
     //read information only one turn
     let current_turn: usize = info.read();
     let player = togatog_ai::solver::Solver::read_game_status(&mut info);
