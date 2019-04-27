@@ -153,7 +153,7 @@ fn test_simulate_same_field() {
     ];
     let old_field = Field::new(field);
     let mut simulated_field = Field::new(field);
-    simulate(&mut simulated_field, 7, &Pack {blocks: vec![0, 9, 1, 9]});
+    simulate(&mut simulated_field, 7, &Pack::new(&[0, 9, 1, 9]));
     // 0 9   => 0 0
     // 1 9      0 0
     assert_eq!(simulated_field, old_field);
@@ -182,7 +182,7 @@ fn test_simulate_with_obstacles() {
         [11, 11, 3, 9, 3, 9, 2, 6, 11, 11]
     ];
     let mut field = field::Field::new(raw_field);
-    let pack = pack::Pack { blocks: vec![6, 7, 2, 0] };
+    let pack = pack::Pack::new(&[6, 7, 2, 0]);
     //drop
     field.drop_obstacles();
     let (score, chain_count) = simulate(&mut field, 7, &pack);
@@ -234,7 +234,7 @@ fn test_simulate() {
     ];
 
     let mut field = field::Field::new(raw_field);
-    let pack = pack::Pack { blocks: vec![7, 6, 6, 9] };
+    let pack = pack::Pack::new(&[7, 6, 6, 9]);
     let (score, chain_count) = simulate(&mut field, 6, &pack);
     assert_eq!((score, chain_count), (120, 13));
 
@@ -282,8 +282,7 @@ fn test_drop_pack() {
         [0, 4, 1, 1, 8, 5, 3, 1, 6, 0]
     ];
     let mut field = field::Field::new(raw_field);
-    let raw_blocks = vec![0, 9, 1, 2];
-    let pack = pack::Pack { blocks: raw_blocks };
+    let pack = pack::Pack::new(&[0, 9, 1, 2]);
     let modified_blocks = drop_pack(&mut field, 1, &pack);
     assert_eq!(modified_blocks, vec![(3, 2), (1, 1), (4, 2)]);
 
