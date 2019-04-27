@@ -56,7 +56,7 @@ def printPack(pack)
 end
 
 # 標準入力から盤面を得ます
-def inputField
+def inputBoard
     blocks = []
     (@simulationHeight - @height).times do
         row = []
@@ -73,8 +73,8 @@ def inputField
 end
 
 # お邪魔カウントに応じて、盤面にお邪魔ブロックを落とします
-def fallObstacle(field, obstacleCount)
-    after = field.map {|row| row.dup}
+def fallObstacle(board, obstacleCount)
+    after = board.map {|row| row.dup}
     if obstacleCount < @width
         return after
     end
@@ -90,9 +90,9 @@ def fallObstacle(field, obstacleCount)
 end
 
 # 標準エラー出力に盤面の情報を出力します
-def printField(field)
+def printBoard(board)
     $stderr.puts(
-        field
+        board
             .map {|row|
                 row.map {|block|
                     sprintf("%2d", block)
@@ -120,15 +120,15 @@ end
     obstacleCount = $stdin.gets.to_i
     skill = $stdin.gets.to_i
     score = $stdin.gets.to_i
-    field = inputField()
-    field = fallObstacle(field, obstacleCount)
+    board = inputBoard()
+    board = fallObstacle(board, obstacleCount)
 
     enemyMillitime = $stdin.gets.to_i
     enemyObstacleCount = $stdin.gets.to_i
     enemySkill = $stdin.gets.to_i
     enemyScore = $stdin.gets.to_i
-    enemyField = inputField()
-    enemyField = fallObstacle(enemyField, enemyObstacleCount)
+    enemyBoard = inputBoard()
+    enemyBoard = fallObstacle(enemyBoard, enemyObstacleCount)
 
     # 操作を決定する
     rotation = rand.rand(4)
@@ -140,7 +140,7 @@ end
 
     $stderr.puts "turn : #{turn}"
     printPack(pack)
-    printField(field)
+    printBoard(board)
 
     # 出力する
     puts "#{position} #{rotation}"

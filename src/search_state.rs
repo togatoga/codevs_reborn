@@ -1,11 +1,11 @@
-use crate::field::{Field, FIELD_WIDTH};
+use crate::board::{Board, FIELD_WIDTH};
 use crate::command::Command;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct SearchState {
-    pub field: Field,
+    pub board: Board,
     pub obstacle_block_count: u32,
     pub spawn_obstacle_block_count: u32,
     pub skill_point: u32,
@@ -30,8 +30,8 @@ impl Ord for SearchState {
 
 
 impl SearchState {
-    pub fn new(field: &Field) -> SearchState {
-        SearchState { field: *field, obstacle_block_count: 0, spawn_obstacle_block_count: 0, skill_point: 0, cumulative_game_score: 0, command: None, search_score: 0.0 }
+    pub fn new(board: &Board) -> SearchState {
+        SearchState { board: *board, obstacle_block_count: 0, spawn_obstacle_block_count: 0, skill_point: 0, cumulative_game_score: 0, command: None, search_score: 0.0 }
     }
     pub fn update_obstacle_block(&mut self) {
         if self.spawn_obstacle_block_count >= self.obstacle_block_count {
@@ -43,7 +43,7 @@ impl SearchState {
         }
         //Drop
         if self.obstacle_block_count >= FIELD_WIDTH as u32 {
-            self.field.drop_obstacles();
+            self.board.drop_obstacles();
             self.obstacle_block_count -= FIELD_WIDTH as u32;
         }
     }
@@ -59,8 +59,8 @@ impl SearchState {
         self.spawn_obstacle_block_count = count;
         *self
     }
-    pub fn with_field(&mut self, field: Field) -> SearchState {
-        self.field = field;
+    pub fn with_board(&mut self, board: Board) -> SearchState {
+        self.board = board;
         *self
     }
     pub fn add_cumulative_game_score(&mut self, score: u32) -> SearchState {
@@ -86,7 +86,7 @@ impl SearchState {
 
 #[test]
 fn test_compare_search_state() {
-    let field = [
+    let board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -105,9 +105,9 @@ fn test_compare_search_state() {
         [11, 11, 6, 6, 11, 6, 2, 6, 11, 11]
     ];
 
-    let lower = SearchState::new(&Field::new(field)).with_search_score(-1000.0);
-    let med = SearchState::new(&Field::new(field)).with_search_score(0.0);
-    let higher = SearchState::new(&Field::new(field)).with_search_score(100000.0);
+    let lower = SearchState::new(&Board::new(board)).with_search_score(-1000.0);
+    let med = SearchState::new(&Board::new(board)).with_search_score(0.0);
+    let higher = SearchState::new(&Board::new(board)).with_search_score(100000.0);
     let mut heaps = BinaryHeap::new();
     heaps.push(med);
     heaps.push(higher);

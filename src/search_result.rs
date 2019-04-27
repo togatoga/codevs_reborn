@@ -1,4 +1,4 @@
-use crate::field::Field;
+use crate::board::Board;
 use crate::command::Command;
 
 extern crate csv;
@@ -11,7 +11,7 @@ pub struct SearchResult {
     pub last_chain_count: u8,
     pub cumulative_game_score: u32,
     pub turn: usize,
-    pub field: Field,
+    pub board: Board,
     pub command: Command,
 }
 

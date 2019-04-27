@@ -4,7 +4,7 @@ use crate::scanner;
 use crate::pack::Pack;
 use crate::command::Command;
 use crate::search_state::SearchState;
-use crate::field::{Field, FIELD_WIDTH, INPUT_FIELD_HEIGHT};
+use crate::board::{Board, FIELD_WIDTH, INPUT_FIELD_HEIGHT};
 use crate::xorshift::Xorshift;
 use crate::evaluation;
 use crate::simulator;
@@ -49,16 +49,16 @@ impl<'a> Solver<'a> {
         let skill_point: u32 = sc.read();
         let cumulative_game_score: u32 = sc.read();
 
-        let mut input_field: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT] = [[0; FIELD_WIDTH]; INPUT_FIELD_HEIGHT];
+        let mut input_board: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT] = [[0; FIELD_WIDTH]; INPUT_FIELD_HEIGHT];
         for y in 0..INPUT_FIELD_HEIGHT {
             for x in 0..FIELD_WIDTH {
-                input_field[y][x] = sc.read::<u8>();
+                input_board[y][x] = sc.read::<u8>();
             }
         }
         let end: String = sc.read();
         assert_eq!(end, "END");
-        let field = Field::new(input_field);
-        GameStatus { rest_time_milliseconds, obstacle_block_count, skill_point, cumulative_game_score, field }
+        let board = Board::new(input_board);
+        GameStatus { rest_time_milliseconds, obstacle_block_count, skill_point, cumulative_game_score, board }
     }
     pub fn output_command(command: Command) {
         match command {
@@ -73,10 +73,10 @@ impl<'a> Solver<'a> {
     pub fn think(&mut self, current_turn: usize) -> SearchResult {
 
         let player = &self.player;
-        let mut best_search_result = SearchResult{last_chain_count: 0, turn: current_turn, cumulative_game_score: player.cumulative_game_score, field: player.field.clone(), command: Command::Drop((0, 0))};
+        let mut best_search_result = SearchResult{last_chain_count: 0, turn: current_turn, cumulative_game_score: player.cumulative_game_score, board: player.board.clone(), command: Command::Drop((0, 0))};
         let enemy = &self.enemy;
         let root_search_state =
-            SearchState::new(&player.field)
+            SearchState::new(&player.board)
                 .with_obstacle_block_count(player.obstacle_block_count)
                 .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
                 .with_cumulative_game_score(player.cumulative_game_score);
@@ -95,7 +95,7 @@ impl<'a> Solver<'a> {
                 //rotate
                 pack.rotates(rotate_count);
                 for point in 0..9 {
-                    let (_, chain_count) = simulator::simulate(&mut search_state.field.clone(), point, &pack);
+                    let (_, chain_count) = simulator::simulate(&mut search_state.board.clone(), point, &pack);
                     if chain_count >= fire_max_chain_count && chain_count > max_chain_count {
                         max_chain_count = chain_count;
                         best_search_result.command = Command::Drop((point, rotate_count));
@@ -113,7 +113,7 @@ impl<'a> Solver<'a> {
         let (beam_depth, beam_width): (usize, usize) = self.config.beam();
 
         let mut search_state_heap: Vec<BinaryHeap<SearchState>> = (0..beam_depth + 1).map(|_| BinaryHeap::new()).collect();
-        let mut searched_field: Vec<HashSet<Field>> = (0..beam_depth + 1).map(|_| HashSet::new()).collect();
+        let mut searched_board: Vec<HashSet<Board>> = (0..beam_depth + 1).map(|_| HashSet::new()).collect();
 
         //push an initial search state
         search_state_heap[0].push(root_search_state);
@@ -127,25 +127,25 @@ impl<'a> Solver<'a> {
                 //Update obstacle block
                 search_state.update_obstacle_block();
                 //skip duplicate
-                if searched_field[depth].contains(&search_state.field) {
+                if searched_board[depth].contains(&search_state.board) {
                     continue;
                 }
                 //insert
-                searched_field[depth].insert(search_state.field);
+                searched_board[depth].insert(search_state.board);
                 iter += 1;
                 for rotate_count in 0..4 {
                     let mut pack = self.packs[search_turn].clone();
                     //rotate
                     pack.rotates(rotate_count);
                     for point in 0..9 {
-                        let mut field = search_state.field.clone();
-                        let (score, chain_count) = simulator::simulate(&mut field, point, &pack);
-                        //Next field is dead and not to put it in state heap
-                        if field.is_game_over() {
+                        let mut board = search_state.board.clone();
+                        let (score, chain_count) = simulator::simulate(&mut board, point, &pack);
+                        //Next board is dead and not to put it in state heap
+                        if board.is_game_over() {
                             continue;
                         }
                         let mut next_search_state = search_state.clone()
-                            .with_field(field)
+                            .with_board(board)
                             .with_command(Command::Drop((point, rotate_count)))
                             .add_cumulative_game_score(score)
                             .add_spawn_obstacle_block_count(simulator::calculate_obstacle_count(chain_count, 0));
@@ -159,7 +159,7 @@ impl<'a> Solver<'a> {
                             best_search_result.cumulative_game_score = next_search_state.cumulative_game_score;
                             best_search_result.last_chain_count = chain_count;
                             best_search_result.turn = search_turn;
-                            best_search_result.field = next_search_state.field;
+                            best_search_result.board = next_search_state.board;
                             best_search_result.command = next_search_state.command.unwrap();
                         }
                         assert!(next_search_state.cumulative_game_score <= best_search_result.cumulative_game_score);

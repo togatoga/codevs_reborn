@@ -50,12 +50,12 @@ mod solver {
 }
 
 mod simulator {
-    use togatog_ai::{evaluation, field};
+    use togatog_ai::{evaluation, board};
     use criterion::{Criterion, Benchmark};
 
 
     pub fn estimate_max_chain_count(c: &mut Criterion) {
-        let field = [
+        let board = [
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 4, 0, 0, 0, 0, 0],
@@ -73,10 +73,10 @@ mod simulator {
             [0, 0, 0, 8, 1, 4, 8, 0, 0, 0],
             [0, 0, 1, 5, 1, 7, 7, 0, 0, 0]
         ];
-        let field_12_chain = field::Field::new(field);
+        let board_12_chain = board::Board::new(board);
         c.bench("estimate_max_chain_count",
                 Benchmark::new("estimate_max_chain_count", move |b| b.iter(|| {
-                    evaluation::estimate_max_chain_count(&field_12_chain.clone())
+                    evaluation::estimate_max_chain_count(&board_12_chain.clone())
                 })),
         );
     }

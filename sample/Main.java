@@ -73,33 +73,33 @@ public class Main {
     }
 
     // 標準入力から盤面を得ます
-    int[][] inputField(Scanner in) {
-        int[][] field = new int[simulationHeight][width];
+    int[][] inputBoard(Scanner in) {
+        int[][] board = new int[simulationHeight][width];
 
         for (int i = 0; i < simulationHeight - height; i++) {
             for (int j = 0; j < width; j++) {
-                field[i][j] = EMPTY_BLOCK;
+                board[i][j] = EMPTY_BLOCK;
             }
         }
         for (int i = simulationHeight - height; i < simulationHeight; i++) {
             for (int j = 0; j < width; j++) {
-                field[i][j] = in.nextInt();
+                board[i][j] = in.nextInt();
             }
         }
         in.next(); // END
-        return field;
+        return board;
     }
 
     // お邪魔カウントに応じて、盤面にお邪魔ブロックを落とします
-    int[][] fallObstacle(int[][] field, int obstacleCount) {
-        int[][] after = Arrays.stream(field)
+    int[][] fallObstacle(int[][] board, int obstacleCount) {
+        int[][] after = Arrays.stream(board)
             .map(row -> Arrays.copyOf(row, width))
             .toArray(int[][]::new);
         if (obstacleCount < width) return after;
         for (int j = 0; j < width; j++) {
             for (int i = simulationHeight - 1; i >= 0; i--) {
-                if (field[i][j] == EMPTY_BLOCK) {
-                    field[i][j] = OBSTACLE_BLOCK;
+                if (board[i][j] == EMPTY_BLOCK) {
+                    board[i][j] = OBSTACLE_BLOCK;
                     break;
                 }
             }
@@ -108,9 +108,9 @@ public class Main {
     }
 
     // 標準エラー出力に盤面の情報を出力します
-    void printField(int[][] field) {
+    void printBoard(int[][] board) {
         System.err.println(
-            Arrays.stream(field).map(row -> {
+            Arrays.stream(board).map(row -> {
                 return Arrays.stream(row)
                     .mapToObj(block -> String.format("%2d", block))
                     .collect(Collectors.joining(" "));
@@ -142,15 +142,15 @@ public class Main {
                 int obstacleCount = in.nextInt();
                 int skill = in.nextInt();
                 int score = in.nextInt();
-                int[][] field = inputField(in);
-                field = fallObstacle(field, obstacleCount);
+                int[][] board = inputBoard(in);
+                board = fallObstacle(board, obstacleCount);
 
                 int enemyMillitime = in.nextInt();
                 int enemyObstacleCount = in.nextInt();
                 int enemySkill = in.nextInt();
                 int enemyScore = in.nextInt();
-                int[][] enemyField = inputField(in);
-                enemyField = fallObstacle(enemyField, enemyObstacleCount);
+                int[][] enemyBoard = inputBoard(in);
+                enemyBoard = fallObstacle(enemyBoard, enemyObstacleCount);
 
                 // 操作を決定する
                 int rotation = random.nextInt(4);
@@ -163,7 +163,7 @@ public class Main {
                 System.err.println("turn : " + turn);
                 System.err.flush();
                 printPack(pack);
-                printField(field);
+                printBoard(board);
 
                 // 操作を出力する
                 System.out.println(position + " " + rotation);
