@@ -1,24 +1,13 @@
-mod pack;
-mod simulator;
-mod field;
-mod search_state;
-mod command;
-mod evaluation;
-mod xorshift;
-mod scanner;
-mod solver;
-mod game_status;
-mod solver_config;
-mod search_result;
-
 extern crate clap;
 #[macro_use]
 extern crate serde_derive;
-use crate::command::Command;
-use crate::solver::Solver;
 use clap::{SubCommand, ArgMatches};
-use crate::solver_config::SolverConfig;
 
+extern crate togatog_ai;
+use togatog_ai::scanner;
+use togatog_ai::pack;
+use togatog_ai::solver::Solver;
+use togatog_ai::solver_config::SolverConfig;
 
 fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
     let mut pack = scanner::Scanner { stdin: pack };
@@ -34,9 +23,7 @@ fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
     solver.set_config(config);
     let best_result = solver.think(current_turn);
     eprintln!("{:?}", best_result);
-    best_result.to_csv(output_file);
-
-
+    best_result.to_csv(output_file).unwrap();
 }
 
 fn run(matches: ArgMatches) {
@@ -51,7 +38,6 @@ fn run(matches: ArgMatches) {
     let s = std::io::stdin();
     let mut sc = scanner::Scanner { stdin: s.lock() };
     println!("togatoga_ai");
-
     let packs: Vec<pack::Pack> = Solver::read_packs(&mut sc);
     loop {
         let current_turn: usize = sc.read();

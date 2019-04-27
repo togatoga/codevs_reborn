@@ -75,7 +75,6 @@ impl<'a> Solver<'a> {
         let player = &self.player;
         let mut best_search_result = SearchResult{last_chain_count: 0, turn: current_turn, cumulative_game_score: player.cumulative_game_score, field: player.field.clone(), command: Command::Drop((0, 0))};
         let enemy = &self.enemy;
-        eprintln!("rest time {}", player.rest_time_milliseconds);
         let root_search_state =
             SearchState::new(&player.field)
                 .with_obstacle_block_count(player.obstacle_block_count)
