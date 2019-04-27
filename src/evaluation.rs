@@ -10,10 +10,10 @@ pub fn estimate_max_chain_count(field: &Field) -> (u8, Field) {
     //drop single block and evaluate chain count
     for point in 0..9 {
         for num in 1..10 {
-            let mut pack = Pack { blocks: [0, 0, num, 0] };
+            let mut pack = Pack::new(&[0, 0, num, 0]);
             //right
             if point == 8 {
-                pack = Pack { blocks: [0, 0, 0, num] };
+                pack = Pack::new(&[0, 0, 0, num]);
             }
             let mut simulated_field = field.clone();
             let (score, chain_count) = simulator::simulate(&mut simulated_field, point, &pack);

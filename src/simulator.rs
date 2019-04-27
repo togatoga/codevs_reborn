@@ -34,7 +34,7 @@ fn drop_pack(field: &mut field::Field, point: usize, pack: &pack::Pack) -> Vec<(
     for y in (0..2).rev() {
         for x in (0..2).rev() {
             //skip empty block
-            let block = pack.blocks[2 * y + x];
+            let block = pack.get(2 * y + x);
             if block == EMPTY_BLOCK {
                 continue;
             }
