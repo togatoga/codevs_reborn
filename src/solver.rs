@@ -32,13 +32,13 @@ impl<'a> Solver<'a> {
     }
     pub fn read_packs<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> Vec<Pack> {
         (0..MAX_TURN).map(|_| {
-            let mut blocks = vec![0; 4];
+            let mut blocks = [0; 4];
             for i in 0..4 {
                 blocks[i] = sc.read::<u8>();
             }
             let end: String = sc.read();
             assert_eq!(end, "END");
-            Pack { blocks }
+            Pack::new(&blocks)
         }).collect::<Vec<Pack>>()
     }
 
@@ -90,7 +90,7 @@ impl<'a> Solver<'a> {
 
             search_state.update_obstacle_block();
             let mut fire = false;
-            for rotate_count in 0..5 {
+            for rotate_count in 0..4 {
                 let mut pack = self.packs[current_turn].clone();
                 //rotate
                 pack.rotates(rotate_count);
@@ -133,7 +133,7 @@ impl<'a> Solver<'a> {
                 //insert
                 searched_field[depth].insert(search_state.field);
                 iter += 1;
-                for rotate_count in 0..5 {
+                for rotate_count in 0..4 {
                     let mut pack = self.packs[search_turn].clone();
                     //rotate
                     pack.rotates(rotate_count);
