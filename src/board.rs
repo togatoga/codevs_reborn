@@ -85,7 +85,7 @@ impl Board {
 
 impl PartialEq for Board {
     fn eq(&self, other: &Board) -> bool {
-        self.board == other.board && self.heights == other.heights
+        self.board == other.board
     }
 }
 
