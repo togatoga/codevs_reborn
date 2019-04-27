@@ -12,8 +12,6 @@ use togatog_ai::solver_config::SolverConfig;
 use togatog_ai::solver::Solver;
 use togatog_ai::search_result::SearchResult;
 
-const BENCHMARK_SOLVER_CONFIG: SolverConfig = SolverConfig { beam_depth: 15, beam_width: 100, fire_max_chain_count: 10 };
-
 fn solver_think_from_file(pack_file_name: &str, info_file_name: &str, config: SolverConfig) -> SearchResult {
     let pack_file = File::open(pack_file_name).expect("can't open a file");
     let info_file = File::open(info_file_name).expect("can't open a file");
@@ -35,6 +33,7 @@ fn solver_think_from_file(pack_file_name: &str, info_file_name: &str, config: So
 mod solver {
     use super::*;
     use criterion::Benchmark;
+    use togatog_ai::solver_config::{DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT};
 
     pub fn think(c: &mut Criterion) {
         c.bench("think",
@@ -42,7 +41,7 @@ mod solver {
                     for i in 0..10 {
                         let pack_file_name: &str = &format!("input/pack/pack_{:04}.pack", i);
                         let info_file_name: &str = "input/information/initial.info";
-                        solver_think_from_file(pack_file_name, info_file_name, BENCHMARK_SOLVER_CONFIG);
+                        solver_think_from_file(pack_file_name, info_file_name, SolverConfig::new(DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT));
                     }
                 })).sample_size(5),
         );
