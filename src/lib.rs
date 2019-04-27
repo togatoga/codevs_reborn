@@ -1,6 +1,6 @@
 pub mod pack;
 pub mod simulator;
-pub mod field;
+pub mod board;
 pub mod search_state;
 pub mod command;
 pub mod evaluation;

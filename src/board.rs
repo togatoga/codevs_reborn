@@ -8,45 +8,45 @@ pub const ERASING_SUM: u8 = 10;
 use std::fmt;
 
 #[derive(Debug, Copy, Clone, Eq, Hash)]
-pub struct Field {
-    pub field: [[u8; FIELD_WIDTH]; FIELD_HEIGHT],
+pub struct Board {
+    pub board: [[u8; FIELD_WIDTH]; FIELD_HEIGHT],
     //y starts from under left point
     pub heights: [usize; FIELD_WIDTH],
 }
 
-impl fmt::Display for Field {
+impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut field = vec![];
+        let mut board = vec![];
         for y in 0..FIELD_HEIGHT {
-            field.push(format!("{:?}", self.field[FIELD_HEIGHT - 1 - y]));
+            board.push(format!("{:?}", self.board[FIELD_HEIGHT - 1 - y]));
         }
-        write!(f, "Field {{ field: [{}], heights: [{:?}] }}", field.join(",\n"), self.heights)
+        write!(f, "Board {{ board: [{}], heights: [{:?}] }}", board.join(",\n"), self.heights)
     }
 }
-impl Field {
-    pub fn new(input_field: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT]) -> Field {
+impl Board {
+    pub fn new(input_board: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT]) -> Board {
         let mut heights: [usize; FIELD_WIDTH] = [0; FIELD_WIDTH];
         for x in 0..FIELD_WIDTH {
             let mut y = 0;
-            while y < INPUT_FIELD_HEIGHT && input_field[INPUT_FIELD_HEIGHT - 1 - y][x] != EMPTY_BLOCK {
+            while y < INPUT_FIELD_HEIGHT && input_board[INPUT_FIELD_HEIGHT - 1 - y][x] != EMPTY_BLOCK {
                 y += 1;
             }
             heights[x] = y;
         }
-        let mut field: [[u8; FIELD_WIDTH]; FIELD_HEIGHT] = [[0; FIELD_WIDTH]; FIELD_HEIGHT];
+        let mut board: [[u8; FIELD_WIDTH]; FIELD_HEIGHT] = [[0; FIELD_WIDTH]; FIELD_HEIGHT];
         for y in 0..INPUT_FIELD_HEIGHT {
             for x in 0..FIELD_WIDTH {
-                field[y][x] = input_field[INPUT_FIELD_HEIGHT - 1 - y][x];
+                board[y][x] = input_board[INPUT_FIELD_HEIGHT - 1 - y][x];
             }
         }
 
-        Field { field, heights }
+        Board { board, heights }
     }
 
     pub fn drop_obstacles(&mut self) {
         for x in 0..FIELD_WIDTH {
             assert!(self.heights[x] < FIELD_HEIGHT);
-            self.field[self.heights[x]][x] = OBSTACLE_BLOCK;
+            self.board[self.heights[x]][x] = OBSTACLE_BLOCK;
             self.heights[x] += 1;
         }
     }
@@ -54,7 +54,7 @@ impl Field {
         let mut count = 0;
         for y in 0..FIELD_HEIGHT {
             for x in 0..FIELD_WIDTH {
-                if self.field[y][x] != EMPTY_BLOCK && self.field[y][x] != OBSTACLE_BLOCK {
+                if self.board[y][x] != EMPTY_BLOCK && self.board[y][x] != OBSTACLE_BLOCK {
                     count += 1;
                 }
             }
@@ -71,15 +71,15 @@ impl Field {
     }
 }
 
-impl PartialEq for Field {
-    fn eq(&self, other: &Field) -> bool {
-        self.field == other.field && self.heights == other.heights
+impl PartialEq for Board {
+    fn eq(&self, other: &Board) -> bool {
+        self.board == other.board && self.heights == other.heights
     }
 }
 
 #[test]
 fn test_is_game_over() {
-    let field = [
+    let board = [
         [0, 0, 9, 11, 11, 4, 8, 8, 0, 0],
         [0, 2, 3, 11, 11, 11, 7, 9, 0, 0],
         [0, 2, 1, 1, 11, 11, 11, 11, 11, 0],
@@ -97,15 +97,15 @@ fn test_is_game_over() {
         [11, 11, 2, 5, 9, 5, 11, 5, 11, 11],
         [11, 11, 2, 3, 3, 2, 7, 1, 11, 11]
     ];
-    let mut field = Field::new(field);
-    assert!(!field.is_game_over());
-    field.drop_obstacles();
-    assert!(field.is_game_over());
+    let mut board = Board::new(board);
+    assert!(!board.is_game_over());
+    board.drop_obstacles();
+    assert!(board.is_game_over());
 }
 
 #[test]
 fn test_count_live_blocks() {
-    let field = [
+    let board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -123,13 +123,13 @@ fn test_count_live_blocks() {
         [0, 0, 6, 5, 1, 2, 3, 4, 11, 0],
         [0, 0, 1, 3, 6, 2, 2, 1, 11, 0]
     ];
-    let field = Field::new(field);
-    assert_eq!(field.count_live_blocks(), 35);
+    let board = Board::new(board);
+    assert_eq!(board.count_live_blocks(), 35);
 }
 
 #[test]
 fn test_heights() {
-    let field = [
+    let board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -147,13 +147,13 @@ fn test_heights() {
         [0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
         [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     ];
-    let field = Field::new(field);
-    assert_eq!(field.heights, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    let board = Board::new(board);
+    assert_eq!(board.heights, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 }
 
 #[test]
 fn drop_obstacles() {
-    let field = [
+    let board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -171,11 +171,11 @@ fn drop_obstacles() {
         [0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
         [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     ];
-    let mut field = Field::new(field);
+    let mut board = Board::new(board);
     //drop
-    field.drop_obstacles();
+    board.drop_obstacles();
     //
-    let dropped_obstacles_field = [
+    let dropped_obstacles_board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -193,6 +193,6 @@ fn drop_obstacles() {
         [0, 11, 1, 1, 1, 1, 1, 1, 1, 1],
         [11, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     ];
-    let dropped_obstacles_field = Field::new(dropped_obstacles_field);
-    assert_eq!(field, dropped_obstacles_field);
+    let dropped_obstacles_board = Board::new(dropped_obstacles_board);
+    assert_eq!(board, dropped_obstacles_board);
 }

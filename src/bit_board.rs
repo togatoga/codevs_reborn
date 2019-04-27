@@ -1,4 +1,4 @@
-use crate::field::{FIELD_HEIGHT, INPUT_FIELD_HEIGHT, FIELD_WIDTH, Field};
+use crate::board::{FIELD_HEIGHT, INPUT_FIELD_HEIGHT, FIELD_WIDTH, Board};
 
 
 //8 * 5 = 40

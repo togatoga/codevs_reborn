@@ -94,24 +94,24 @@ private
   }
 
   // 標準入力から盤面を得ます
-  int[, ] inputField() {
-    int[, ] field = new int[simulationHeight, width];
+  int[, ] inputBoard() {
+    int[, ] board = new int[simulationHeight, width];
     for (int i = 0; i < simulationHeight - height - 1; ++i) {
       for (int j = 0; j < width; ++j)
-        field[i, j] = EMPTY_BLOCK;
+        board[i, j] = EMPTY_BLOCK;
     }
     for (int i = simulationHeight - height; i < simulationHeight; ++i) {
       string[] line = ReadLine().Split();
       for (int j = 0; j < width; ++j)
-        field[i, j] = int.Parse(line[j]);
+        board[i, j] = int.Parse(line[j]);
     }
     ReadLine(); // END
-    return field;
+    return board;
   }
 
   // お邪魔カウントに応じて、盤面にお邪魔ブロックを落とします
-  int[, ] fallObstacle(int[, ] field, int obstacleCount) {
-    int[, ] after = (int[, ])field.Clone();
+  int[, ] fallObstacle(int[, ] board, int obstacleCount) {
+    int[, ] after = (int[, ])board.Clone();
     if (obstacleCount < width)
       return after;
     for (int j = 0; j < width; ++j)
@@ -124,13 +124,13 @@ private
   }
 
   // 標準エラー出力に盤面の情報を出力します
-  void printField(int[, ] field) {
+  void printBoard(int[, ] board) {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < simulationHeight; ++i) {
       sb.Append(i == 0 ? "" : Environment.NewLine);
       for (int j = 0; j < width; ++j) {
         sb.Append(j == 0 ? "" : " ")
-            .Append(field[i, j].ToString().PadLeft(2, ' '));
+            .Append(board[i, j].ToString().PadLeft(2, ' '));
       }
     }
     debug(sb.ToString());
@@ -162,16 +162,16 @@ private
       int skill = int.Parse(ReadLine());
       int score = int.Parse(ReadLine());
 
-      int[, ] field = inputField();
-      field = fallObstacle(field, obstacleCount);
+      int[, ] board = inputBoard();
+      board = fallObstacle(board, obstacleCount);
 
       long enemyMillitime = long.Parse(ReadLine());
       int enemyObstacleCount = int.Parse(ReadLine());
       int enemySkill = int.Parse(ReadLine());
       int enemyScore = int.Parse(ReadLine());
 
-      int[, ] enemyField = inputField();
-      enemyField = fallObstacle(enemyField, enemyObstacleCount);
+      int[, ] enemyBoard = inputBoard();
+      enemyBoard = fallObstacle(enemyBoard, enemyObstacleCount);
 
       // 操作を決定する
       int rotation = random.Next(4);
@@ -182,7 +182,7 @@ private
 
       debug("turn : " + turn);
       printPack(pack);
-      printField(field);
+      printBoard(board);
 
       // 出力する
       println(position + " " + rotation);

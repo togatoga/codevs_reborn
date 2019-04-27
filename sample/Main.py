@@ -47,46 +47,46 @@ def printPack(pack):
 
 
 # 標準入力から盤面を得ます
-def inputField():
-    field = [[EMPTY_BLOCK] * width if j < simulationHeight - height else [int(i) for i in input().split()]
+def inputBoard():
+    board = [[EMPTY_BLOCK] * width if j < simulationHeight - height else [int(i) for i in input().split()]
              for j in range(simulationHeight)]
     input()  # END
-    return field
+    return board
 
 
-# def alternativeInputField():
-#    field = []
+# def alternativeInputBoard():
+#    board = []
 #    for j in range(simulationHeight):
 #        if j < simulationHeight - height:
 #            row = []
 #            for i in range(width):
 #                row.append(EMPTY_BLOCK)
-#            field.append(row)
+#            board.append(row)
 #        else:
 #            row = []
 #            temp = input().split()
 #            for i in range(width):
 #                row.append(int(temp[i]))
-#            field.append(row)
+#            board.append(row)
 #    end = input()
-#    return field
+#    return board
 
 # お邪魔カウントに応じて、盤面にお邪魔ブロックを落とします
-def fallObstacle(field, obstacleCount):
-    after = copy.deepcopy(field)
+def fallObstacle(board, obstacleCount):
+    after = copy.deepcopy(board)
     if obstacleCount < width:
         return after
     for j in range(width):
         for i in reversed(range(simulationHeight)):
-            if field[i][j] == EMPTY_BLOCK:
-                field[i][j] = OBSTACLE_BLOCK
+            if board[i][j] == EMPTY_BLOCK:
+                board[i][j] = OBSTACLE_BLOCK
                 break
     return after
 
 
 # 標準エラー出力に盤面の情報を出力します
-def printField(field):
-    print('\n'.join(map(lambda row: ' '.join(map(lambda block: '{:>2}'.format(block), row)), field)), file=sys.stderr)
+def printBoard(board):
+    print('\n'.join(map(lambda row: ' '.join(map(lambda block: '{:>2}'.format(block), row)), board)), file=sys.stderr)
     sys.stdout.flush()
 
 
@@ -110,15 +110,15 @@ def main():
             obstacleCount = int(input())
             skill = int(input())
             score = int(input())
-            field = inputField()
-            field = fallObstacle(field, obstacleCount)
+            board = inputBoard()
+            board = fallObstacle(board, obstacleCount)
 
             enemyMillitime = int(input())
             enemyObstacleCount = int(input())
             enemySkill = int(input())
             enemyScore = int(input())
-            enemyField = inputField()
-            enemyField = fallObstacle(enemyField, enemyObstacleCount)
+            enemyBoard = inputBoard()
+            enemyBoard = fallObstacle(enemyBoard, enemyObstacleCount)
 
             # 操作を決定する
             rotation = random.randrange(0, 4)
@@ -130,7 +130,7 @@ def main():
 
             print("turn: " + str(turn), file=sys.stderr)
             printPack(pack)
-            printField(field)
+            printBoard(board)
 
             # 出力する
             print(position, rotation)

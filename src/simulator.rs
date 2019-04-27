@@ -1,6 +1,6 @@
 use crate::pack;
-use crate::field;
-use crate::field::{EMPTY_BLOCK, FIELD_WIDTH, FIELD_HEIGHT, OBSTACLE_BLOCK, ERASING_SUM, Field};
+use crate::board;
+use crate::board::{EMPTY_BLOCK, FIELD_WIDTH, FIELD_HEIGHT, OBSTACLE_BLOCK, ERASING_SUM, Board};
 use std::collections::HashSet;
 use crate::pack::Pack;
 
@@ -17,7 +17,7 @@ const DIRECTION_YXS: [(i8, i8); 8] = [
     (1, 1), //down right
 ];
 
-fn is_on_field(y: i8, x: i8) -> bool {
+fn is_on_board(y: i8, x: i8) -> bool {
     if y < 0 || y as usize >= FIELD_HEIGHT {
         return false;
     }
@@ -27,7 +27,7 @@ fn is_on_field(y: i8, x: i8) -> bool {
     return true;
 }
 
-fn drop_pack(field: &mut field::Field, point: usize, pack: &pack::Pack) -> Vec<(usize, usize)> {
+fn drop_pack(board: &mut board::Board, point: usize, pack: &pack::Pack) -> Vec<(usize, usize)> {
     assert!(point <= 8);
 
     let mut modified_blocks: Vec<(usize, usize)> = Vec::new(); //(y, x)
@@ -40,10 +40,10 @@ fn drop_pack(field: &mut field::Field, point: usize, pack: &pack::Pack) -> Vec<(
             }
             let nx = point + x;
             assert!(nx < FIELD_WIDTH);
-            let ny = field.heights[nx];
+            let ny = board.heights[nx];
             assert!(ny < FIELD_HEIGHT);
-            field.field[ny][nx] = block;
-            field.heights[nx] += 1;
+            board.board[ny][nx] = block;
+            board.heights[nx] += 1;
             modified_blocks.push((ny, nx));
         }
     }
@@ -55,20 +55,20 @@ pub fn calculate_obstacle_count(chain_count: u8, skill_chain_count: u32) -> u32 
     (chain_count / 2) as u32 + skill_chain_count / 2
 }
 
-fn calculate_erase_blocks(field: &field::Field, modified_blocks: &Vec<(usize, usize)>) -> HashSet<(usize, usize)> {
+fn calculate_erase_blocks(board: &board::Board, modified_blocks: &Vec<(usize, usize)>) -> HashSet<(usize, usize)> {
     let mut erase_blocks: HashSet<(usize, usize)> = HashSet::new();
     for &(y, x) in modified_blocks.iter() {
-        let block = field.field[y][x];
+        let block = board.board[y][x];
         assert!(block != EMPTY_BLOCK && block != OBSTACLE_BLOCK);
         let y: i8 = y as i8;
         let x: i8 = x as i8;
         for &dyx in DIRECTION_YXS.iter() {
-            if !is_on_field(y + dyx.0, x + dyx.1) {
+            if !is_on_board(y + dyx.0, x + dyx.1) {
                 continue;
             }
             let ny: usize = (y + dyx.0) as usize;
             let nx: usize = (x + dyx.1) as usize;
-            let neighbor_block = field.field[ny][nx];
+            let neighbor_block = board.board[ny][nx];
             if neighbor_block == EMPTY_BLOCK || neighbor_block == OBSTACLE_BLOCK {
                 continue;
             }
@@ -82,58 +82,58 @@ fn calculate_erase_blocks(field: &field::Field, modified_blocks: &Vec<(usize, us
     return erase_blocks;
 }
 
-fn apply_erase_blocks(field: &mut field::Field, erase_blocks: &HashSet<(usize, usize)>) -> Vec<(usize, usize)> {
+fn apply_erase_blocks(board: &mut board::Board, erase_blocks: &HashSet<(usize, usize)>) -> Vec<(usize, usize)> {
     assert!(!erase_blocks.is_empty());
 
-    let old_heights = field.heights;
+    let old_heights = board.heights;
     //erase
     for &(y, x) in erase_blocks.iter() {
-        field.field[y][x] = EMPTY_BLOCK;
+        board.board[y][x] = EMPTY_BLOCK;
         //update heights
-        field.heights[x] = std::cmp::min(field.heights[x], y);
+        board.heights[x] = std::cmp::min(board.heights[x], y);
     }
 
     let mut modified_blocks: Vec<(usize, usize)> = Vec::new();
     //erase and drop
     for x in 0..FIELD_WIDTH {
-        let new_height = field.heights[x];
+        let new_height = board.heights[x];
         let old_height = old_heights[x];
         for y in new_height..old_height {
-            let drop_block = field.field[y][x];
+            let drop_block = board.board[y][x];
             if drop_block == EMPTY_BLOCK {
                 continue;
             }
-            let ny = field.heights[x];
-            field.field[ny][x] = drop_block;
+            let ny = board.heights[x];
+            board.board[ny][x] = drop_block;
             if drop_block != OBSTACLE_BLOCK {
                 modified_blocks.push((ny, x));
             }
-            field.heights[x] += 1;
-            field.field[y][x] = EMPTY_BLOCK;
+            board.heights[x] += 1;
+            board.board[y][x] = EMPTY_BLOCK;
         }
     }
     modified_blocks
 }
 
-pub fn simulate(field: &mut field::Field, point: usize, pack: &pack::Pack) -> (u32, u8) {
-    let mut modified_blocks = drop_pack(field, point, &pack);
+pub fn simulate(board: &mut board::Board, point: usize, pack: &pack::Pack) -> (u32, u8) {
+    let mut modified_blocks = drop_pack(board, point, &pack);
     let mut score: u32 = 0;
     let mut chain_count: u8 = 0;
     while !modified_blocks.is_empty() {
-        let erase_blocks = calculate_erase_blocks(&field, &modified_blocks);
+        let erase_blocks = calculate_erase_blocks(&board, &modified_blocks);
         if erase_blocks.is_empty() {
             break;
         }
         chain_count += 1;
-        modified_blocks = apply_erase_blocks(field, &erase_blocks);
+        modified_blocks = apply_erase_blocks(board, &erase_blocks);
     }
     score += CHAIN_CUMULATIVE_SCORES[chain_count as usize];
     (score, chain_count)
 }
 
 #[test]
-fn test_simulate_same_field() {
-    let field = [
+fn test_simulate_same_board() {
+    let board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -151,19 +151,19 @@ fn test_simulate_same_field() {
         [2, 2, 7, 9, 9, 0, 0, 6, 3, 0],
         [7, 6, 6, 9, 4, 9, 3, 9, 3, 6]
     ];
-    let old_field = Field::new(field);
-    let mut simulated_field = Field::new(field);
-    simulate(&mut simulated_field, 7, &Pack::new(&[0, 9, 1, 9]));
+    let old_board = Board::new(board);
+    let mut simulated_board = Board::new(board);
+    simulate(&mut simulated_board, 7, &Pack::new(&[0, 9, 1, 9]));
     // 0 9   => 0 0
     // 1 9      0 0
-    assert_eq!(simulated_field, old_field);
+    assert_eq!(simulated_board, old_board);
 }
 
 #[test]
 fn test_simulate_with_obstacles() {
     //score 210
     //chain_count 15
-    let raw_field = [
+    let raw_board = [
         [0, 0, 0, 11, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 11, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 11, 0, 0, 0, 0, 0, 0],
@@ -181,14 +181,14 @@ fn test_simulate_with_obstacles() {
         [11, 11, 3, 2, 5, 6, 2, 9, 11, 11],
         [11, 11, 3, 9, 3, 9, 2, 6, 11, 11]
     ];
-    let mut field = field::Field::new(raw_field);
+    let mut board = board::Board::new(raw_board);
     let pack = pack::Pack::new(&[6, 7, 2, 0]);
     //drop
-    field.drop_obstacles();
-    let (score, chain_count) = simulate(&mut field, 7, &pack);
+    board.drop_obstacles();
+    let (score, chain_count) = simulate(&mut board, 7, &pack);
     assert_eq!((score, chain_count), (210, 15));
 
-    let simulated_field = [
+    let simulated_board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -206,15 +206,15 @@ fn test_simulate_with_obstacles() {
         [11, 11, 11, 11, 11, 6, 2, 9, 11, 11],
         [11, 11, 6, 6, 11, 6, 2, 6, 11, 11]
     ];
-    let simulated_field = field::Field::new(simulated_field);
-    assert_eq!(field, simulated_field);
+    let simulated_board = board::Board::new(simulated_board);
+    assert_eq!(board, simulated_board);
 }
 
 #[test]
 fn test_simulate() {
     //score 120
     //chain_count 13
-    let raw_field = [
+    let raw_board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -233,13 +233,13 @@ fn test_simulate() {
         [0, 0, 1, 3, 6, 2, 2, 1, 0, 0]
     ];
 
-    let mut field = field::Field::new(raw_field);
+    let mut board = board::Board::new(raw_board);
     let pack = pack::Pack::new(&[7, 6, 6, 9]);
-    let (score, chain_count) = simulate(&mut field, 6, &pack);
+    let (score, chain_count) = simulate(&mut board, 6, &pack);
     assert_eq!((score, chain_count), (120, 13));
 
 
-    let simulated_field = [
+    let simulated_board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -257,13 +257,13 @@ fn test_simulate() {
         [0, 0, 0, 0, 4, 0, 0, 0, 0, 0],
         [0, 0, 1, 3, 4, 4, 0, 0, 0, 0]
     ];
-    let simulated_field = field::Field::new(simulated_field);
-    assert_eq!(field, simulated_field);
+    let simulated_board = board::Board::new(simulated_board);
+    assert_eq!(board, simulated_board);
 }
 
 #[test]
 fn test_drop_pack() {
-    let raw_field = [
+    let raw_board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -281,12 +281,12 @@ fn test_drop_pack() {
         [0, 0, 8, 3, 3, 3, 0, 1, 3, 0],
         [0, 4, 1, 1, 8, 5, 3, 1, 6, 0]
     ];
-    let mut field = field::Field::new(raw_field);
+    let mut board = board::Board::new(raw_board);
     let pack = pack::Pack::new(&[0, 9, 1, 2]);
-    let modified_blocks = drop_pack(&mut field, 1, &pack);
+    let modified_blocks = drop_pack(&mut board, 1, &pack);
     assert_eq!(modified_blocks, vec![(3, 2), (1, 1), (4, 2)]);
 
-    let dropped_field = [
+    let dropped_board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -304,6 +304,6 @@ fn test_drop_pack() {
         [0, 1, 8, 3, 3, 3, 0, 1, 3, 0],
         [0, 4, 1, 1, 8, 5, 3, 1, 6, 0]
     ];
-    let dropped_field = field::Field::new(dropped_field);
-    assert_eq!(field, dropped_field);
+    let dropped_board = board::Board::new(dropped_board);
+    assert_eq!(board, dropped_board);
 }

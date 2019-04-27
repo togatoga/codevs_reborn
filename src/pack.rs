@@ -1,4 +1,4 @@
-use crate::field::EMPTY_BLOCK;
+use crate::board::EMPTY_BLOCK;
 
 pub type Block = u8;
 pub type BitBlock = u16;

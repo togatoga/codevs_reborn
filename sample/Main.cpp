@@ -74,14 +74,14 @@ void printPack(vector<vector<int>> pack) {
 }
 
 // 標準入力から盤面を得ます
-vector<vector<int>> inputField() {
-  vector<vector<int>> field;
+vector<vector<int>> inputBoard() {
+  vector<vector<int>> board;
   for (int i = 0; i < simulationHeight - height; i++) {
     vector<int> row;
     for (int j = 0; j < width; j++) {
       row.push_back(EMPTY_BLOCK);
     }
-    field.push_back(row);
+    board.push_back(row);
   }
   for (int i = 0; i < height; i++) {
     vector<int> row;
@@ -90,16 +90,16 @@ vector<vector<int>> inputField() {
       cin >> block;
       row.push_back(block);
     }
-    field.push_back(row);
+    board.push_back(row);
   }
   string endStr;
   cin >> endStr;
-  return field;
+  return board;
 }
 
 // お邪魔カウントに応じて、盤面にお邪魔ブロックを落とします
-vector<vector<int>> fallObstacle(vector<vector<int>> field, int obstacleCount) {
-  vector<vector<int>> after = field;
+vector<vector<int>> fallObstacle(vector<vector<int>> board, int obstacleCount) {
+  vector<vector<int>> after = board;
   if (obstacleCount < width)
     return after;
   for (int j = 0; j < width; j++) {
@@ -114,11 +114,11 @@ vector<vector<int>> fallObstacle(vector<vector<int>> field, int obstacleCount) {
 }
 
 // 標準エラー出力に盤面の情報を出力します
-void printField(vector<vector<int>> field) {
+void printBoard(vector<vector<int>> board) {
   for (int i = 0; i < simulationHeight; i++) {
     for (int j = 0; j < width; j++) {
       char s[4];
-      snprintf(s, 4, "%s%2d", (j == 0 ? "" : " "), field[i][j]);
+      snprintf(s, 4, "%s%2d", (j == 0 ? "" : " "), board[i][j]);
       cerr << s;
     }
     cerr << endl;
@@ -159,15 +159,15 @@ int main() {
     cin >> obstacleCount;
     cin >> skill;
     cin >> score;
-    vector<vector<int>> field = inputField();
-    field = fallObstacle(field, obstacleCount);
+    vector<vector<int>> board = inputBoard();
+    board = fallObstacle(board, obstacleCount);
 
     cin >> enemyMillitime;
     cin >> enemyObstacleCount;
     cin >> enemySkill;
     cin >> enemyScore;
-    vector<vector<int>> enemyField = inputField();
-    enemyField = fallObstacle(enemyField, enemyObstacleCount);
+    vector<vector<int>> enemyBoard = inputBoard();
+    enemyBoard = fallObstacle(enemyBoard, enemyObstacleCount);
 
     // 操作を決定する
     int rotation = randInt(0, 4);
@@ -178,7 +178,7 @@ int main() {
     cerr << "turn : " << turn << endl;
     cerr.flush();
     printPack(pack);
-    printField(field);
+    printBoard(board);
 
     // 出力する
     cout << position << " " << rotation << endl;
