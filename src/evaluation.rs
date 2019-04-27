@@ -1,19 +1,44 @@
-use crate::board::{Board, FIELD_HEIGHT, DANGER_LINE_HEIGHT};
+use crate::board::{Board, FIELD_HEIGHT, DANGER_LINE_HEIGHT, FIELD_WIDTH, EMPTY_BLOCK, OBSTACLE_BLOCK, ERASING_SUM};
 use crate::pack::Pack;
 use crate::simulator;
 use crate::search_state::SearchState;
+use crate::simulator::DIRECTION_YXS;
+use std::collections::HashSet;
 
 
 pub fn estimate_max_chain_count(board: &Board) -> (u8, Board) {
     let mut estimated_max_chain_count = 0;
     let mut estimated_board = board.clone();
     //drop single block and evaluate chain count
-    for point in 0..9 {
-        for num in 1..10 {
-            let mut pack = Pack::new(&[0, 0, num, 0]);
-            //right
-            if point == 8 {
-                pack = Pack::new(&[0, 0, 0, num]);
+
+    for x in 0..FIELD_WIDTH {
+        let y =  board.heights[x] as i8;
+        let x = x as i8;
+        let mut dropped_num = HashSet::new();
+        for &dyx in DIRECTION_YXS.iter() {
+
+            if !simulator::is_on_board(y + dyx.0, x + dyx.1) {
+                continue;
+            }
+            let ny: usize = (y + dyx.0) as usize;
+            let nx: usize = (x + dyx.1) as usize;
+            let neighbor_block = board.get(ny, nx);
+            if neighbor_block == EMPTY_BLOCK || neighbor_block == OBSTACLE_BLOCK {
+                continue;
+            }
+            let num = ERASING_SUM - neighbor_block;
+            //skip
+            if dropped_num.contains(&num) {
+                continue;
+            }
+            dropped_num.insert(num);
+            let mut pack = Pack::new_from_bit(0);
+            let mut point = x as usize;
+            if x != 9 {
+                pack.set(2, num);
+            } else {
+                point -= 1;
+                pack.set(3, num);
             }
             let mut simulated_board = board.clone();
             let (score, chain_count) = simulator::simulate(&mut simulated_board, point, &pack);
@@ -23,6 +48,7 @@ pub fn estimate_max_chain_count(board: &Board) -> (u8, Board) {
             }
         }
     }
+
     (estimated_max_chain_count, estimated_board)
 }
 

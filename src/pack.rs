@@ -4,6 +4,7 @@ pub type Block = u8;
 pub type BitBlock = u16;
 
 const BASE_BIT: u16 = 4;
+
 #[derive(Clone, Debug, PartialEq, Hash)]
 pub struct Pack {
     //Board
@@ -14,11 +15,15 @@ pub struct Pack {
     //0000 0011
     bit_block: BitBlock,
 }
+
 impl Eq for Pack {}
 
 impl Pack {
+    pub fn new_from_bit(bit: u16) -> Pack {
+        Pack { bit_block: bit }
+    }
     pub fn new(blocks: &[Block; 4]) -> Pack {
-        let mut pack = Pack {bit_block: 0};
+        let mut pack = Pack { bit_block: 0 };
         for i in 0..4 {
             pack.set(i, blocks[i]);
         }
@@ -49,7 +54,6 @@ impl Pack {
         //set bit
         let value = value as u16;
         self.bit_block |= (value << shift_bit) as BitBlock;
-
     }
     fn drop(&mut self) {
         if self.get(2) == EMPTY_BLOCK {
@@ -81,8 +85,8 @@ impl Pack {
 fn test_equal() {
     let mut p = Pack::new(&[9, 5, 0, 3]);
     assert_eq!([p.get(0), p.get(1), p.get(2), p.get(3)], [9, 5, 0, 3]);
-
 }
+
 #[test]
 fn test_rotate() {
     let mut p = Pack::new(&[9, 5, 0, 3]);

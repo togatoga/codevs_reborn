@@ -7,7 +7,7 @@ use crate::pack::Pack;
 
 const CHAIN_CUMULATIVE_SCORES: [u32; 50] = [0, 1, 2, 4, 6, 9, 13, 19, 27, 37, 50, 67, 90, 120, 159, 210, 276, 362, 474, 620, 810, 1057, 1378, 1795, 2337, 3042, 3959, 5151, 6701, 8716, 11335, 14740, 19167, 24923, 32405, 42132, 54778, 71218, 92590, 120373, 156491, 203445, 264485, 343838, 446997, 581103, 755441, 982081, 1276713, 1659735];
 
-const DIRECTION_YXS: [(i8, i8); 8] = [
+pub const DIRECTION_YXS: [(i8, i8); 8] = [
     (0, 1),// right
     (-1, 1), //upper right
     (-1, 0), //top
@@ -18,7 +18,7 @@ const DIRECTION_YXS: [(i8, i8); 8] = [
     (1, 1), //down right
 ];
 
-fn is_on_board(y: i8, x: i8) -> bool {
+pub fn is_on_board(y: i8, x: i8) -> bool {
     if y < 0 || y as usize >= FIELD_HEIGHT {
         return false;
     }
