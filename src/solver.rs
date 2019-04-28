@@ -1,4 +1,3 @@
-use std::io::StdinLock;
 use std::collections::{BinaryHeap, HashSet};
 use crate::scanner;
 use crate::pack::Pack;

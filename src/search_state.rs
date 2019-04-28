@@ -1,7 +1,7 @@
 use crate::board::{Board, FIELD_WIDTH};
 use crate::command::Command;
 use std::cmp::Ordering;
-use std::collections::BinaryHeap;
+
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct SearchState {
@@ -86,6 +86,7 @@ impl SearchState {
 
 #[test]
 fn test_compare_search_state() {
+    use std::collections::BinaryHeap;
     let board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],

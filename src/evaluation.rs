@@ -1,4 +1,4 @@
-use crate::board::{Board, FIELD_HEIGHT, DANGER_LINE_HEIGHT, FIELD_WIDTH, EMPTY_BLOCK, OBSTACLE_BLOCK, ERASING_SUM};
+use crate::board::{Board, FIELD_WIDTH, EMPTY_BLOCK, OBSTACLE_BLOCK, ERASING_SUM};
 use crate::pack::Pack;
 use crate::simulator;
 use crate::search_state::SearchState;
@@ -41,7 +41,7 @@ pub fn estimate_max_chain_count(board: &Board) -> (u8, Board) {
                 pack.set(3, num);
             }
             let mut simulated_board = board.clone();
-            let (score, chain_count) = simulator::simulate(&mut simulated_board, point, &pack);
+            let (_, chain_count) = simulator::simulate(&mut simulated_board, point, &pack);
             if chain_count > estimated_max_chain_count {
                 estimated_max_chain_count = chain_count;
                 estimated_board = simulated_board;
@@ -58,7 +58,7 @@ pub fn evaluate_search_score(search_state: &SearchState) -> f64 {
     let board = search_state.board;
     // game score
     // max chain count
-    let (estimated_max_chain_count, estimated_board) = estimate_max_chain_count(&board);
+    let (estimated_max_chain_count, _) = estimate_max_chain_count(&board);
 
     search_score += estimated_max_chain_count as f64;
     search_score *= 10e5;

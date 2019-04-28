@@ -83,7 +83,7 @@ impl Pack {
 
 #[test]
 fn test_equal() {
-    let mut p = Pack::new(&[9, 5, 0, 3]);
+    let p = Pack::new(&[9, 5, 0, 3]);
     assert_eq!([p.get(0), p.get(1), p.get(2), p.get(3)], [9, 5, 0, 3]);
 }
 
