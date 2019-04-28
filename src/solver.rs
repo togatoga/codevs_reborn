@@ -133,7 +133,7 @@ impl<'a> Solver<'a> {
         for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
-            let mut iter = 0;
+
             while let Some(search_state) = &mut search_state_heap[depth].pop_max() {
                 //Update obstacle block
                 search_state.update_obstacle_block();
@@ -143,7 +143,6 @@ impl<'a> Solver<'a> {
                 }
                 //insert
                 searched_board[depth].insert(search_state.board);
-                iter += 1;
                 for (pack, rotate_count) in self.packs[search_turn].iter() {
                     for point in 0..9 {
                         let mut board = search_state.board.clone();
@@ -164,7 +163,7 @@ impl<'a> Solver<'a> {
                         //push it to next beam
                         search_state_heap[depth + 1].push(next_search_state);
                         //The number of next beam is over beam_width; pop minimum state
-                         while search_state_heap[depth + 1].len() > beam_width {
+                        while search_state_heap[depth + 1].len() > beam_width {
                             search_state_heap[depth + 1].pop_min();
                         }
                         assert!(search_state_heap[depth + 1].len() <= beam_width);
@@ -179,10 +178,6 @@ impl<'a> Solver<'a> {
                         assert!(next_search_state.cumulative_game_score <= best_search_result.cumulative_game_score);
                     }
                 }
-                if iter >= beam_width {
-                    break;
-                }
-
             }
         }
         best_search_result
