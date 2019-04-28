@@ -1,4 +1,6 @@
-use std::collections::{BinaryHeap, HashSet};
+extern crate min_max_heap;
+extern crate fnv;
+
 use crate::scanner;
 use crate::pack::Pack;
 use crate::command::Command;
@@ -10,6 +12,7 @@ use crate::simulator;
 use crate::game_status::GameStatus;
 use crate::solver_config::{SolverConfig, DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT};
 use crate::search_result::SearchResult;
+use self::min_max_heap::MinMaxHeap;
 
 #[derive(Debug)]
 pub struct Solver<'a> {
@@ -39,7 +42,7 @@ impl<'a> Solver<'a> {
             let end: String = sc.read();
             assert_eq!(end, "END");
 
-            let mut pack_set = HashSet::new();
+            let mut pack_set = fnv::FnvHashSet::default();
             let mut res = Vec::new();
             for i in 0..4 {
                 let mut pack = Pack::new(&blocks);
@@ -120,9 +123,8 @@ impl<'a> Solver<'a> {
 
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.config.beam();
-
-        let mut search_state_heap: Vec<BinaryHeap<SearchState>> = (0..beam_depth + 1).map(|_| BinaryHeap::new()).collect();
-        let mut searched_board: Vec<HashSet<Board>> = (0..beam_depth + 1).map(|_| HashSet::new()).collect();
+        let mut search_state_heap: Vec<MinMaxHeap<SearchState>> = (0..beam_depth + 1).map(|_| MinMaxHeap::new()).collect();
+        let mut searched_board: Vec<fnv::FnvHashSet<Board>> = (0..beam_depth + 1).map(|_| fnv::FnvHashSet::default()).collect();
 
         //push an initial search state
         search_state_heap[0].push(root_search_state);
@@ -132,7 +134,7 @@ impl<'a> Solver<'a> {
             //next state
             let search_turn = current_turn + depth;
             let mut iter = 0;
-            while let Some(search_state) = &mut search_state_heap[depth].pop() {
+            while let Some(search_state) = &mut search_state_heap[depth].pop_max() {
                 //Update obstacle block
                 search_state.update_obstacle_block();
                 //skip duplicate
@@ -159,7 +161,13 @@ impl<'a> Solver<'a> {
                         // Add a tiny value(0.0 ~ 1.0) to search score
                         // To randomize search score for the diversity of search
                         next_search_state.with_search_score(evaluation::evaluate_search_score(&next_search_state) + rnd.randf());
+                        //push it to next beam
                         search_state_heap[depth + 1].push(next_search_state);
+                        //The number of next beam is over beam_width; pop minimum state
+                         while search_state_heap[depth + 1].len() > beam_width {
+                            search_state_heap[depth + 1].pop_min();
+                        }
+                        assert!(search_state_heap[depth + 1].len() <= beam_width);
 
                         if next_search_state.cumulative_game_score > best_search_result.cumulative_game_score {
                             best_search_result.cumulative_game_score = next_search_state.cumulative_game_score;
