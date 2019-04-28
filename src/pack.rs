@@ -80,7 +80,7 @@ impl Pack {
         self.set(2, tmp1);
     }
     #[allow(dead_code)]
-    fn vec(&self) -> Vec<Block> {
+    pub fn vec(&self) -> Vec<Block> {
         vec![self.get(0), self.get(1), self.get(2), self.get(3)]
     }
 }
