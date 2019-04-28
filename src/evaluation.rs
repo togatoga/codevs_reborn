@@ -55,8 +55,8 @@ pub fn estimate_max_chain_count(board: &Board) -> (u8, Board) {
 
 pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
     let mut pattern_match_cnt = 0;
-    for y in 0..FIELD_HEIGHT {
-        for x in 0..FIELD_WIDTH {
+    for x in 0..FIELD_WIDTH {
+        for y in 0..board.heights[x] {
             let block = board.get(y, x);
             if block == EMPTY_BLOCK || block == OBSTACLE_BLOCK {
                 continue
@@ -68,11 +68,11 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
                 }
             }
             //big jump
-            if y + 3 < FIELD_HEIGHT {
+            /*if y + 3 < FIELD_HEIGHT {
                 if block + board.get(y + 3, x) == ERASING_SUM {
                     pattern_match_cnt += 1
                 }
-            }
+            }*/
             //short keima
             if y + 2 < FIELD_HEIGHT && x + 1 < FIELD_WIDTH {
                 if block + board.get(y + 2, x + 1) == ERASING_SUM {
@@ -84,7 +84,7 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
                     pattern_match_cnt += 1;
                 }
             }
-            //big keima
+            /*//big keima
             if y + 3 < FIELD_HEIGHT && x + 1 < FIELD_WIDTH {
                 if block + board.get(y + 3, x + 1) == ERASING_SUM {
                     pattern_match_cnt += 1;
@@ -94,7 +94,7 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
                 if block + board.get(y + 3, x - 1) == ERASING_SUM {
                     pattern_match_cnt += 1;
                 }
-            }
+            }*/
         }
     }
     pattern_match_cnt
@@ -112,15 +112,34 @@ pub fn evaluate_search_score(search_state: &SearchState) -> f64 {
     // count live block
     search_score += (board.count_live_blocks() as f64 * 1000.0) as f64;
 
-    //search_score += evaluate_pattern_match_cnt(&board) as f64 * 1000.0;
-    // penalty for heights
-    let mut max_height = 0;
-    for &height in board.heights.iter() {
-        //near danger line
-        search_score -= height as f64 * 1.5;
-        max_height = std::cmp::max(max_height, height);
-    }
+    search_score += evaluate_pattern_match_cnt(&board) as f64 * 1.0;
+
     search_score
+}
+
+#[test]
+fn test_evaluate_pattern_match() {
+    let board = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 9, 9, 9, 0, 0, 0, 0, 0, 0],
+        [0, 9, 9, 9, 0, 0, 0, 0, 0, 0],
+        [0, 11, 2, 2, 0, 0, 0, 0, 0, 0],
+        [0, 11, 1, 11, 0, 0, 0, 0, 0, 0],
+    ];
+    let board = Board::new(board);
+    let cnt = evaluate_pattern_match_cnt(&board);
+    assert_eq!(cnt, 6);
 }
 
 #[test]
