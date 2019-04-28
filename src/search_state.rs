@@ -1,6 +1,7 @@
 use crate::board::{Board, FIELD_WIDTH};
 use crate::command::Command;
 use std::cmp::Ordering;
+use crate::zobrist_hash_table::ZobristHash;
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -81,6 +82,11 @@ impl SearchState {
         }
         *self
     }
+     #[inline]
+    pub fn zobrist_hash(&self) -> ZobristHash {
+         //TODO need to consider other state info
+         self.board.zobrist_hash()
+     }
 }
 
 

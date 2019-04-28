@@ -13,6 +13,7 @@ use crate::game_status::GameStatus;
 use crate::solver_config::{SolverConfig, DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT};
 use crate::search_result::SearchResult;
 use self::min_max_heap::MinMaxHeap;
+use crate::zobrist_hash_table::ZobristHash;
 
 #[derive(Debug)]
 pub struct Solver<'a> {
@@ -124,7 +125,7 @@ impl<'a> Solver<'a> {
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.config.beam();
         let mut search_state_heap: Vec<MinMaxHeap<SearchState>> = (0..beam_depth + 1).map(|_| MinMaxHeap::new()).collect();
-        let mut searched_board: Vec<fnv::FnvHashSet<Board>> = (0..beam_depth + 1).map(|_| fnv::FnvHashSet::default()).collect();
+        let mut searched_board: Vec<fnv::FnvHashSet<ZobristHash>> = (0..beam_depth + 1).map(|_| fnv::FnvHashSet::default()).collect();
 
         //push an initial search state
         search_state_heap[0].push(root_search_state);
@@ -138,11 +139,11 @@ impl<'a> Solver<'a> {
                 //Update obstacle block
                 search_state.update_obstacle_block();
                 //skip duplicate
-                if searched_board[depth].contains(&search_state.board) {
+                if searched_board[depth].contains(&search_state.zobrist_hash()) {
                     continue;
                 }
                 //insert
-                searched_board[depth].insert(search_state.board);
+                searched_board[depth].insert(search_state.zobrist_hash());
                 for (pack, rotate_count) in self.packs[search_turn].iter() {
                     for point in 0..9 {
                         let mut board = search_state.board.clone();
