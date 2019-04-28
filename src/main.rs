@@ -1,5 +1,4 @@
 extern crate clap;
-#[macro_use]
 extern crate serde_derive;
 use clap::{SubCommand, ArgMatches};
 
