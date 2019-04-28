@@ -139,11 +139,7 @@ impl<'a> Solver<'a> {
                 //Update obstacle block
                 search_state.update_obstacle_block();
                 //skip duplicate
-                if searched_board[depth].contains(&search_state.zobrist_hash()) {
-                    continue;
-                }
-                //insert
-                searched_board[depth].insert(search_state.zobrist_hash());
+
                 for (pack, rotate_count) in self.packs[search_turn].iter() {
                     for point in 0..9 {
                         let mut board = search_state.board.clone();
@@ -157,6 +153,14 @@ impl<'a> Solver<'a> {
                             .with_command(Command::Drop((point, *rotate_count)))
                             .add_cumulative_game_score(score)
                             .add_spawn_obstacle_block_count(simulator::calculate_obstacle_count(chain_count, 0));
+
+                        //remove duplication
+                        if searched_board[depth + 1].contains(&next_search_state.zobrist_hash()) {
+                            continue;
+                        }
+                        //push it to hash set
+                        searched_board[depth + 1].insert(search_state.zobrist_hash());
+
                         assert_eq!(search_state.cumulative_game_score + score, next_search_state.cumulative_game_score);
                         // Add a tiny value(0.0 ~ 1.0) to search score
                         // To randomize search score for the diversity of search

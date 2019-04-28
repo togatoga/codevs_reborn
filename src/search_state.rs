@@ -2,6 +2,7 @@ use crate::board::{Board, FIELD_WIDTH};
 use crate::command::Command;
 use std::cmp::Ordering;
 use crate::zobrist_hash_table::ZobristHash;
+use crate::xorshift::Xorshift;
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -84,8 +85,8 @@ impl SearchState {
     }
      #[inline]
     pub fn zobrist_hash(&self) -> ZobristHash {
-         //TODO need to consider other state info
-         self.board.zobrist_hash()
+         let mut rnd = Xorshift::with_seed(self.cumulative_game_score as u64);
+         self.board.zobrist_hash() ^ rnd.next()
      }
 }
 
