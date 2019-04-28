@@ -86,7 +86,8 @@ impl SearchState {
 
 #[test]
 fn test_compare_search_state() {
-    use std::collections::BinaryHeap;
+    extern crate min_max_heap;
+
     let board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -109,11 +110,11 @@ fn test_compare_search_state() {
     let lower = SearchState::new(&Board::new(board)).with_search_score(-1000.0);
     let med = SearchState::new(&Board::new(board)).with_search_score(0.0);
     let higher = SearchState::new(&Board::new(board)).with_search_score(100000.0);
-    let mut heaps = BinaryHeap::new();
+    let mut heaps = min_max_heap::MinMaxHeap::new();
     heaps.push(med);
     heaps.push(higher);
     heaps.push(lower);
-    assert_eq!(heaps.pop(), Some(higher));
-    assert_eq!(heaps.pop(), Some(med));
-    assert_eq!(heaps.pop(), Some(lower));
+    assert_eq!(heaps.pop_max(), Some(higher));
+    assert_eq!(heaps.pop_max(), Some(med));
+    assert_eq!(heaps.pop_max(), Some(lower));
 }
