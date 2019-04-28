@@ -13,7 +13,7 @@ use crate::game_status::GameStatus;
 use crate::solver_config::{SolverConfig, DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT};
 use crate::search_result::SearchResult;
 use self::min_max_heap::MinMaxHeap;
-use crate::zobrist_hash_table::ZobristHash;
+
 
 #[derive(Debug)]
 pub struct Solver<'a> {
@@ -99,6 +99,7 @@ impl<'a> Solver<'a> {
         let mut best_search_result = SearchResult { last_chain_count: 0, turn: current_turn, cumulative_game_score: player.cumulative_game_score, board: player.board.clone(), command: Command::Drop((0, 0)) };
         if self.debug {
             eprintln!("Turn: {}", current_turn);
+            eprintln!("Rest Time(msec): {}", player.rest_time_milliseconds);
         }
 
 
@@ -108,9 +109,7 @@ impl<'a> Solver<'a> {
                 .with_obstacle_block_count(player.obstacle_block_count)
                 .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
                 .with_cumulative_game_score(player.cumulative_game_score);
-
-
-        let fire_max_chain_count: u8 = self.config.fire_max_chain_count;
+                let fire_max_chain_count: u8 = self.config.fire_max_chain_count;
         //Fire if chain count is over threshold
         {
             let mut search_state = root_search_state.clone();
@@ -128,13 +127,11 @@ impl<'a> Solver<'a> {
                     }
                 }
             }
-
             //Fire!!
             if fire {
                 return best_search_result;
             }
         }
-
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.config.beam();
         if self.debug {
