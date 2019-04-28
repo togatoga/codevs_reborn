@@ -55,19 +55,20 @@ impl Pack {
         let value = value as u16;
         self.bit_block |= (value << shift_bit) as BitBlock;
     }
-    fn drop(&mut self) {
+    pub fn drop(&mut self) {
         if self.get(2) == EMPTY_BLOCK {
             self.set(2, self.get(0));
+            self.set(0, EMPTY_BLOCK);
         }
         if self.get(3) == EMPTY_BLOCK {
             self.set(3, self.get(1));
+            self.set(1, EMPTY_BLOCK);
         }
     }
     pub fn rotates(&mut self, rotate_count: usize) {
         for _ in 0..rotate_count {
             self.rotate();
         }
-        self.drop();
     }
     fn rotate(&mut self) {
         let tmp1 = self.get(0);
@@ -78,26 +79,59 @@ impl Pack {
         self.set(3, tmp2);
         self.set(2, tmp1);
     }
+    #[allow(dead_code)]
+    fn vec(&self) -> Vec<Block> {
+        vec![self.get(0), self.get(1), self.get(2), self.get(3)]
+    }
 }
 
 
 #[test]
 fn test_equal() {
     let p = Pack::new(&[9, 5, 0, 3]);
-    assert_eq!([p.get(0), p.get(1), p.get(2), p.get(3)], [9, 5, 0, 3]);
+    assert_eq!(p.vec(), [9, 5, 0, 3]);
+    let p = Pack::new(&[8, 5, 5, 0]);
+    assert_eq!(p.vec(), [8, 5, 5, 0]);
 }
 
 #[test]
 fn test_rotate() {
     let mut p = Pack::new(&[9, 5, 0, 3]);
+    assert_eq!(p.vec(), [9, 5, 0, 3]);
 
     p.rotate();
-    //0 9 3 5
-    assert_eq!([p.get(0), p.get(1), p.get(2), p.get(3)], [0, 9, 3, 5]);
+    assert_eq!(p.vec(), [0, 9, 3, 5]);
+
     p.rotate();
-    assert_eq!([p.get(0), p.get(1), p.get(2), p.get(3)], [3, 0, 5, 9]);
+    assert_eq!(p.vec(), [3, 0, 5, 9]);
+
     p.rotate();
-    assert_eq!([p.get(0), p.get(1), p.get(2), p.get(3)], [5, 3, 9, 0]);
+    assert_eq!(p.vec(), [5, 3, 9, 0]);
+
     p.rotate();
-    assert_eq!([p.get(0), p.get(1), p.get(2), p.get(3)], [9, 5, 0, 3]);
+    assert_eq!(p.vec(), [9, 5, 0, 3]);
+
+    let mut p = Pack::new(&[1, 2, 3, 4]);
+    assert_eq!(p.vec(), [1, 2, 3, 4]);
+    p.rotate();
+    assert_eq!(p.vec(), [3, 1, 4, 2]);
+    p.rotate();
+    assert_eq!(p.vec(), [4, 3, 2, 1]);
+    p.rotate();
+    assert_eq!(p.vec(), [2, 4, 1, 3]);
+    p.rotate();
+    assert_eq!(p.vec(), [1, 2, 3, 4]);
+}
+#[test]
+fn drop() {
+    let mut p = Pack::new(&[5, 8, 0, 5]);
+    p.drop();
+    assert_eq!(p.vec(), [0, 8, 5, 5]);
+    let mut p = Pack::new(&[3, 8, 5, 0]);
+    p.drop();
+    assert_eq!(p.vec(), [3, 0, 5, 8]);
+
+    let mut p = Pack::new(&[1, 2, 3, 4]);
+    p.drop();
+    assert_eq!(p.vec(), [1, 2, 3, 4]);
 }

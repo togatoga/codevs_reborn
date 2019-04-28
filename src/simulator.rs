@@ -135,6 +135,44 @@ pub fn simulate(board: &mut board::Board, point: usize, pack: &pack::Pack) -> (u
     (score, chain_count)
 }
 
+
+#[test]
+fn test_simulate_must_dead() {
+    let board = [
+        [0, 0, 0, 0, 0, 11, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 11, 0, 0, 0, 0],
+        [0, 0, 0, 0, 11, 11, 0, 0, 0, 0],
+        [0, 0, 3, 0, 2, 11, 0, 7, 0, 0],
+        [0, 0, 4, 0, 11, 9, 7, 7, 0, 0],
+        [0, 4, 7, 0, 11, 8, 4, 5, 0, 0],
+        [0, 4, 7, 6, 11, 4, 1, 11, 0, 0],
+        [0, 7, 5, 11, 7, 8, 11, 11, 0, 0],
+        [0, 11, 6, 9, 7, 4, 11, 11, 2, 0],
+        [0, 11, 11, 5, 4, 2, 11, 4, 2, 0],
+        [11, 1, 11, 11, 1, 1, 11, 4, 11, 7],
+        [11, 3, 8, 11, 5, 4, 2, 11, 11, 7],
+        [11, 11, 11, 11, 9, 9, 3, 3, 11, 11],
+        [11, 11, 11, 3, 6, 8, 6, 5, 9, 11],
+        [9, 3, 8, 8, 6, 6, 9, 6, 2, 11],
+        [2, 9, 5, 3, 5, 9, 8, 3, 11, 11]
+    ];
+    let mut pack = pack::Pack::new(&[8, 5, 5, 0]);
+    pack.rotates(1);
+    assert_eq!(pack, pack::Pack::new(&[5, 8, 0, 5]));
+    pack.drop();
+    assert_eq!(pack, pack::Pack::new(&[0, 8, 5, 5]));
+    let mut simulated_board = board::Board::new(board);
+    simulate(&mut simulated_board, 5, &pack);
+
+    for y in 0..FIELD_HEIGHT {
+        for x in 0..FIELD_WIDTH {
+            print!("{:02} ", simulated_board.get(FIELD_HEIGHT - 1 - y, x));
+        }
+        println!()
+    }
+    assert!(simulated_board.is_game_over());
+}
+
 #[test]
 fn test_simulate_same_board() {
     let board = [

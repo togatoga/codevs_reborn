@@ -48,6 +48,10 @@ impl<'a> Solver<'a> {
             for i in 0..4 {
                 let mut pack = Pack::new(&blocks);
                 pack.rotates(i);
+                //To make pack unique
+                //5 8  0 8
+                //0 5  5 5
+                pack.drop();
                 if pack_set.contains(&pack) {
                     continue;
                 }
@@ -185,10 +189,8 @@ impl<'a> Solver<'a> {
                 }
             }
         }
+        eprintln!("{:?}", best_search_result);
         best_search_result
     }
 }
-
-#[test]
-fn test_read_packs() {}
 
