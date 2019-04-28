@@ -8,14 +8,21 @@ pub const ERASING_SUM: u8 = 10;
 
 use std::fmt;
 use crate::bit_board::BitBoard;
+use crate::zobrist_hash_table::ZobristHash;
 
 #[derive(Debug, Copy, Clone, Eq, Hash)]
 pub struct Board {
     board: BitBoard,
     //y starts from under left point
     pub heights: [usize; FIELD_WIDTH],
-}
+ }
 
+
+impl PartialEq for Board {
+    fn eq(&self, other: &Board) -> bool {
+        self.board == other.board
+    }
+}
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut board = vec![];
@@ -27,6 +34,7 @@ impl fmt::Display for Board {
         write!(f, "Board {{ board: [{}], heights: [{:?}] }}", board.join(",\n"), self.heights)
     }
 }
+
 
 impl Board {
     pub fn new(input_board: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT]) -> Board {
@@ -40,6 +48,7 @@ impl Board {
         }
 
         let board = BitBoard::new(input_board);
+        let zobrist_hash = board.zobrist_hash();
         Board { board, heights }
     }
     #[inline]
@@ -54,6 +63,11 @@ impl Board {
         assert!(x < FIELD_WIDTH);
         self.board.set(y, x, value)
     }
+    #[inline]
+    pub fn zobrist_hash(&self) -> ZobristHash {
+        self.board.zobrist_hash()
+    }
+
     pub fn drop_obstacles(&mut self) {
         for x in 0..FIELD_WIDTH {
             assert!(self.heights[x] < FIELD_HEIGHT);
@@ -83,11 +97,7 @@ impl Board {
     }
 }
 
-impl PartialEq for Board {
-    fn eq(&self, other: &Board) -> bool {
-        self.board == other.board
-    }
-}
+
 
 #[test]
 fn test_is_game_over() {

@@ -11,3 +11,4 @@ pub mod game_status;
 pub mod solver_config;
 pub mod search_result;
 pub mod bit_board;
+pub mod zobrist_hash_table;
