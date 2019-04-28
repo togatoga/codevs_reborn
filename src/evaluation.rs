@@ -56,6 +56,7 @@ pub fn evaluate_search_score(search_state: &SearchState) -> f64 {
     let mut search_score: f64 = 0.0;
 
     let board = search_state.board;
+    // game score
     // max chain count
     let (estimated_max_chain_count, estimated_board) = estimate_max_chain_count(&board);
 

@@ -46,7 +46,7 @@ impl Pack {
         assert!(idx < 4);
         let y = (idx / 2) as u16;
         let x = (idx % 2) as u16;
-        let shift_bit = (BASE_BIT * (2 * y + x));
+        let shift_bit = BASE_BIT * (2 * y + x);
         let bit: u16 = 0b1111;
         //clear bit
         let clear_bit = !(bit << shift_bit);
