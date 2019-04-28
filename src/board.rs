@@ -10,6 +10,7 @@ use std::fmt;
 use crate::bit_board::BitBoard;
 use crate::zobrist_hash_table::ZobristHash;
 
+
 #[derive(Debug, Copy, Clone, Eq, Hash)]
 pub struct Board {
     board: BitBoard,
@@ -27,9 +28,12 @@ impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut board = vec![];
         for y in 0..FIELD_HEIGHT {
+            let mut tmp = Vec::new();
             for x in 0..FIELD_WIDTH {
-                board.push(format!("{:?}", self.board.get(y, x)));
+                tmp.push(format!("{:?}", self.board.get(y, x)));
             }
+            assert_eq!(tmp.len(), FIELD_WIDTH);
+            board.push(tmp.join(","));
         }
         write!(f, "Board {{ board: [{}], heights: [{:?}] }}", board.join(",\n"), self.heights)
     }
@@ -48,19 +52,20 @@ impl Board {
         }
 
         let board = BitBoard::new(input_board);
-        let zobrist_hash = board.zobrist_hash();
         Board { board, heights }
     }
     #[inline]
     pub fn get(&self, y: usize, x: usize) -> u8 {
         assert!(y < FIELD_HEIGHT);
         assert!(x < FIELD_WIDTH);
+        assert!(self.board.get(y, x) <= 11);
         self.board.get(y, x)
     }
     #[inline]
     pub fn set(&mut self, y: usize, x: usize, value: u8) {
         assert!(y < FIELD_HEIGHT);
         assert!(x < FIELD_WIDTH);
+        assert!(value <= 11);
         self.board.set(y, x, value)
     }
     #[inline]
