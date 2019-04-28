@@ -1,4 +1,4 @@
-use crate::board::{Board, FIELD_WIDTH, EMPTY_BLOCK, OBSTACLE_BLOCK, ERASING_SUM};
+use crate::board::{Board, FIELD_WIDTH, EMPTY_BLOCK, OBSTACLE_BLOCK, ERASING_SUM, FIELD_HEIGHT};
 use crate::pack::Pack;
 use crate::simulator;
 use crate::search_state::SearchState;
@@ -52,6 +52,55 @@ pub fn estimate_max_chain_count(board: &Board) -> (u8, Board) {
     (estimated_max_chain_count, estimated_board)
 }
 
+
+pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
+    let mut pattern_match_cnt = 0;
+    for y in 0..FIELD_HEIGHT {
+        for x in 0..FIELD_WIDTH {
+            let block = board.get(y, x);
+            if block == EMPTY_BLOCK || block == OBSTACLE_BLOCK {
+                continue
+            }
+            //short jump
+            if y + 2  < FIELD_HEIGHT {
+                if block + board.get(y + 2, x) == ERASING_SUM {
+                    pattern_match_cnt += 1;
+                }
+            }
+            //big jump
+            if y + 3 < FIELD_HEIGHT {
+                if block + board.get(y + 3, x) == ERASING_SUM {
+                    pattern_match_cnt += 1
+                }
+            }
+            //short keima
+            if y + 2 < FIELD_HEIGHT && x + 1 < FIELD_WIDTH {
+                if block + board.get(y + 2, x + 1) == ERASING_SUM {
+                    pattern_match_cnt += 1;
+                }
+            }
+            if y + 2 < FIELD_HEIGHT && x > 1 {
+                if block + board.get(y + 2, x - 1) == ERASING_SUM {
+                    pattern_match_cnt += 1;
+                }
+            }
+            //big keima
+            if y + 3 < FIELD_HEIGHT && x + 1 < FIELD_WIDTH {
+                if block + board.get(y + 3, x + 1) == ERASING_SUM {
+                    pattern_match_cnt += 1;
+                }
+            }
+            if y + 3 < FIELD_HEIGHT && x > 1 {
+                if block + board.get(y + 3, x - 1) == ERASING_SUM {
+                    pattern_match_cnt += 1;
+                }
+            }
+        }
+    }
+    pattern_match_cnt
+}
+
+
 pub fn evaluate_search_score(search_state: &SearchState) -> f64 {
     let mut search_score: f64 = 0.0;
 
@@ -59,11 +108,11 @@ pub fn evaluate_search_score(search_state: &SearchState) -> f64 {
     // game score
     // max chain count
     let (estimated_max_chain_count, _) = estimate_max_chain_count(&board);
-
-    search_score += estimated_max_chain_count as f64;
-    search_score *= 10e5;
+    search_score += estimated_max_chain_count as f64 * 10e5;
     // count live block
     search_score += (board.count_live_blocks() as f64 * 1000.0) as f64;
+
+    //search_score += evaluate_pattern_match_cnt(&board) as f64 * 1000.0;
     // penalty for heights
     let mut max_height = 0;
     for &height in board.heights.iter() {
