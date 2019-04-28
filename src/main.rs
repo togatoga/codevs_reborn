@@ -53,7 +53,7 @@ fn run(matches: ArgMatches) {
 fn main() {
     let matches = clap::App::new("solver")
         .about("A Solver for CODEVS Reborn")
-        .version("1.0")
+        .version("2.1")
         .author("togatoga")
         .subcommand(SubCommand::with_name("bench").about("Run benchmarks")
             .arg(clap::Arg::with_name("pack").help("The path of a pack file").short("p").long("pack").value_name("PACK").required(true))
