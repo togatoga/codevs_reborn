@@ -1,8 +1,10 @@
 extern crate clap;
 extern crate serde_derive;
+
 use clap::{SubCommand, ArgMatches};
 
 extern crate togatog_ai;
+
 use togatog_ai::scanner;
 use togatog_ai::pack;
 use togatog_ai::solver::Solver;
@@ -26,6 +28,7 @@ fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
 }
 
 fn run(matches: ArgMatches) {
+    let debug = matches.is_present("debug");
     if let Some(matches) = matches.subcommand_matches("bench") {
         let pack = std::fs::File::open(matches.value_of("pack").expect("Invalid for pack file")).expect("Can't open a file");
         let info = std::fs::File::open(matches.value_of("info").expect("Invalid for information file")).expect("Can't open a file");
@@ -33,17 +36,17 @@ fn run(matches: ArgMatches) {
         bench(pack, info, output);
         return;
     }
-
-    let s = std::io::stdin();
-    let mut sc = scanner::Scanner { stdin: s.lock() };
-    let packs: Vec<Vec<(pack::Pack, usize)>> = Solver::read_packs(&mut sc);
-    let debug = matches.is_present("debug");
-
     //START!!
     if debug {
         eprintln!("togatog_ai_{}", SOLVER_VERSION);
     }
     println!("togatog_ai_{}", SOLVER_VERSION);
+    let s = std::io::stdin();
+    let mut sc = scanner::Scanner { stdin: s.lock() };
+    let packs: Vec<Vec<(pack::Pack, usize)>> = Solver::read_packs(&mut sc);
+
+
+
     loop {
         let current_turn: usize = sc.read();
         //read player data
