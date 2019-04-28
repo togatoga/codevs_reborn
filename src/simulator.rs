@@ -54,8 +54,8 @@ pub fn calculate_obstacle_count(chain_count: u8, skill_chain_count: u32) -> u32 
     (chain_count / 2) as u32 + skill_chain_count / 2
 }
 
-fn calculate_erase_blocks(board: &board::Board, modified_blocks: &Vec<(usize, usize)>) -> HashSet<(usize, usize)> {
-    let mut erase_blocks: HashSet<(usize, usize)> = HashSet::new();
+fn calculate_erase_blocks(board: &board::Board, modified_blocks: &Vec<(usize, usize)>) -> Vec<(usize, usize)> {
+    let mut erase_blocks: Vec<(usize, usize)> = Vec::new();
     for &(y, x) in modified_blocks.iter() {
         let block = board.get(y, x);
         assert!(block != EMPTY_BLOCK && block != OBSTACLE_BLOCK);
@@ -73,15 +73,18 @@ fn calculate_erase_blocks(board: &board::Board, modified_blocks: &Vec<(usize, us
             }
             //block and neighbor_block are erased
             if block + neighbor_block == ERASING_SUM {
-                erase_blocks.insert((y as usize, x as usize));
-                erase_blocks.insert((ny, nx));
+                erase_blocks.push((y as usize, x as usize));
+                erase_blocks.push((ny, nx));
             }
         }
     }
+    //unique
+    erase_blocks.sort();
+    erase_blocks.dedup();
     return erase_blocks;
 }
 
-fn apply_erase_blocks(board: &mut board::Board, erase_blocks: &HashSet<(usize, usize)>) -> Vec<(usize, usize)> {
+fn apply_erase_blocks(board: &mut board::Board, erase_blocks: &Vec<(usize, usize)>) -> Vec<(usize, usize)> {
     assert!(!erase_blocks.is_empty());
 
     let old_heights = board.heights;
@@ -97,7 +100,7 @@ fn apply_erase_blocks(board: &mut board::Board, erase_blocks: &HashSet<(usize, u
     for x in 0..FIELD_WIDTH {
         let new_height = board.heights[x];
         let old_height = old_heights[x];
-        for y in new_height..old_height {
+        for y in new_height + 1..old_height {
             let drop_block = board.get(y, x);
             if drop_block == EMPTY_BLOCK {
                 continue;
@@ -111,6 +114,9 @@ fn apply_erase_blocks(board: &mut board::Board, erase_blocks: &HashSet<(usize, u
             board.set(y, x, EMPTY_BLOCK);
         }
     }
+    //unique
+    modified_blocks.sort();
+    modified_blocks.dedup();
     modified_blocks
 }
 
