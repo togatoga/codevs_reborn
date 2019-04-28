@@ -2,8 +2,6 @@ use crate::pack;
 use crate::board;
 use crate::board::{EMPTY_BLOCK, FIELD_WIDTH, FIELD_HEIGHT, OBSTACLE_BLOCK, ERASING_SUM, Board};
 use std::collections::HashSet;
-use crate::pack::Pack;
-
 
 const CHAIN_CUMULATIVE_SCORES: [u32; 50] = [0, 1, 2, 4, 6, 9, 13, 19, 27, 37, 50, 67, 90, 120, 159, 210, 276, 362, 474, 620, 810, 1057, 1378, 1795, 2337, 3042, 3959, 5151, 6701, 8716, 11335, 14740, 19167, 24923, 32405, 42132, 54778, 71218, 92590, 120373, 156491, 203445, 264485, 343838, 446997, 581103, 755441, 982081, 1276713, 1659735];
 
@@ -154,7 +152,7 @@ fn test_simulate_same_board() {
     ];
     let old_board = Board::new(board);
     let mut simulated_board = Board::new(board);
-    simulate(&mut simulated_board, 7, &Pack::new(&[0, 9, 1, 9]));
+    simulate(&mut simulated_board, 7, &pack::Pack::new(&[0, 9, 1, 9]));
     // 0 9   => 0 0
     // 1 9      0 0
     assert_eq!(simulated_board, old_board);

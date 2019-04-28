@@ -1,4 +1,4 @@
-use crate::board::{FIELD_HEIGHT, INPUT_FIELD_HEIGHT, FIELD_WIDTH, Board};
+use crate::board::{FIELD_HEIGHT, INPUT_FIELD_HEIGHT, FIELD_WIDTH};
 
 
 //8 * 5 = 40
@@ -33,10 +33,9 @@ impl BitBoard {
         //clear bit
         //5(0101) 9(1001)
         //0101 1001
-        let clear_bit: u8 = 0b0000;
         if x % 2 == 0 {
             self.bits[y][x_idx] &= 0b00001111;
-            self.bits[y][x_idx] |= (value << BASE_BIT);
+            self.bits[y][x_idx] |= value << BASE_BIT;
         } else {
             self.bits[y][x_idx] &= 0b11110000;
             self.bits[y][x_idx] |= value;
