@@ -23,4 +23,10 @@ impl SearchResult {
         wtr.serialize(vec![self.cumulative_game_score as u32, self.last_chain_count as u32, self.turn as u32])?;
         Ok(())
     }
+
+    pub fn log(&self) {
+        eprintln!("cumulative_game_score: {}", self.cumulative_game_score);
+    }
 }
+
+

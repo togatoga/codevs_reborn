@@ -83,6 +83,9 @@ impl SearchState {
         }
         *self
     }
+    pub fn log(&self) {
+        eprintln!("{:?}", *self);
+    }
      #[inline]
     pub fn zobrist_hash(&self) -> ZobristHash {
          let mut rnd = Xorshift::with_seed(self.cumulative_game_score as u64);
