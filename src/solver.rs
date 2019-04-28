@@ -125,7 +125,7 @@ impl<'a> Solver<'a> {
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.config.beam();
         let mut search_state_heap: Vec<MinMaxHeap<SearchState>> = (0..beam_depth + 1).map(|_| MinMaxHeap::new()).collect();
-        let mut searched_board: Vec<fnv::FnvHashSet<ZobristHash>> = (0..beam_depth + 1).map(|_| fnv::FnvHashSet::default()).collect();
+        let mut searched_state = fnv::FnvHashSet::default();
 
         //push an initial search state
         search_state_heap[0].push(root_search_state);
@@ -155,11 +155,11 @@ impl<'a> Solver<'a> {
                             .add_spawn_obstacle_block_count(simulator::calculate_obstacle_count(chain_count, 0));
 
                         //remove duplication
-                        if searched_board[depth + 1].contains(&next_search_state.zobrist_hash()) {
+                        if searched_state.contains(&next_search_state.zobrist_hash()) {
                             continue;
                         }
                         //push it to hash set
-                        searched_board[depth + 1].insert(search_state.zobrist_hash());
+                        searched_state.insert(search_state.zobrist_hash());
 
                         assert_eq!(search_state.cumulative_game_score + score, next_search_state.cumulative_game_score);
                         // Add a tiny value(0.0 ~ 1.0) to search score
