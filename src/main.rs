@@ -6,7 +6,7 @@ extern crate togatog_ai;
 use togatog_ai::scanner;
 use togatog_ai::pack;
 use togatog_ai::solver::Solver;
-use togatog_ai::solver_config::SolverConfig;
+use togatog_ai::solver_config::{SolverConfig, SOLVER_VERSION};
 
 fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
     let mut pack = scanner::Scanner { stdin: pack };
@@ -21,7 +21,7 @@ fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
     let mut solver = Solver::new(&packs, player, enemy);
     solver.set_config(config);
     let best_result = solver.think(current_turn);
-    eprintln!("{:?}", best_result);
+
     best_result.to_csv(output_file).unwrap();
 }
 
@@ -36,14 +36,21 @@ fn run(matches: ArgMatches) {
 
     let s = std::io::stdin();
     let mut sc = scanner::Scanner { stdin: s.lock() };
-    println!("togatoga_ai");
     let packs: Vec<Vec<(pack::Pack, usize)>> = Solver::read_packs(&mut sc);
+    let debug = matches.is_present("debug");
+
+    //START!!
+    if debug {
+        eprintln!("togatog_ai_{}", SOLVER_VERSION);
+    }
+    println!("togatog_ai_{}", SOLVER_VERSION);
     loop {
         let current_turn: usize = sc.read();
         //read player data
         let player = Solver::read_game_status(&mut sc);
         let enemy = Solver::read_game_status(&mut sc);
         let mut solver = Solver::new(&packs, player, enemy);
+        solver.set_debug(debug);
         let best_result = solver.think(current_turn);
         Solver::output_command(best_result.command);
     }
@@ -52,13 +59,13 @@ fn run(matches: ArgMatches) {
 fn main() {
     let matches = clap::App::new("solver")
         .about("A Solver for CODEVS Reborn")
-        .version("2.1")
+        .version(SOLVER_VERSION)
         .author("togatoga")
         .subcommand(SubCommand::with_name("bench").about("Run benchmarks")
             .arg(clap::Arg::with_name("pack").help("The path of a pack file").short("p").long("pack").value_name("PACK").required(true))
             .arg(clap::Arg::with_name("info").help("The path of an information file").short("i").long("info").value_name("INFORMATION").required(true))
             .arg(clap::Arg::with_name("output").help("The path of an output csv file").short("o").long("output").value_name("OUTPUT").required(true))
-        )
+        ).arg(clap::Arg::with_name("debug").short("d").long("debug").help("print debug information verbosely"))
         .get_matches();
     std::thread::Builder::new()
         .stack_size(64 * 1024 * 1024) // 64MB

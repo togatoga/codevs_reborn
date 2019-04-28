@@ -22,6 +22,7 @@ pub struct Solver<'a> {
     player: GameStatus,
     enemy: GameStatus,
     config: SolverConfig,
+    debug: bool, //debug mode
 }
 
 const MAX_TURN: usize = 500;
@@ -29,10 +30,13 @@ const MAX_TURN: usize = 500;
 impl<'a> Solver<'a> {
     pub fn new(packs: &'a Vec<Vec<(Pack, usize)>>, player: GameStatus, enemy: GameStatus) -> Solver {
         let config = SolverConfig::new(DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT);
-        Solver { packs, player, enemy, config }
+        Solver { packs, player, enemy, config , debug: false}
     }
     pub fn set_config(&mut self, config: SolverConfig) {
         self.config = config;
+    }
+    pub fn set_debug(&mut self, debug: bool) {
+        self.debug = debug;
     }
     pub fn read_packs<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> Vec<Vec<(Pack, usize)>> {
         (0..MAX_TURN).map(|_| {
@@ -93,6 +97,11 @@ impl<'a> Solver<'a> {
     pub fn think(&mut self, current_turn: usize) -> SearchResult {
         let player = &self.player;
         let mut best_search_result = SearchResult { last_chain_count: 0, turn: current_turn, cumulative_game_score: player.cumulative_game_score, board: player.board.clone(), command: Command::Drop((0, 0)) };
+        if self.debug {
+            eprintln!("Turn: {}", current_turn);
+        }
+
+
         let enemy = &self.enemy;
         let root_search_state =
             SearchState::new(&player.board)
@@ -128,6 +137,9 @@ impl<'a> Solver<'a> {
 
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.config.beam();
+        if self.debug {
+            eprintln!("Beam depth: {}, Beam width: {}", beam_depth, beam_width);
+        }
         let mut search_state_heap: Vec<MinMaxHeap<SearchState>> = (0..beam_depth + 1).map(|_| MinMaxHeap::new()).collect();
         let mut searched_state = fnv::FnvHashSet::default();
 
@@ -189,7 +201,10 @@ impl<'a> Solver<'a> {
                 }
             }
         }
-        eprintln!("{:?}", best_search_result);
+        if self.debug {
+            eprintln!("== Search Result ==");
+            best_search_result.log();
+        }
         best_search_result
     }
 }
