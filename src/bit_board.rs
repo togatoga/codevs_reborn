@@ -18,6 +18,10 @@ impl PartialEq for BitBoard {
 }
 
 impl BitBoard {
+    pub fn default() -> BitBoard {
+        let bits = [[0; FIELD_WIDTH]; INPUT_FIELD_HEIGHT];
+        BitBoard::new(bits)
+    }
     pub fn new(input_board: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT]) -> BitBoard {
         let mut bit_board = BitBoard { bits: [[0; BIT_FIELD_WIDTH]; FIELD_HEIGHT], zobrist_hash: 0 };
         for y in 0..INPUT_FIELD_HEIGHT {

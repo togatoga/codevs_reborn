@@ -7,3 +7,9 @@ pub struct GameStatus {
     pub cumulative_game_score: u32,
     pub board: Board,
 }
+
+impl GameStatus {
+    pub fn default() -> GameStatus {
+        GameStatus {rest_time_milliseconds: 0, obstacle_block_count: 0, skill_point: 0, cumulative_game_score: 0, board: Board::default()}
+    }
+}

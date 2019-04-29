@@ -13,15 +13,16 @@ use togatog_ai::solver_config::{SolverConfig, SOLVER_VERSION};
 fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
     let mut pack = scanner::Scanner { stdin: pack };
     let mut information = scanner::Scanner { stdin: info };
-    let packs: Vec<Vec<(pack::Pack, usize)>> = Solver::read_packs(&mut pack);
 
-    //read information only one turn
+    let mut solver = Solver::default();
+    solver.set_packs(Solver::read_packs(&mut pack));
+
+    //read information and think at only one turn
     let current_turn: usize = information.read();
     let player = Solver::read_game_status(&mut information);
     let enemy = Solver::read_game_status(&mut information);
-    let config = SolverConfig::new(15, 500, 10);
-    let mut solver = Solver::new(&packs, player, enemy);
-    solver.set_config(config);
+    solver.set_game_status(player, enemy);
+    solver.set_config(SolverConfig::new(15, 500, 10));
     let best_result = solver.think(current_turn);
 
     best_result.to_csv(output_file).unwrap();
@@ -43,17 +44,19 @@ fn run(matches: ArgMatches) {
     println!("togatog_ai_{}", SOLVER_VERSION);
     let s = std::io::stdin();
     let mut sc = scanner::Scanner { stdin: s.lock() };
-    let packs: Vec<Vec<(pack::Pack, usize)>> = Solver::read_packs(&mut sc);
-
-
-
+    //create a default solver object
+    let mut solver = Solver::default();
+    //set debug option
+    solver.set_debug(debug);
+    //read and set packs
+    solver.set_packs(Solver::read_packs(&mut sc));
     loop {
         let current_turn: usize = sc.read();
         //read player data
         let player = Solver::read_game_status(&mut sc);
         let enemy = Solver::read_game_status(&mut sc);
-        let mut solver = Solver::new(&packs, player, enemy);
-        solver.set_debug(debug);
+        solver.set_game_status(player, enemy);
+
         let best_result = solver.think(current_turn);
         Solver::output_command(best_result.command);
     }

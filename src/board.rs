@@ -41,6 +41,9 @@ impl fmt::Display for Board {
 
 
 impl Board {
+    pub fn default() -> Board {
+        Board {board: BitBoard::default(), heights: [0; FIELD_WIDTH]}
+    }
     pub fn new(input_board: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT]) -> Board {
         let mut heights: [usize; FIELD_WIDTH] = [0; FIELD_WIDTH];
         for x in 0..FIELD_WIDTH {

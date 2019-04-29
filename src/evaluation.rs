@@ -32,7 +32,7 @@ pub fn estimate_max_chain_count(board: &Board) -> (u8, Board) {
                 continue;
             }
             dropped_num.insert(num);
-            let mut pack = Pack::new_from_bit(0);
+            let mut pack = Pack::default();
             let mut point = x as usize;
             if x != 9 {
                 pack.set(2, num);
