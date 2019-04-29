@@ -25,6 +25,7 @@ def cmd(solver, pack, info, num):
         now = datetime.datetime.now()
         now = now.strftime("%Y%m%d_%H%M%S")
         output_dir = f'data/result/{now}'
+        print(f'Create a directory: {output_dir}')
         os.makedirs(output_dir)
 
         for file in files:
