@@ -17,6 +17,10 @@ pub struct SearchResult {
 
 
 impl SearchResult {
+
+    pub fn default() -> SearchResult {
+        SearchResult {last_chain_count: 0, cumulative_game_score: 0, turn: 0, board: Board::default(), command: Command::default()}
+    }
     pub fn to_csv<T: std::io::Write>(&self, file: T) -> Result<(), Box<std::error::Error>> {
         let mut wtr = Writer::from_writer(file);
         wtr.write_record(&["cumulative_game_score", "last_chain_count", "best_result.turn"])?;
