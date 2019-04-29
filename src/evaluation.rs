@@ -3,6 +3,7 @@ use crate::pack::Pack;
 use crate::simulator;
 use crate::search_state::SearchState;
 use crate::simulator::DIRECTION_YXS;
+use crate::solver_config;
 use std::collections::HashSet;
 
 //max 20
@@ -59,7 +60,8 @@ pub fn estimate_max_chain_count(board: &Board) -> (u8, Board) {
 
 pub fn evaluate_game_score_by_depth(cumulative_game_score: u32, depth: usize) -> f64 {
     assert!(depth < 20);
-    cumulative_game_score as f64 * GAME_SCORE_DEPTH_RATES[depth]
+    let max_fatal_gain_score = simulator::CHAIN_CUMULATIVE_SCORES[solver_config::DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT as usize];
+    std::cmp::min(max_fatal_gain_score, cumulative_game_score) as f64 * GAME_SCORE_DEPTH_RATES[depth]
 }
 
 pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
