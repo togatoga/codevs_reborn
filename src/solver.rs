@@ -10,7 +10,7 @@ use crate::xorshift::Xorshift;
 use crate::evaluation;
 use crate::simulator;
 use crate::game_status::GameStatus;
-use crate::solver_config::SolverConfig;
+use crate::solver_config::{SolverConfig, DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT};
 use crate::search_result::SearchResult;
 use self::min_max_heap::MinMaxHeap;
 use crate::simulator::{calculate_obstacle_count, CHAIN_CUMULATIVE_SCORES};
@@ -187,7 +187,7 @@ impl Solver {
 
         //push an initial search state
         search_state_heap[0].push(root_search_state.clone());
-        let mut rnd = Xorshift::with_seed(current_turn as u64);
+        let mut rnd = Xorshift::with_seed((current_turn + 10) as u64);
 
         for depth in 0..beam_depth {
             //next state
@@ -242,7 +242,8 @@ impl Solver {
                         }
                         assert!(search_state_heap[depth + 1].len() <= beam_width);
 
-                        let best_score = evaluate_game_score_by_depth(best_search_result.gain_game_score, best_search_result.search_depth);
+
+                        let best_score = evaluate_game_score_by_depth( best_search_result.gain_game_score, best_search_result.search_depth);
                         let target_score = evaluate_game_score_by_depth(gain_chain_game_score, depth);
                         if target_score > best_score {
                             best_search_result.gain_game_score = gain_chain_game_score;
