@@ -14,6 +14,7 @@ use crate::solver_config::SolverConfig;
 use crate::search_result::SearchResult;
 use self::min_max_heap::MinMaxHeap;
 use crate::simulator::{calculate_obstacle_count, CHAIN_CUMULATIVE_SCORES};
+use crate::evaluation::evaluate_game_score_by_depth;
 
 
 pub struct Solver {
@@ -126,7 +127,7 @@ impl Solver {
         }
     }
     //gaze enemy
-    #[allow(dead_code,)]
+    #[allow(dead_code, )]
     fn gaze_enemy(&self, _current_turn: usize) -> SearchResult {
         SearchResult::default()
     }
@@ -208,10 +209,10 @@ impl Solver {
                         //create next search state from a previous state
                         let mut next_search_state = search_state.clone();
                         //update these values
-                        let earned_chain_game_score = CHAIN_CUMULATIVE_SCORES[chain_count as usize];
+                        let gain_chain_game_score = CHAIN_CUMULATIVE_SCORES[chain_count as usize];
                         let next_board = board;
-                        let next_cumulative_game_score = earned_chain_game_score + search_state.cumulative_game_score();
-                        let next_spawn_obstacle_block_count = calculate_obstacle_count(earned_chain_game_score, 0) + search_state.spawn_obstacle_block_count();
+                        let next_cumulative_game_score = gain_chain_game_score + search_state.cumulative_game_score();
+                        let next_spawn_obstacle_block_count = calculate_obstacle_count(gain_chain_game_score, 0) + search_state.spawn_obstacle_block_count();
                         next_search_state.set_board(next_board);
                         next_search_state.set_cumulative_game_score(next_cumulative_game_score);
                         next_search_state.set_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
@@ -220,15 +221,13 @@ impl Solver {
                             next_search_state.set_command(Command::Drop((point, *rotate_count)));
                         }
 
-
                         //remove duplication
                         if searched_state.contains(&next_search_state.zobrist_hash()) {
-
                             continue;
                         }
                         //push it to hash set
                         searched_state.insert(search_state.zobrist_hash());
-                        assert_eq!(search_state.cumulative_game_score() + earned_chain_game_score, next_search_state.cumulative_game_score());
+                        assert_eq!(search_state.cumulative_game_score() + gain_chain_game_score, next_search_state.cumulative_game_score());
 
                         // Add a tiny value(0.0 ~ 1.0) to search score
                         // To randomize search score for the diversity of search
@@ -243,14 +242,16 @@ impl Solver {
                         }
                         assert!(search_state_heap[depth + 1].len() <= beam_width);
 
-                        if next_search_state.cumulative_game_score() > best_search_result.cumulative_game_score {
+                        let best_score = evaluate_game_score_by_depth(best_search_result.gain_game_score, best_search_result.search_depth);
+                        let target_score = evaluate_game_score_by_depth(gain_chain_game_score, depth);
+                        if target_score > best_score {
+                            best_search_result.gain_game_score = gain_chain_game_score;
                             best_search_result.cumulative_game_score = next_search_state.cumulative_game_score();
                             best_search_result.last_chain_count = chain_count;
-                            best_search_result.turn = search_turn;
+                            best_search_result.search_depth = depth;
                             best_search_result.board = next_search_state.board();
                             best_search_result.command = next_search_state.command().unwrap();
                         }
-                        assert!(next_search_state.cumulative_game_score() <= best_search_result.cumulative_game_score);
                     }
                 }
             }
