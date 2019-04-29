@@ -39,7 +39,7 @@ pub fn estimate_max_chain_count(board: &Board) -> (u8, Board) {
                 pack.set(3, num);
             }
             let mut simulated_board = board.clone();
-            let (_, chain_count) = simulator::simulate(&mut simulated_board, point, &pack);
+            let chain_count = simulator::simulate(&mut simulated_board, point, &pack);
             if chain_count > estimated_max_chain_count {
                 estimated_max_chain_count = chain_count;
                 estimated_board = simulated_board;
