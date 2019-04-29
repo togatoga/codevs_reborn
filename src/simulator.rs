@@ -49,8 +49,8 @@ fn drop_pack(board: &mut board::Board, point: usize, pack: &pack::Pack) -> Vec<(
 }
 
 
-pub fn calculate_obstacle_count(chain_count: u8, skill_chain_count: u32) -> u32 {
-    (chain_count / 2) as u32 + skill_chain_count / 2
+pub fn calculate_obstacle_count(chain_score: u32, skill_chain_score: u32) -> u32 {
+    chain_score / 2 + skill_chain_score / 2
 }
 
 fn calculate_erase_blocks(board: &board::Board, modified_blocks: &Vec<(usize, usize)>) -> Vec<(usize, usize)> {
@@ -121,7 +121,6 @@ fn apply_erase_blocks(board: &mut board::Board, erase_blocks: &Vec<(usize, usize
 
 pub fn simulate(board: &mut board::Board, point: usize, pack: &pack::Pack) -> (u32, u8) {
     let mut modified_blocks = drop_pack(board, point, &pack);
-    let mut score: u32 = 0;
     let mut chain_count: u8 = 0;
     while !modified_blocks.is_empty() {
         let erase_blocks = calculate_erase_blocks(&board, &modified_blocks);
@@ -131,10 +130,16 @@ pub fn simulate(board: &mut board::Board, point: usize, pack: &pack::Pack) -> (u
         chain_count += 1;
         modified_blocks = apply_erase_blocks(board, &erase_blocks);
     }
-    score += CHAIN_CUMULATIVE_SCORES[chain_count as usize];
-    (score, chain_count)
+    (CHAIN_CUMULATIVE_SCORES[chain_count as usize], chain_count)
 }
 
+
+#[test]
+fn test_calculate_obstacle_count() {
+    let chain_count = 11;
+    let obstacle_count = calculate_obstacle_count(CHAIN_CUMULATIVE_SCORES[chain_count], 0);
+    assert_eq!(obstacle_count, 33);
+}
 
 #[test]
 fn test_simulate_must_dead() {

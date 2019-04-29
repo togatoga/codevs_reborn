@@ -83,7 +83,6 @@ fn run(matches: ArgMatches) {
 
         let best_result = solver.think(current_turn);
         Solver::output_command(best_result.command);
-        break;
     }
 }
 

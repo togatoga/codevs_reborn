@@ -43,7 +43,7 @@ mod solver {
                     for i in 0..10 {
                         let pack_file_name: &str = &format!("input/pack/pack_{:04}.pack", i);
                         let info_file_name: &str = "input/information/initial.info";
-                        solver_think_from_file(pack_file_name, info_file_name, SolverConfig::new(DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT));
+                        solver_think_from_file(pack_file_name, info_file_name, SolverConfig::default());
                     }
                 })).sample_size(5),
         );
