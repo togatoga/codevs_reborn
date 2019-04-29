@@ -13,7 +13,7 @@ use crate::game_status::GameStatus;
 use crate::solver_config::SolverConfig;
 use crate::search_result::SearchResult;
 use self::min_max_heap::MinMaxHeap;
-use crate::simulator::calculate_obstacle_count;
+use crate::simulator::{calculate_obstacle_count, CHAIN_CUMULATIVE_SCORES};
 
 
 pub struct Solver {
@@ -157,7 +157,7 @@ impl Solver {
             let mut fire = false;
             for (pack, rotate_count) in self.packs[current_turn].iter() {
                 for point in 0..9 {
-                    let (_, chain_count) = simulator::simulate(&mut search_state.board(), point, &pack);
+                    let chain_count = simulator::simulate(&mut search_state.board(), point, &pack);
                     //spawn many obstacle lines
                     //low chain count not to fire
                     //obstacle_block drop two line
@@ -200,7 +200,7 @@ impl Solver {
                 for (pack, rotate_count) in self.packs[search_turn].iter() {
                     for point in 0..9 {
                         let mut board = search_state.board();
-                        let (game_score, chain_count) = simulator::simulate(&mut board, point, &pack);
+                        let chain_count = simulator::simulate(&mut board, point, &pack);
                         //Next board is dead and not to put it in state heap
                         if board.is_game_over() {
                             continue;
@@ -208,9 +208,10 @@ impl Solver {
                         //create next search state from a previous state
                         let mut next_search_state = search_state.clone();
                         //update these values
+                        let earned_chain_game_score = CHAIN_CUMULATIVE_SCORES[chain_count as usize];
                         let next_board = board;
-                        let next_cumulative_game_score = game_score + search_state.cumulative_game_score();
-                        let next_spawn_obstacle_block_count = calculate_obstacle_count(game_score, 0) + search_state.spawn_obstacle_block_count();
+                        let next_cumulative_game_score = earned_chain_game_score + search_state.cumulative_game_score();
+                        let next_spawn_obstacle_block_count = calculate_obstacle_count(earned_chain_game_score, 0) + search_state.spawn_obstacle_block_count();
                         next_search_state.set_board(next_board);
                         next_search_state.set_cumulative_game_score(next_cumulative_game_score);
                         next_search_state.set_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
@@ -227,7 +228,7 @@ impl Solver {
                         }
                         //push it to hash set
                         searched_state.insert(search_state.zobrist_hash());
-                        assert_eq!(search_state.cumulative_game_score() + game_score, next_search_state.cumulative_game_score());
+                        assert_eq!(search_state.cumulative_game_score() + earned_chain_game_score, next_search_state.cumulative_game_score());
 
                         // Add a tiny value(0.0 ~ 1.0) to search score
                         // To randomize search score for the diversity of search
