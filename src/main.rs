@@ -8,6 +8,7 @@ extern crate togatog_ai;
 use togatog_ai::scanner;
 use togatog_ai::solver::Solver;
 use togatog_ai::solver_config::{SolverConfig, SOLVER_VERSION};
+use togatog_ai::command::Command;
 
 fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
     let mut pack = scanner::Scanner { stdin: pack };
@@ -79,6 +80,11 @@ fn run(matches: ArgMatches) {
         //read player data
         let player = Solver::read_game_status(&mut sc);
         let enemy = Solver::read_game_status(&mut sc);
+        //force to spell magic!!!
+        if player.skill_point >= 80 {
+            Solver::output_command(Command::Spell);
+            continue;
+        }
         solver.set_game_status(player, enemy);
 
         let best_result = solver.think(current_turn);
