@@ -21,7 +21,7 @@ fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
     let player = Solver::read_game_status(&mut information);
     let enemy = Solver::read_game_status(&mut information);
     solver.set_game_status(player, enemy);
-    solver.set_config(SolverConfig::new(15, 500, 10));
+    solver.set_config(SolverConfig::default().with_beam(15, 500));
     let best_result = solver.think(current_turn);
 
     best_result.to_csv(output_file).unwrap();
@@ -39,7 +39,7 @@ fn profile(pack: std::fs::File, info: std::fs::File) {
     let player = Solver::read_game_status(&mut information);
     let enemy = Solver::read_game_status(&mut information);
     solver.set_game_status(player, enemy);
-    solver.set_config(SolverConfig::new(15, 500, 10));
+    solver.set_config(SolverConfig::default().with_beam(15, 500));
     let best_result = solver.think(current_turn);
     eprintln!("{:?}", best_result);
 }
