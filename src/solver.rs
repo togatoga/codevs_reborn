@@ -10,9 +10,10 @@ use crate::xorshift::Xorshift;
 use crate::evaluation;
 use crate::simulator;
 use crate::game_status::GameStatus;
-use crate::solver_config::{SolverConfig};
+use crate::solver_config::SolverConfig;
 use crate::search_result::SearchResult;
 use self::min_max_heap::MinMaxHeap;
+use crate::simulator::calculate_obstacle_count;
 
 
 pub struct Solver {
@@ -124,32 +125,42 @@ impl Solver {
             }
         }
     }
+    //gaze enemy
+    #[allow(dead_code,)]
+    fn gaze_enemy(&self, _current_turn: usize) -> SearchResult {
+        SearchResult::default()
+    }
     pub fn think(&mut self, current_turn: usize) -> SearchResult {
         let player = &self.player;
-        let mut best_search_result = SearchResult { last_chain_count: 0, turn: current_turn, cumulative_game_score: player.cumulative_game_score, board: player.board.clone(), command: Command::Drop((0, 0)) };
+        let enemy = &self.enemy;
+        let mut best_search_result = SearchResult::default();
         if self.debug {
             eprintln!("Turn: {}", current_turn);
             eprintln!("Rest Time(msec): {}", player.rest_time_milliseconds);
         }
 
+        let mut root_search_state = SearchState::default();
+        root_search_state.set_board(player.board);
+        root_search_state.set_obstacle_block_count(player.obstacle_block_count);
+        root_search_state.set_spawn_obstacle_block_count(enemy.obstacle_block_count);
+        root_search_state.set_cumulative_game_score(player.cumulative_game_score);
 
-        let enemy = &self.enemy;
-        let root_search_state =
-            SearchState::new(&player.board)
-                .with_obstacle_block_count(player.obstacle_block_count)
-                .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
-                .with_cumulative_game_score(player.cumulative_game_score);
         let fire_max_chain_count: u8 = self.config.fire_max_chain_count;
+
+        //gaze enemy board
+        //let gazed_search_result = self.gaze_enemy(current_turn);
         //Fire if chain count is over threshold
         {
             let mut search_state = root_search_state.clone();
             let mut max_chain_count = 0;
-
             search_state.update_obstacle_block();
             let mut fire = false;
             for (pack, rotate_count) in self.packs[current_turn].iter() {
                 for point in 0..9 {
-                    let (_, chain_count) = simulator::simulate(&mut search_state.board.clone(), point, &pack);
+                    let (_, chain_count) = simulator::simulate(&mut search_state.board(), point, &pack);
+                    //spawn many obstacle lines
+                    //low chain count not to fire
+                    //obstacle_block drop two line
                     if chain_count >= fire_max_chain_count && chain_count > max_chain_count {
                         max_chain_count = chain_count;
                         best_search_result.command = Command::Drop((point, *rotate_count));
@@ -159,6 +170,9 @@ impl Solver {
             }
             //Fire!!
             if fire {
+                if self.debug {
+                    eprintln!("Fire!! by gazing");
+                }
                 return best_search_result;
             }
         }
@@ -171,7 +185,7 @@ impl Solver {
         let mut searched_state = fnv::FnvHashSet::default();
 
         //push an initial search state
-        search_state_heap[0].push(root_search_state);
+        search_state_heap[0].push(root_search_state.clone());
         let mut rnd = Xorshift::with_seed(current_turn as u64);
 
         for depth in 0..beam_depth {
@@ -185,29 +199,41 @@ impl Solver {
 
                 for (pack, rotate_count) in self.packs[search_turn].iter() {
                     for point in 0..9 {
-                        let mut board = search_state.board.clone();
-                        let (score, chain_count) = simulator::simulate(&mut board, point, &pack);
+                        let mut board = search_state.board();
+                        let (game_score, chain_count) = simulator::simulate(&mut board, point, &pack);
                         //Next board is dead and not to put it in state heap
                         if board.is_game_over() {
                             continue;
                         }
-                        let mut next_search_state = search_state.clone()
-                            .with_board(board)
-                            .with_command(Command::Drop((point, *rotate_count)))
-                            .add_cumulative_game_score(score)
-                            .add_spawn_obstacle_block_count(simulator::calculate_obstacle_count(chain_count, 0));
+                        //create next search state from a previous state
+                        let mut next_search_state = search_state.clone();
+                        //update these values
+                        let next_board = board;
+                        let next_cumulative_game_score = game_score + search_state.cumulative_game_score();
+                        let next_spawn_obstacle_block_count = calculate_obstacle_count(game_score, 0) + search_state.spawn_obstacle_block_count();
+                        next_search_state.set_board(next_board);
+                        next_search_state.set_cumulative_game_score(next_cumulative_game_score);
+                        next_search_state.set_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
+                        if !next_search_state.is_command() {
+                            assert_eq!(depth, 0);
+                            next_search_state.set_command(Command::Drop((point, *rotate_count)));
+                        }
+
 
                         //remove duplication
                         if searched_state.contains(&next_search_state.zobrist_hash()) {
+
                             continue;
                         }
                         //push it to hash set
                         searched_state.insert(search_state.zobrist_hash());
+                        assert_eq!(search_state.cumulative_game_score() + game_score, next_search_state.cumulative_game_score());
 
-                        assert_eq!(search_state.cumulative_game_score + score, next_search_state.cumulative_game_score);
                         // Add a tiny value(0.0 ~ 1.0) to search score
                         // To randomize search score for the diversity of search
-                        next_search_state.with_search_score(evaluation::evaluate_search_score(&next_search_state) + rnd.randf());
+                        let next_search_score = evaluation::evaluate_search_score(&next_search_state) + rnd.randf();
+                        next_search_state.set_search_score(next_search_score);
+
                         //push it to next beam
                         search_state_heap[depth + 1].push(next_search_state);
                         //The number of next beam is over beam_width; pop minimum state
@@ -216,14 +242,14 @@ impl Solver {
                         }
                         assert!(search_state_heap[depth + 1].len() <= beam_width);
 
-                        if next_search_state.cumulative_game_score > best_search_result.cumulative_game_score {
-                            best_search_result.cumulative_game_score = next_search_state.cumulative_game_score;
+                        if next_search_state.cumulative_game_score() > best_search_result.cumulative_game_score {
+                            best_search_result.cumulative_game_score = next_search_state.cumulative_game_score();
                             best_search_result.last_chain_count = chain_count;
                             best_search_result.turn = search_turn;
-                            best_search_result.board = next_search_state.board;
-                            best_search_result.command = next_search_state.command.unwrap();
+                            best_search_result.board = next_search_state.board();
+                            best_search_result.command = next_search_state.command().unwrap();
                         }
-                        assert!(next_search_state.cumulative_game_score <= best_search_result.cumulative_game_score);
+                        assert!(next_search_state.cumulative_game_score() <= best_search_result.cumulative_game_score);
                     }
                 }
             }

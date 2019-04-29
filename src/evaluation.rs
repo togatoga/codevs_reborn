@@ -102,7 +102,7 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
 pub fn evaluate_search_score(search_state: &SearchState) -> f64 {
     let mut search_score: f64 = 0.0;
 
-    let board = search_state.board;
+    let board = search_state.board();
     // game score
     // max chain count
     let (estimated_max_chain_count, _) = estimate_max_chain_count(&board);
