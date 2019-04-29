@@ -10,10 +10,9 @@ use crate::xorshift::Xorshift;
 use crate::evaluation;
 use crate::simulator;
 use crate::game_status::GameStatus;
-use crate::solver_config::{SolverConfig, DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT};
+use crate::solver_config::{SolverConfig};
 use crate::search_result::SearchResult;
 use self::min_max_heap::MinMaxHeap;
-
 
 
 pub struct Solver {
@@ -49,6 +48,26 @@ impl Solver {
         self.debug = debug;
     }
 
+    #[allow(dead_code)]
+    pub fn get_cumulative_sum_pack(&self, turn: usize) -> &[u8; 10] {
+        &self.cumulative_sum_pack[turn]
+    }
+    #[allow(dead_code)]
+    pub fn calculate_cumulative_sum_pack(&mut self) {
+        for i in 0..MAX_TURN {
+            let pack = &self.packs[i][0].0;
+            for idx in 0..4 {
+                let block = pack.get(idx);
+                self.cumulative_sum_pack[i][block as usize] += 1;
+            }
+            if i >= 1 {
+                for block in 1..10 {
+                    //println!("{} {} {}", block, self.cumulative_sum_pack[i][block], self.cumulative_sum_pack[i - 1][block]);
+                    self.cumulative_sum_pack[i][block] += self.cumulative_sum_pack[i - 1][block];
+                }
+            }
+        }
+    }
     pub fn read_packs<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> Vec<Vec<(Pack, usize)>> {
         (0..MAX_TURN).map(|_| {
             let mut blocks = [0; 4];
