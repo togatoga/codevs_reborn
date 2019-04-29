@@ -3,6 +3,11 @@ NAME=togatog_ai
 all:
 	cargo build
 	cargo build --release
+profile:
+	export RUSTFLAGS='-g'
+	perf record --call-graph=lbr cargo run --release -- profile --pack input/pack/pack_0000.pack --info input/information/initial.info
+	unset RUSTFLAGS
+	perf report
 clean:
 	cargo clean
 	rm submit*.zip
