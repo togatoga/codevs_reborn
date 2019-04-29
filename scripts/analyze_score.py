@@ -97,7 +97,9 @@ def analyze(args):
     cumulative_game_scores = get_scores(contents)
 
     output_path = f'data/analysis/'
+
     os.makedirs(output_path, exist_ok=True)
+    print(f'Create directory: {output_path}')
     file_name = os.path.basename(root)
     analyze_score(cumulative_game_scores, os.path.join(
         output_path, f'{file_name}.txt'))
