@@ -18,12 +18,14 @@ fn solver_think_from_file(pack_file_name: &str, info_file_name: &str, config: So
     //read from pack file
     let mut pack = togatog_ai::scanner::Scanner { stdin: pack_file };
     let mut info = togatog_ai::scanner::Scanner { stdin: info_file };
-    let packs: Vec<Vec<(togatog_ai::pack::Pack, usize)>> = togatog_ai::solver::Solver::read_packs(&mut pack);
+    //solver object
+    let mut solver = togatog_ai::solver::Solver::default();
+    solver.set_packs(togatog_ai::solver::Solver::read_packs(&mut pack));
     //read information only one turn
     let current_turn: usize = info.read();
     let player = togatog_ai::solver::Solver::read_game_status(&mut info);
     let enemy = togatog_ai::solver::Solver::read_game_status(&mut info);
-    let mut solver = togatog_ai::solver::Solver::new(&packs, player, enemy);
+    solver.set_game_status(player, enemy);
     solver.set_config(config);
     //measure
     solver.think(current_turn)

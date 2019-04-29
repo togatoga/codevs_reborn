@@ -15,10 +15,11 @@ use crate::search_result::SearchResult;
 use self::min_max_heap::MinMaxHeap;
 
 
-#[derive(Debug)]
-pub struct Solver<'a> {
-    packs: &'a Vec<Vec<(Pack, usize)>>,
-    //(pack, rotate_count)
+
+pub struct Solver {
+    packs: Vec<Vec<(Pack, usize)>>,
+    cumulative_sum_pack: [[u8; 10]; MAX_TURN],
+    //cumulative_sum_pack[block][turn]
     player: GameStatus,
     enemy: GameStatus,
     config: SolverConfig,
@@ -27,10 +28,19 @@ pub struct Solver<'a> {
 
 const MAX_TURN: usize = 500;
 
-impl<'a> Solver<'a> {
-    pub fn new(packs: &'a Vec<Vec<(Pack, usize)>>, player: GameStatus, enemy: GameStatus) -> Solver {
-        let config = SolverConfig::new(DEFAULT_BEAM_DEPTH, DEFAULT_BEAM_WIDTH, DEFAULT_FIRE_MAX_CHAIN_COUNT);
-        Solver { packs, player, enemy, config , debug: false}
+impl Solver {
+    pub fn default() -> Solver {
+        Solver { packs: Vec::new(), cumulative_sum_pack: [[0; 10]; MAX_TURN], player: GameStatus::default(), enemy: GameStatus::default(), config: SolverConfig::default(), debug: false }
+    }
+    pub fn new(packs: Vec<Vec<(Pack, usize)>>, player: GameStatus, enemy: GameStatus, config: SolverConfig, debug: bool) -> Solver {
+        Solver { packs, player, enemy, config, cumulative_sum_pack: [[0; 10]; MAX_TURN], debug: debug }
+    }
+    pub fn set_packs(&mut self, packs: Vec<Vec<(Pack, usize)>>) {
+        self.packs = packs;
+    }
+    pub fn set_game_status(&mut self, player: GameStatus, enemy: GameStatus) {
+        self.player = player;
+        self.enemy = enemy;
     }
     pub fn set_config(&mut self, config: SolverConfig) {
         self.config = config;
@@ -38,6 +48,7 @@ impl<'a> Solver<'a> {
     pub fn set_debug(&mut self, debug: bool) {
         self.debug = debug;
     }
+
     pub fn read_packs<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> Vec<Vec<(Pack, usize)>> {
         (0..MAX_TURN).map(|_| {
             let mut blocks = [0; 4];
@@ -109,7 +120,7 @@ impl<'a> Solver<'a> {
                 .with_obstacle_block_count(player.obstacle_block_count)
                 .with_spawn_obstacle_block_count(enemy.obstacle_block_count)
                 .with_cumulative_game_score(player.cumulative_game_score);
-                let fire_max_chain_count: u8 = self.config.fire_max_chain_count;
+        let fire_max_chain_count: u8 = self.config.fire_max_chain_count;
         //Fire if chain count is over threshold
         {
             let mut search_state = root_search_state.clone();

@@ -9,6 +9,9 @@ pub const DEFAULT_BEAM_WIDTH: usize = 150;
 pub const DEFAULT_FIRE_MAX_CHAIN_COUNT: u8 = 11;
 pub const SOLVER_VERSION: &str = "2.2";
 impl SolverConfig {
+    pub fn default() -> SolverConfig {
+        SolverConfig {beam_depth: DEFAULT_BEAM_DEPTH, beam_width: DEFAULT_BEAM_WIDTH, fire_max_chain_count: DEFAULT_FIRE_MAX_CHAIN_COUNT}
+    }
     pub fn new(beam_depth: usize, beam_width: usize, fire_max_chain_count: u8) -> SolverConfig {
         SolverConfig {beam_depth, beam_width, fire_max_chain_count}
     }

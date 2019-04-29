@@ -19,8 +19,8 @@ pub struct Pack {
 impl Eq for Pack {}
 
 impl Pack {
-    pub fn new_from_bit(bit: u16) -> Pack {
-        Pack { bit_block: bit }
+    pub fn default() -> Pack {
+        Pack { bit_block: 0 }
     }
     pub fn new(blocks: &[Block; 4]) -> Pack {
         let mut pack = Pack { bit_block: 0 };
@@ -122,6 +122,7 @@ fn test_rotate() {
     p.rotate();
     assert_eq!(p.vec(), [1, 2, 3, 4]);
 }
+
 #[test]
 fn drop() {
     let mut p = Pack::new(&[5, 8, 0, 5]);
