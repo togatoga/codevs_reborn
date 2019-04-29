@@ -5,18 +5,16 @@ use crate::search_state::SearchState;
 use crate::simulator::DIRECTION_YXS;
 use std::collections::HashSet;
 
-
 pub fn estimate_max_chain_count(board: &Board) -> (u8, Board) {
     let mut estimated_max_chain_count = 0;
     let mut estimated_board = board.clone();
     //drop single block and evaluate chain count
 
     for x in 0..FIELD_WIDTH {
-        let y =  board.heights[x] as i8;
+        let y = board.heights[x] as i8;
         let x = x as i8;
         let mut dropped_num = HashSet::new();
         for &dyx in DIRECTION_YXS.iter() {
-
             if !simulator::is_on_board(y + dyx.0, x + dyx.1) {
                 continue;
             }
@@ -59,10 +57,10 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
         for y in 0..board.heights[x] {
             let block = board.get(y, x);
             if block == EMPTY_BLOCK || block == OBSTACLE_BLOCK {
-                continue
+                continue;
             }
             //short jump
-            if y + 2  < FIELD_HEIGHT {
+            if y + 2 < FIELD_HEIGHT {
                 if block + board.get(y + 2, x) == ERASING_SUM {
                     pattern_match_cnt += 1;
                 }
@@ -111,8 +109,12 @@ pub fn evaluate_search_score(search_state: &SearchState) -> f64 {
     search_score += estimated_max_chain_count as f64 * 10e5;
     // count live block
     search_score += (board.count_live_blocks() as f64 * 1000.0) as f64;
-
+    // pattern match
     search_score += evaluate_pattern_match_cnt(&board) as f64 * 1.0;
+
+    // penalty scores
+    // count live block after estimating
+    //search_score -= estimated_board.count_live_blocks() as f64 * 0.5;
 
     search_score
 }
@@ -139,7 +141,7 @@ fn test_evaluate_pattern_match() {
     ];
     let board = Board::new(board);
     let cnt = evaluate_pattern_match_cnt(&board);
-    assert_eq!(cnt, 6);
+    assert_eq!(cnt, 3);
 }
 
 #[test]
