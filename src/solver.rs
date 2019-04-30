@@ -226,7 +226,7 @@ impl Solver {
                             continue;
                         }
                         //push it to hash set
-                        searched_state.insert(search_state.zobrist_hash());
+                        searched_state.insert(next_search_state.zobrist_hash());
                         debug_assert_eq!(search_state.cumulative_game_score() + gain_chain_game_score, next_search_state.cumulative_game_score());
 
                         // Add a tiny value(0.0 ~ 1.0) to search score
