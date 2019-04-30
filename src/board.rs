@@ -32,7 +32,7 @@ impl fmt::Display for Board {
             for x in 0..FIELD_WIDTH {
                 tmp.push(format!("{:?}", self.board.get(y, x)));
             }
-            assert_eq!(tmp.len(), FIELD_WIDTH);
+            debug_assert_eq!(tmp.len(), FIELD_WIDTH);
             board.push(tmp.join(","));
         }
         write!(f, "Board {{ board: [{}], heights: [{:?}] }}", board.join(",\n"), self.heights)
@@ -59,16 +59,16 @@ impl Board {
     }
     #[inline]
     pub fn get(&self, y: usize, x: usize) -> u8 {
-        assert!(y < FIELD_HEIGHT);
-        assert!(x < FIELD_WIDTH);
-        assert!(self.board.get(y, x) <= 11);
+        debug_assert!(y < FIELD_HEIGHT);
+        debug_assert!(x < FIELD_WIDTH);
+        debug_assert!(self.board.get(y, x) <= 11);
         self.board.get(y, x)
     }
     #[inline]
     pub fn set(&mut self, y: usize, x: usize, value: u8) {
-        assert!(y < FIELD_HEIGHT);
-        assert!(x < FIELD_WIDTH);
-        assert!(value <= 11);
+        debug_assert!(y < FIELD_HEIGHT);
+        debug_assert!(x < FIELD_WIDTH);
+        debug_assert!(value <= 11);
         self.board.set(y, x, value)
     }
     #[inline]
@@ -78,7 +78,7 @@ impl Board {
 
     pub fn drop_obstacles(&mut self) {
         for x in 0..FIELD_WIDTH {
-            assert!(self.heights[x] < FIELD_HEIGHT);
+            debug_assert!(self.heights[x] < FIELD_HEIGHT);
             self.board.set(self.heights[x], x, OBSTACLE_BLOCK);
             self.heights[x] += 1;
         }
@@ -128,9 +128,9 @@ fn test_is_game_over() {
         [11, 11, 2, 3, 3, 2, 7, 1, 11, 11]
     ];
     let mut board = Board::new(board);
-    assert!(!board.is_game_over());
+    debug_assert!(!board.is_game_over());
     board.drop_obstacles();
-    assert!(board.is_game_over());
+    debug_assert!(board.is_game_over());
 }
 
 #[test]
@@ -154,7 +154,7 @@ fn test_count_live_blocks() {
         [0, 0, 1, 3, 6, 2, 2, 1, 11, 0]
     ];
     let board = Board::new(board);
-    assert_eq!(board.count_live_blocks(), 35);
+    debug_assert_eq!(board.count_live_blocks(), 35);
 }
 
 #[test]
@@ -178,7 +178,7 @@ fn test_heights() {
         [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     ];
     let board = Board::new(board);
-    assert_eq!(board.heights, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    debug_assert_eq!(board.heights, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 }
 
 #[test]
@@ -224,5 +224,5 @@ fn drop_obstacles() {
         [11, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     ];
     let dropped_obstacles_board = Board::new(dropped_obstacles_board);
-    assert_eq!(board, dropped_obstacles_board);
+    debug_assert_eq!(board, dropped_obstacles_board);
 }

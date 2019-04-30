@@ -77,7 +77,7 @@ impl Solver {
                 blocks[i] = sc.read::<u8>();
             }
             let end: String = sc.read();
-            assert_eq!(end, "END");
+            debug_assert_eq!(end, "END");
 
             let mut pack_set = fnv::FnvHashSet::default();
             let mut res = Vec::new();
@@ -112,7 +112,7 @@ impl Solver {
             }
         }
         let end: String = sc.read();
-        assert_eq!(end, "END");
+        debug_assert_eq!(end, "END");
         let board = Board::new(input_board);
         GameStatus { rest_time_milliseconds, obstacle_block_count, skill_point, cumulative_game_score, board }
     }
@@ -217,7 +217,7 @@ impl Solver {
                         next_search_state.set_cumulative_game_score(next_cumulative_game_score);
                         next_search_state.set_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
                         if !next_search_state.is_command() {
-                            assert_eq!(depth, 0);
+                            debug_assert_eq!(depth, 0);
                             next_search_state.set_command(Command::Drop((point, *rotate_count)));
                         }
 
@@ -227,7 +227,7 @@ impl Solver {
                         }
                         //push it to hash set
                         searched_state.insert(search_state.zobrist_hash());
-                        assert_eq!(search_state.cumulative_game_score() + gain_chain_game_score, next_search_state.cumulative_game_score());
+                        debug_assert_eq!(search_state.cumulative_game_score() + gain_chain_game_score, next_search_state.cumulative_game_score());
 
                         // Add a tiny value(0.0 ~ 1.0) to search score
                         // To randomize search score for the diversity of search
@@ -240,7 +240,7 @@ impl Solver {
                         while search_state_heap[depth + 1].len() > beam_width {
                             search_state_heap[depth + 1].pop_min();
                         }
-                        assert!(search_state_heap[depth + 1].len() <= beam_width);
+                        debug_assert!(search_state_heap[depth + 1].len() <= beam_width);
 
 
                         let best_score = evaluate_game_score_by_depth( best_search_result.gain_game_score, best_search_result.search_depth);

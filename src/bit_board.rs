@@ -33,7 +33,7 @@ impl BitBoard {
     }
     #[inline]
     pub fn set(&mut self, y: usize, x: usize, value: u8) {
-        assert!(value <= 11);
+        debug_assert!(value <= 11);
         let x_idx = x / 2;
         //clear  hash
         self.zobrist_hash ^= ZOBRIST_HASH_TABLE_BOARD[y][x_idx][self.bits[y][x_idx] as usize];
@@ -117,8 +117,8 @@ fn test_zobrist_hash() {
         [9, 8, 7, 7, 1, 7, 11, 11, 6, 8]
     ];
     let board = BitBoard::new(board);
-    assert_eq!(bit_board.bits, board.bits);
-    assert_eq!(bit_board.zobrist_hash, board.zobrist_hash);
+    debug_assert_eq!(bit_board.bits, board.bits);
+    debug_assert_eq!(bit_board.zobrist_hash, board.zobrist_hash);
 
 
 }
@@ -146,7 +146,7 @@ fn test_bit_board() {
     let bit_board = BitBoard::new(input_board);
     for y in 0..INPUT_FIELD_HEIGHT {
         for x in 0..FIELD_WIDTH {
-            assert_eq!(bit_board.get(y, x), input_board[INPUT_FIELD_HEIGHT - 1 - y][x]);
+            debug_assert_eq!(bit_board.get(y, x), input_board[INPUT_FIELD_HEIGHT - 1 - y][x]);
         }
     }
 }

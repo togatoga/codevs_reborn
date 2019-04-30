@@ -30,7 +30,7 @@ impl Pack {
         pack
     }
     pub fn get(&self, idx: usize) -> Block {
-        assert!(idx < 4);
+        debug_assert!(idx < 4);
         let y = (idx / 2) as u16;
         let x = (idx % 2) as u16;
         let shift_bit = BASE_BIT * (2 * y + x);
@@ -43,7 +43,7 @@ impl Pack {
         block
     }
     pub fn set(&mut self, idx: usize, value: Block) {
-        assert!(idx < 4);
+        debug_assert!(idx < 4);
         let y = (idx / 2) as u16;
         let x = (idx % 2) as u16;
         let shift_bit = BASE_BIT * (2 * y + x);
@@ -89,50 +89,50 @@ impl Pack {
 #[test]
 fn test_equal() {
     let p = Pack::new(&[9, 5, 0, 3]);
-    assert_eq!(p.vec(), [9, 5, 0, 3]);
+    debug_assert_eq!(p.vec(), [9, 5, 0, 3]);
     let p = Pack::new(&[8, 5, 5, 0]);
-    assert_eq!(p.vec(), [8, 5, 5, 0]);
+    debug_assert_eq!(p.vec(), [8, 5, 5, 0]);
 }
 
 #[test]
 fn test_rotate() {
     let mut p = Pack::new(&[9, 5, 0, 3]);
-    assert_eq!(p.vec(), [9, 5, 0, 3]);
+    debug_assert_eq!(p.vec(), [9, 5, 0, 3]);
 
     p.rotate();
-    assert_eq!(p.vec(), [0, 9, 3, 5]);
+    debug_assert_eq!(p.vec(), [0, 9, 3, 5]);
 
     p.rotate();
-    assert_eq!(p.vec(), [3, 0, 5, 9]);
+    debug_assert_eq!(p.vec(), [3, 0, 5, 9]);
 
     p.rotate();
-    assert_eq!(p.vec(), [5, 3, 9, 0]);
+    debug_assert_eq!(p.vec(), [5, 3, 9, 0]);
 
     p.rotate();
-    assert_eq!(p.vec(), [9, 5, 0, 3]);
+    debug_assert_eq!(p.vec(), [9, 5, 0, 3]);
 
     let mut p = Pack::new(&[1, 2, 3, 4]);
-    assert_eq!(p.vec(), [1, 2, 3, 4]);
+    debug_assert_eq!(p.vec(), [1, 2, 3, 4]);
     p.rotate();
-    assert_eq!(p.vec(), [3, 1, 4, 2]);
+    debug_assert_eq!(p.vec(), [3, 1, 4, 2]);
     p.rotate();
-    assert_eq!(p.vec(), [4, 3, 2, 1]);
+    debug_assert_eq!(p.vec(), [4, 3, 2, 1]);
     p.rotate();
-    assert_eq!(p.vec(), [2, 4, 1, 3]);
+    debug_assert_eq!(p.vec(), [2, 4, 1, 3]);
     p.rotate();
-    assert_eq!(p.vec(), [1, 2, 3, 4]);
+    debug_assert_eq!(p.vec(), [1, 2, 3, 4]);
 }
 
 #[test]
 fn drop() {
     let mut p = Pack::new(&[5, 8, 0, 5]);
     p.drop();
-    assert_eq!(p.vec(), [0, 8, 5, 5]);
+    debug_assert_eq!(p.vec(), [0, 8, 5, 5]);
     let mut p = Pack::new(&[3, 8, 5, 0]);
     p.drop();
-    assert_eq!(p.vec(), [3, 0, 5, 8]);
+    debug_assert_eq!(p.vec(), [3, 0, 5, 8]);
 
     let mut p = Pack::new(&[1, 2, 3, 4]);
     p.drop();
-    assert_eq!(p.vec(), [1, 2, 3, 4]);
+    debug_assert_eq!(p.vec(), [1, 2, 3, 4]);
 }
