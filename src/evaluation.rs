@@ -59,7 +59,7 @@ pub fn estimate_max_chain_count(board: &Board) -> (u8, Board) {
 }
 
 pub fn evaluate_game_score_by_depth(cumulative_game_score: u32, depth: usize) -> f64 {
-    assert!(depth < 20);
+    debug_assert!(depth < 20);
     let max_fatal_gain_score = simulator::CHAIN_CUMULATIVE_SCORES[solver_config::DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT as usize];
     std::cmp::min(max_fatal_gain_score, cumulative_game_score) as f64 * GAME_SCORE_DEPTH_RATES[depth]
 }
@@ -137,7 +137,7 @@ pub fn evaluate_search_score(search_state: &SearchState) -> f64 {
 fn test_evaluate_game_score_by_depth() {
     let depth = 2;
     let score = 120;
-    assert_eq!(evaluate_game_score_by_depth(score, depth), 76.80000000000001);
+    debug_assert_eq!(evaluate_game_score_by_depth(score, depth), 76.80000000000001);
 }
 #[test]
 fn test_evaluate_pattern_match() {
@@ -161,7 +161,7 @@ fn test_evaluate_pattern_match() {
     ];
     let board = Board::new(board);
     let cnt = evaluate_pattern_match_cnt(&board);
-    assert_eq!(cnt, 3);
+    debug_assert_eq!(cnt, 3);
 }
 
 #[test]
@@ -203,8 +203,8 @@ fn test_estimate_max_chain_count() {
         [0, 0, 0, 0, 0, 0, 0, 0, 11, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 11, 0],
     ];
-    assert_eq!(max_chain_count, 1);
-    assert_eq!(estimated_board, Board::new(board));
+    debug_assert_eq!(max_chain_count, 1);
+    debug_assert_eq!(estimated_board, Board::new(board));
 
 
     let board = [
@@ -226,5 +226,5 @@ fn test_estimate_max_chain_count() {
         [0, 0, 1, 5, 1, 7, 7, 0, 0, 0]
     ];
     let (max_chain_count, _) = estimate_max_chain_count(&Board::new(board));
-    assert_eq!(max_chain_count, 12);
+    debug_assert_eq!(max_chain_count, 12);
 }

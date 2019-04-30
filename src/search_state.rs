@@ -83,7 +83,7 @@ impl SearchState {
         self.search_score = search_score;
     }
     pub fn set_command(&mut self, command: Command) {
-        assert!(self.command.is_none());
+        debug_assert!(self.command.is_none());
         self.command = Some(command);
     }
     pub fn is_command(&self) -> bool {
@@ -116,7 +116,7 @@ fn test_compare_search_state() {
     heaps.push(med);
     heaps.push(higher);
     heaps.push(lower);
-    assert_eq!(heaps.pop_max(), Some(higher));
-    assert_eq!(heaps.pop_max(), Some(med));
-    assert_eq!(heaps.pop_max(), Some(lower));
+    debug_assert_eq!(heaps.pop_max(), Some(higher));
+    debug_assert_eq!(heaps.pop_max(), Some(med));
+    debug_assert_eq!(heaps.pop_max(), Some(lower));
 }
