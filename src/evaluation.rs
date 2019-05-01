@@ -5,6 +5,7 @@ use crate::search_state::SearchState;
 use crate::simulator::DIRECTION_YXS;
 use crate::solver_config;
 use std::collections::HashSet;
+use crate::solver_config::DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT;
 
 //max 20
 
@@ -12,6 +13,10 @@ use std::collections::HashSet;
 //a = 4 / 5
 //a ^ 0 a ^ 1 a ^  2
 const GAME_SCORE_DEPTH_RATES: [f64; 20] = [1.0, 0.8, 0.6400000000000001, 0.5120000000000001, 0.4096000000000001, 0.3276800000000001, 0.2621440000000001, 0.20971520000000007, 0.1677721600000001, 0.13421772800000006, 0.10737418240000006, 0.08589934592000005, 0.06871947673600004,0.054975581388800036,0.043980465111040035,0.03518437208883203,0.028147497671065624,0.022517998136852502,0.018014398509482003,0.014411518807585602];
+//chain count: 7
+//score: 19
+//line obstacle: (19 / 2) = 9 / 10 = 0
+const NOT_SPAWN_MAX_CHAIN_COUNT: u8 = 7;
 
 pub fn estimate_max_chain_count(board: &Board) -> (u8, Board) {
     let mut estimated_max_chain_count = 0;
@@ -58,10 +63,14 @@ pub fn estimate_max_chain_count(board: &Board) -> (u8, Board) {
     (estimated_max_chain_count, estimated_board)
 }
 
-pub fn evaluate_game_score_by_depth(cumulative_game_score: u32, depth: usize) -> f64 {
+pub fn evaluate_game_score_by_depth(game_score: u32, depth: usize) -> f64 {
     debug_assert!(depth < 20);
-    let max_fatal_gain_score = simulator::CHAIN_CUMULATIVE_SCORES[solver_config::DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT as usize];
-    std::cmp::min(max_fatal_gain_score, cumulative_game_score) as f64 * GAME_SCORE_DEPTH_RATES[depth]
+    let max_fatal_gain_score = simulator::calculate_obstacle_count_from_chain_count(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT);
+    //small chain count
+    /*if game_score <= simulator::calculate_game_score(NOT_SPAWN_MAX_CHAIN_COUNT) {
+        return 1.0 * GAME_SCORE_DEPTH_RATES[depth] * GAME_SCORE_DEPTH_RATES[depth];
+    }*/
+    std::cmp::min(max_fatal_gain_score, game_score) as f64 * GAME_SCORE_DEPTH_RATES[depth]
 }
 
 pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {

@@ -5,7 +5,7 @@ use crate::scanner;
 use crate::pack::Pack;
 use crate::command::Command;
 use crate::search_state::SearchState;
-use crate::board::{Board, FIELD_WIDTH, INPUT_FIELD_HEIGHT};
+use crate::board::{Board, FIELD_WIDTH, INPUT_FIELD_HEIGHT, FIELD_HEIGHT, OBSTACLE_BLOCK, DANGER_LINE_HEIGHT};
 use crate::xorshift::Xorshift;
 use crate::evaluation;
 use crate::simulator;
@@ -126,11 +126,11 @@ impl Solver {
             }
         }
     }
-    fn should_fire_right_now(&self, chain_count: u8, max_enemy_chain_count: u8, target_chain_count: u8) -> bool {
+    fn should_fire_right_now(&self, chain_count: u8, max_enemy_chain_count: u8, need_kill_chain_count: u8) -> bool {
         //chain count is fatal max chain count
-        if chain_count >= DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT {
+        if chain_count >= need_kill_chain_count {
             if self.debug {
-                eprintln!("Fire!!: A chain count is max chain_count {} {}", chain_count, self.config.fire_max_chain_count);
+                eprintln!("Fire!!: A chain count is over to kill enemy!!: {} {}", chain_count, need_kill_chain_count);
             }
             return true;
         }
@@ -153,8 +153,27 @@ impl Solver {
 
         false
     }
+    fn gaze_enemy_need_kill_chain_count(&self) -> u8 {
+        let enemy = &self.enemy;
+        let board = enemy.board;
+        let mut spawned_obstacle_count = 0;
+        for y in 0..board.heights[0] {
+            if board.get(y, 0) == OBSTACLE_BLOCK {
+                spawned_obstacle_count += 1;
+            }
+        }
+        let need_kill_line = (DANGER_LINE_HEIGHT - spawned_obstacle_count) as u8;
+        for chain_count in 0..DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT {
+            let spawned_obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
+            let spawned_line = (spawned_obstacle_count / 10) as u8;
+            if spawned_line >= need_kill_line {
+                return chain_count;
+            }
+        }
+        DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT
+    }
     //gaze enemy
-    #[allow(dead_code, )]
+    #[allow(dead_code)]
     fn gaze_enemy_max_chain_count(&self, current_turn: usize) -> u8 {
         let enemy = &self.enemy;
         let mut max_chain_count = 0;
@@ -167,6 +186,7 @@ impl Solver {
         }
         max_chain_count
     }
+
     pub fn think(&mut self, current_turn: usize) -> SearchResult {
         let player = &self.player;
         let enemy = &self.enemy;
@@ -194,7 +214,9 @@ impl Solver {
         search_state_heap[0].push(root_search_state);
         let mut rnd = Xorshift::with_seed((current_turn + 10) as u64);
         let mut fire_right_now = false;
+        //gaze enemy...
         let max_enemy_chain_count = self.gaze_enemy_max_chain_count(current_turn);
+        let need_kill_chain_count = self.gaze_enemy_need_kill_chain_count();
         for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
@@ -220,7 +242,7 @@ impl Solver {
                         }
 
                         //consider whether solver should fire at depth 0
-                        if depth == 0 && self.should_fire_right_now(chain_count, max_enemy_chain_count, 1000) {
+                        if depth == 0 && self.should_fire_right_now(chain_count, max_enemy_chain_count, need_kill_chain_count) {
                             fire_right_now = true;
                             //pick best chain count one
                             if chain_count > best_search_result.last_chain_count {
