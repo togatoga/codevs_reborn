@@ -189,7 +189,16 @@ impl Solver {
         }
         max_chain_count
     }
-
+    pub fn beam_search_config(&self) -> (usize, usize) {
+        let player = &self.player;
+        if player.rest_time_milliseconds >= 30000 {//more than 30 seconds
+            return self.config.beam();
+        }
+        if player.rest_time_milliseconds >= 10000 {//more thatn 10 seconds
+            return (5, 100);
+        }
+        (3, 100)
+    }
     pub fn think(&mut self, current_turn: usize) -> SearchResult {
         let player = &self.player;
         let enemy = &self.enemy;
@@ -206,7 +215,8 @@ impl Solver {
         root_search_state.set_cumulative_game_score(player.cumulative_game_score);
 
         // beam search for a command
-        let (beam_depth, beam_width): (usize, usize) = self.config.beam();
+        let (beam_depth, beam_width): (usize, usize) = self.beam_search_config();
+
         if self.debug {
             eprintln!("Beam depth: {}, Beam width: {}", beam_depth, beam_width);
         }
@@ -220,6 +230,7 @@ impl Solver {
         //gaze enemy...
         let max_enemy_chain_count = self.gaze_enemy_max_chain_count(current_turn);
         let need_kill_chain_count = self.gaze_enemy_need_kill_chain_count();
+
         for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
@@ -230,6 +241,7 @@ impl Solver {
                 debug_assert_eq!(depth, 1);
                 break;
             }
+
             while let Some(search_state) = &mut search_state_heap[depth].pop_max() {
                 //Update obstacle block
                 search_state.update_obstacle_block();
@@ -287,13 +299,15 @@ impl Solver {
                         next_search_state.set_search_score(next_search_score);
 
                         //push it to next beam
-                        search_state_heap[depth + 1].push(next_search_state);
-                        //The number of next beam is over beam_width; pop minimum state
-                        while search_state_heap[depth + 1].len() > beam_width {
-                            search_state_heap[depth + 1].pop_min();
+                        //prune fire state
+                        if chain_count <= 10 {
+                            search_state_heap[depth + 1].push(next_search_state);
+                            //The number of next beam is over beam_width; pop minimum state
+                            while search_state_heap[depth + 1].len() > beam_width {
+                                search_state_heap[depth + 1].pop_min();
+                            }
+                            debug_assert!(search_state_heap[depth + 1].len() <= beam_width);
                         }
-                        debug_assert!(search_state_heap[depth + 1].len() <= beam_width);
-
 
                         let best_score = evaluate_game_score_by_depth( best_search_result.gain_game_score, best_search_result.search_depth);
                         let target_score = evaluate_game_score_by_depth(gain_chain_game_score, depth);
@@ -311,6 +325,7 @@ impl Solver {
         }
         if self.debug {
             eprintln!("== Search Result ==");
+
             best_search_result.log();
         }
         best_search_result
