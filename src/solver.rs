@@ -126,6 +126,13 @@ impl Solver {
             }
         }
     }
+    fn should_fire_right_now(&self, chain_count: u8) -> bool {
+        //chain count is over max
+        if chain_count >= self.config.fire_max_chain_count {
+            return true;
+        }
+        false
+    }
     //gaze enemy
     #[allow(dead_code, )]
     fn gaze_enemy(&self, _current_turn: usize) -> SearchResult {
@@ -146,37 +153,6 @@ impl Solver {
         root_search_state.set_spawn_obstacle_block_count(enemy.obstacle_block_count);
         root_search_state.set_cumulative_game_score(player.cumulative_game_score);
 
-        let fire_max_chain_count: u8 = self.config.fire_max_chain_count;
-
-        //gaze enemy board
-        //let gazed_search_result = self.gaze_enemy(current_turn);
-        //Fire if chain count is over threshold
-        {
-            let mut search_state = root_search_state.clone();
-            let mut max_chain_count = 0;
-            search_state.update_obstacle_block();
-            let mut fire = false;
-            for (pack, rotate_count) in self.packs[current_turn].iter() {
-                for point in 0..9 {
-                    let chain_count = simulator::simulate(&mut search_state.board(), point, &pack);
-                    //spawn many obstacle lines
-                    //low chain count not to fire
-                    //obstacle_block drop two line
-                    if chain_count >= fire_max_chain_count && chain_count > max_chain_count {
-                        max_chain_count = chain_count;
-                        best_search_result.command = Command::Drop((point, *rotate_count));
-                        fire = true;
-                    }
-                }
-            }
-            //Fire!!
-            if fire {
-                if self.debug {
-                    eprintln!("Fire!! by gazing");
-                }
-                return best_search_result;
-            }
-        }
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.config.beam();
         if self.debug {
@@ -186,13 +162,20 @@ impl Solver {
         let mut searched_state = fnv::FnvHashSet::default();
 
         //push an initial search state
-        search_state_heap[0].push(root_search_state.clone());
+        search_state_heap[0].push(root_search_state);
         let mut rnd = Xorshift::with_seed((current_turn + 10) as u64);
 
+        let mut fire_right_now = false;
         for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
-
+            if fire_right_now {
+                if self.debug {
+                    eprintln!("Fire!! now");
+                }
+                debug_assert_eq!(depth, 1);
+                break;
+            }
             while let Some(search_state) = &mut search_state_heap[depth].pop_max() {
                 //Update obstacle block
                 search_state.update_obstacle_block();
@@ -206,6 +189,21 @@ impl Solver {
                         if board.is_game_over() {
                             continue;
                         }
+
+                        //consider whether solver should fire at depth 0
+                        if depth == 0 && self.should_fire_right_now(chain_count) {
+                            fire_right_now = true;
+                            //pick best chain count one
+                            if chain_count > best_search_result.last_chain_count {
+                                best_search_result.last_chain_count = chain_count;
+                                best_search_result.command = Command::Drop((point, *rotate_count));
+                                best_search_result.gain_game_score = simulator::calculate_game_score(chain_count);
+                                best_search_result.cumulative_game_score = search_state.cumulative_game_score() + simulator::calculate_game_score(chain_count);
+                                best_search_result.search_depth = depth;
+                                best_search_result.board = board.clone();
+                            }
+                        }
+
                         //create next search state from a previous state
                         let mut next_search_state = search_state.clone();
                         //update these values
