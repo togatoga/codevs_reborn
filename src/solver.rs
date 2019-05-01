@@ -126,9 +126,9 @@ impl Solver {
             }
         }
     }
-    fn should_fire_right_now(&self, chain_count: u8, max_enemy_chain_count: u8) -> bool {
-        //chain count is over max
-        if chain_count >= self.config.fire_max_chain_count {
+    fn should_fire_right_now(&self, chain_count: u8, max_enemy_chain_count: u8, target_chain_count: u8) -> bool {
+        //chain count is fatal max chain count
+        if chain_count >= DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT {
             if self.debug {
                 eprintln!("Fire!!: A chain count is max chain_count {} {}", chain_count, self.config.fire_max_chain_count);
             }
@@ -236,10 +236,10 @@ impl Solver {
                         //create next search state from a previous state
                         let mut next_search_state = search_state.clone();
                         //update these values
-                        let gain_chain_game_score = CHAIN_CUMULATIVE_SCORES[chain_count as usize];
+                        let gain_chain_game_score = simulator::calculate_game_score(chain_count);
                         let next_board = board;
                         let next_cumulative_game_score = gain_chain_game_score + search_state.cumulative_game_score();
-                        let next_spawn_obstacle_block_count = calculate_obstacle_count(gain_chain_game_score, 0) + search_state.spawn_obstacle_block_count();
+                        let next_spawn_obstacle_block_count = simulator::calculate_obstacle_count_from_chain_count(chain_count) + search_state.spawn_obstacle_block_count();
                         next_search_state.set_board(next_board);
                         next_search_state.set_cumulative_game_score(next_cumulative_game_score);
                         next_search_state.set_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
