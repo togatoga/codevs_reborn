@@ -136,7 +136,7 @@ impl Solver {
         }
 
 
-        if self.enemy.obstacle_block_count == 0 && chain_count >= max_enemy_chain_count {
+        if self.enemy.obstacle_block_count < 10 && chain_count >= max_enemy_chain_count {
             let enemy_obstacle_count = simulator::calculate_obstacle_count_from_chain_count(max_enemy_chain_count);
             let player_obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
             if player_obstacle_count > self.player.obstacle_block_count {
@@ -220,7 +220,7 @@ impl Solver {
                         }
 
                         //consider whether solver should fire at depth 0
-                        if depth == 0 && self.should_fire_right_now(chain_count, max_enemy_chain_count) {
+                        if depth == 0 && self.should_fire_right_now(chain_count, max_enemy_chain_count, 1000) {
                             fire_right_now = true;
                             //pick best chain count one
                             if chain_count > best_search_result.last_chain_count {
