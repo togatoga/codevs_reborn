@@ -29,26 +29,27 @@ fn drop_pack(board: &mut board::Board, point: usize, pack: &pack::Pack) -> Vec<(
     debug_assert!(point <= 8);
 
     let mut modified_blocks: Vec<(usize, usize)> = Vec::new(); //(y, x)
-    for y in (0..2).rev() {
-        for x in (0..2).rev() {
-            //skip empty block
-            let block = pack.get(2 * y + x);
-            if block == EMPTY_BLOCK {
-                continue;
-            }
-            let nx = point + x;
-            debug_assert!(nx < FIELD_WIDTH);
-            let ny = board.heights[nx];
-            debug_assert!(ny < FIELD_HEIGHT);
-            board.set(ny, nx, block);
-            board.heights[nx] += 1;
-            modified_blocks.push((ny, nx));
+
+    for idx in (0..4).rev() {
+        let block = pack.get(idx);
+        let x = idx % 2;
+        if block == EMPTY_BLOCK {
+            continue;
         }
+        let nx = point + x;
+        let ny = board.heights[nx];
+        debug_assert!(nx < FIELD_WIDTH);
+        debug_assert!(ny < FIELD_HEIGHT);
+        board.set(ny, nx, block);
+        board.heights[nx] += 1;
+        modified_blocks.push((ny, nx));
     }
     modified_blocks
 }
 
-
+pub fn calculate_game_score(chain_count: u8) -> u32 {
+    CHAIN_CUMULATIVE_SCORES[chain_count as usize]
+}
 pub fn calculate_obstacle_count(chain_score: u32, skill_chain_score: u32) -> u32 {
     chain_score / 2 + skill_chain_score / 2
 }
