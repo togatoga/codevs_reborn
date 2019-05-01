@@ -126,17 +126,46 @@ impl Solver {
             }
         }
     }
-    fn should_fire_right_now(&self, chain_count: u8) -> bool {
+    fn should_fire_right_now(&self, chain_count: u8, max_enemy_chain_count: u8) -> bool {
         //chain count is over max
         if chain_count >= self.config.fire_max_chain_count {
+            if self.debug {
+                eprintln!("Fire!!: A chain count is max chain_count {} {}", chain_count, self.config.fire_max_chain_count);
+            }
             return true;
         }
+
+
+        if self.enemy.obstacle_block_count == 0 && chain_count >= max_enemy_chain_count {
+            let enemy_obstacle_count = simulator::calculate_obstacle_count_from_chain_count(max_enemy_chain_count);
+            let player_obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
+            if player_obstacle_count > self.player.obstacle_block_count {
+                let player_spawned_obstacle_count = player_obstacle_count - self.player.obstacle_block_count;
+                let line_block = player_spawned_obstacle_count / 10;
+                if line_block >= 3 {
+                    if self.debug {
+                        eprintln!("Fire!!: Must spawn three line!! {}", player_spawned_obstacle_count);
+                    }
+                    return true;
+                }
+            }
+        }
+
         false
     }
     //gaze enemy
     #[allow(dead_code, )]
-    fn gaze_enemy(&self, _current_turn: usize) -> SearchResult {
-        SearchResult::default()
+    fn gaze_enemy_max_chain_count(&self, current_turn: usize) -> u8 {
+        let enemy = &self.enemy;
+        let mut max_chain_count = 0;
+        for (pack, rotate_count) in self.packs[current_turn].iter() {
+            for point in 0..9 {
+                let mut board = enemy.board.clone();
+                let chain_count = simulator::simulate(&mut board, point, &pack);
+                max_chain_count = std::cmp::max(max_chain_count, chain_count);
+            }
+        }
+        max_chain_count
     }
     pub fn think(&mut self, current_turn: usize) -> SearchResult {
         let player = &self.player;
@@ -164,8 +193,8 @@ impl Solver {
         //push an initial search state
         search_state_heap[0].push(root_search_state);
         let mut rnd = Xorshift::with_seed((current_turn + 10) as u64);
-
         let mut fire_right_now = false;
+        let max_enemy_chain_count = self.gaze_enemy_max_chain_count(current_turn);
         for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
@@ -191,7 +220,7 @@ impl Solver {
                         }
 
                         //consider whether solver should fire at depth 0
-                        if depth == 0 && self.should_fire_right_now(chain_count) {
+                        if depth == 0 && self.should_fire_right_now(chain_count, max_enemy_chain_count) {
                             fire_right_now = true;
                             //pick best chain count one
                             if chain_count > best_search_result.last_chain_count {
