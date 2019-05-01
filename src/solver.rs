@@ -157,9 +157,12 @@ impl Solver {
         let enemy = &self.enemy;
         let board = enemy.board;
         let mut spawned_obstacle_count = 0;
-        for y in 0..board.heights[0] {
-            if board.get(y, 0) == OBSTACLE_BLOCK {
-                spawned_obstacle_count += 1;
+        for x in 0..FIELD_WIDTH {
+            for y in (0..board.heights[x]).rev() {
+                if board.get(y, x) == OBSTACLE_BLOCK {
+                    spawned_obstacle_count = std::cmp::max(spawned_obstacle_count, y + 1);
+                    break;
+                }
             }
         }
         let need_kill_line = (DANGER_LINE_HEIGHT - spawned_obstacle_count) as u8;
@@ -212,7 +215,7 @@ impl Solver {
 
         //push an initial search state
         search_state_heap[0].push(root_search_state);
-        let mut rnd = Xorshift::with_seed((current_turn + 10) as u64);
+        let mut rnd = Xorshift::with_seed((current_turn + 25) as u64);
         let mut fire_right_now = false;
         //gaze enemy...
         let max_enemy_chain_count = self.gaze_enemy_max_chain_count(current_turn);
