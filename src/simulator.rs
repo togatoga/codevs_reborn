@@ -6,13 +6,13 @@ pub const CHAIN_CUMULATIVE_SCORES: [u32; 50] = [0, 1, 2, 4, 6, 9, 13, 19, 27, 37
 
 pub const DIRECTION_YXS: [(i8, i8); 8] = [
     (0, 1),// right
-    (-1, 1), //upper right
-    (-1, 0), //top
-    (-1, -1),//upper left
+    (-1, 1), //down right
+    (-1, 0), //down
+    (-1, -1),//down left
     (0, -1), //left
-    (1, -1), //down left
-    (1, 0),//down
-    (1, 1), //down right
+    (1, -1), //top left
+    (1, 0),//top
+    (1, 1), //top right
 ];
 
 
