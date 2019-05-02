@@ -13,7 +13,7 @@ pub struct BitBoard {
 
 impl PartialEq for BitBoard {
     fn eq(&self, other: &BitBoard) -> bool {
-         self.bits == other.bits && self.zobrist_hash == other.zobrist_hash
+         self.zobrist_hash == other.zobrist_hash && self.bits == other.bits
     }
 }
 
