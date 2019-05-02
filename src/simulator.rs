@@ -34,8 +34,11 @@ impl Simulator {
     pub fn init(&mut self) {
         self.modified_blocks.clear();
         self.erase_blocks.clear();
-        assert_eq!(self.modified_blocks.capacity(), FIELD_HEIGHT * FIELD_WIDTH);
-        assert_eq!(self.erase_blocks.capacity(), FIELD_HEIGHT * FIELD_WIDTH);
+        debug_assert_eq!(self.modified_blocks.capacity(), FIELD_HEIGHT * FIELD_WIDTH);
+        debug_assert_eq!(self.erase_blocks.capacity(), FIELD_HEIGHT * FIELD_WIDTH);
+    }
+    pub fn modified_blocks(&self) -> &Vec<(usize, usize)> {
+        &self.modified_blocks
     }
     pub fn simulate(&mut self, board: &mut board::Board, point: usize, pack: &pack::Pack) -> u8 {
         self.init();
@@ -190,7 +193,7 @@ fn test_simulate_must_dead() {
     pack.drop();
     debug_assert_eq!(pack, pack::Pack::new(&[0, 8, 5, 5]));
     let mut simulated_board = board::Board::new(board);
-    simulate(&mut simulated_board, 5, &pack);
+    Simulator::new().simulate(&mut simulated_board, 5, &pack);
 
     for y in 0..FIELD_HEIGHT {
         for x in 0..FIELD_WIDTH {
@@ -224,7 +227,7 @@ fn test_simulate_sandwich_obstacle_board() {
     let mut board = board::Board::new(board);
     board.drop_obstacles();
     let pack = pack::Pack::new(&[3, 6, 2, 2]);
-    let chain_count = simulate(&mut board, 0, &pack);
+    let chain_count = Simulator::new().simulate(&mut board, 0, &pack);
     let target_board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -269,7 +272,7 @@ fn test_simulate_same_board() {
     ];
     let old_board = board::Board::new(board);
     let mut simulated_board = board::Board::new(board);
-    simulate(&mut simulated_board, 7, &pack::Pack::new(&[0, 9, 1, 9]));
+    Simulator::new().simulate(&mut simulated_board, 7, &pack::Pack::new(&[0, 9, 1, 9]));
     // 0 9   => 0 0
     // 1 9      0 0
     debug_assert_eq!(simulated_board, old_board);
@@ -301,7 +304,7 @@ fn test_simulate_with_obstacles() {
     let pack = pack::Pack::new(&[6, 7, 2, 0]);
     //drop
     board.drop_obstacles();
-    let chain_count = simulate(&mut board, 7, &pack);
+    let chain_count = Simulator::new().simulate(&mut board, 7, &pack);
     let score = CHAIN_CUMULATIVE_SCORES[chain_count as usize];
     debug_assert_eq!((score, chain_count), (210, 15));
 
@@ -352,7 +355,7 @@ fn test_simulate() {
 
     let mut board = board::Board::new(raw_board);
     let pack = pack::Pack::new(&[7, 6, 6, 9]);
-    let chain_count = simulate(&mut board, 6, &pack);
+    let chain_count = Simulator::new().simulate(&mut board, 6, &pack);
     let score = CHAIN_CUMULATIVE_SCORES[chain_count as usize];
     debug_assert_eq!((score, chain_count), (120, 13));
 
@@ -403,7 +406,7 @@ fn test_simulate() {
     let mut pack = pack::Pack::new(&[5, 1, 1, 3]);
     pack.rotates(1);
     debug_assert_eq!(pack.vec(), [1, 5, 3, 1]);
-    let chain_count = simulate(&mut board, 7, &pack);
+    let chain_count = Simulator::new().simulate(&mut board, 7, &pack);
     let score = CHAIN_CUMULATIVE_SCORES[chain_count as usize];
     debug_assert_eq!((score, chain_count), (37, 9));
     let simulated_board = [
@@ -449,8 +452,10 @@ fn test_drop_pack() {
     ];
     let mut board = board::Board::new(raw_board);
     let pack = pack::Pack::new(&[0, 9, 1, 2]);
-    let modified_blocks = drop_pack(&mut board, 1, &pack);
-    debug_assert_eq!(modified_blocks, vec![(3, 2), (1, 1), (4, 2)]);
+
+    let mut simulator = Simulator::new();
+    simulator.drop_pack(&mut board, 1, &pack);
+    debug_assert_eq!(simulator.modified_blocks, vec![(3, 2), (1, 1), (4, 2)]);
 
     let dropped_board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
