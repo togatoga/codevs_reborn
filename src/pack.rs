@@ -29,6 +29,9 @@ impl Pack {
         }
         pack
     }
+    pub fn clear(&mut self) {
+        self.bit_block = 0;
+    }
     pub fn get(&self, idx: usize) -> Block {
         debug_assert!(idx < 4);
         let y = (idx / 2) as u16;
