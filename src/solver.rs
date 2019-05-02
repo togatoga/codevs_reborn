@@ -1,20 +1,19 @@
-extern crate min_max_heap;
+
 extern crate fnv;
-
-use crate::scanner;
-use crate::pack::Pack;
-use crate::command::Command;
-use crate::search_state::SearchState;
-use crate::board::{Board, FIELD_WIDTH, INPUT_FIELD_HEIGHT, OBSTACLE_BLOCK, DANGER_LINE_HEIGHT};
-use crate::xorshift::Xorshift;
-use crate::simulator;
-use crate::game_status::GameStatus;
-use crate::solver_config::{SolverConfig, DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT};
-use crate::search_result::SearchResult;
+extern crate min_max_heap;
 use self::min_max_heap::MinMaxHeap;
+use crate::board::{Board, DANGER_LINE_HEIGHT, FIELD_WIDTH, INPUT_FIELD_HEIGHT, OBSTACLE_BLOCK};
+use crate::command::Command;
 use crate::evaluation::{evaluate_game_score_by_depth, EvaluateCache};
+use crate::game_status::GameStatus;
+use crate::pack::Pack;
+use crate::scanner;
+use crate::search_result::SearchResult;
+use crate::search_state::SearchState;
+use crate::simulator;
 use crate::simulator::Simulator;
-
+use crate::solver_config::{SolverConfig, DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT};
+use crate::xorshift::Xorshift;
 
 pub struct Solver {
     packs: Vec<Vec<(Pack, usize)>>,
@@ -32,10 +31,34 @@ const MAX_TURN: usize = 500;
 
 impl Solver {
     pub fn default() -> Solver {
-        Solver { packs: Vec::new(), cumulative_sum_pack: [[0; 10]; MAX_TURN], player: GameStatus::default(), enemy: GameStatus::default(), config: SolverConfig::default(), simulator: Simulator::default(), evaluate_cache: EvaluateCache::new(), debug: false }
+        Solver {
+            packs: Vec::new(),
+            cumulative_sum_pack: [[0; 10]; MAX_TURN],
+            player: GameStatus::default(),
+            enemy: GameStatus::default(),
+            config: SolverConfig::default(),
+            simulator: Simulator::default(),
+            evaluate_cache: EvaluateCache::new(),
+            debug: false,
+        }
     }
-    pub fn new(packs: Vec<Vec<(Pack, usize)>>, player: GameStatus, enemy: GameStatus, config: SolverConfig, debug: bool) -> Solver {
-        Solver { packs, player, enemy, config, cumulative_sum_pack: [[0; 10]; MAX_TURN], simulator: Simulator::new(), evaluate_cache:EvaluateCache::new(), debug }
+    pub fn new(
+        packs: Vec<Vec<(Pack, usize)>>,
+        player: GameStatus,
+        enemy: GameStatus,
+        config: SolverConfig,
+        debug: bool,
+    ) -> Solver {
+        Solver {
+            packs,
+            player,
+            enemy,
+            config,
+            cumulative_sum_pack: [[0; 10]; MAX_TURN],
+            simulator: Simulator::new(),
+            evaluate_cache: EvaluateCache::new(),
+            debug,
+        }
     }
     pub fn set_packs(&mut self, packs: Vec<Vec<(Pack, usize)>>) {
         self.packs = packs;
@@ -72,7 +95,10 @@ impl Solver {
         }
         //512MB
         if self.evaluate_cache.len() > 512 * 1024 * 1024 {
-            eprintln!("Cache Clear because cache is too big: {}", self.evaluate_cache.len());
+            eprintln!(
+                "Cache Clear because cache is too big: {}",
+                self.evaluate_cache.len()
+            );
             self.evaluate_cache.clear();
         }
 
@@ -98,31 +124,33 @@ impl Solver {
         }
     }
     pub fn read_packs<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> Vec<Vec<(Pack, usize)>> {
-        (0..MAX_TURN).map(|_| {
-            let mut blocks = [0; 4];
-            for i in 0..4 {
-                blocks[i] = sc.read::<u8>();
-            }
-            let end: String = sc.read();
-            debug_assert_eq!(end, "END");
-
-            let mut pack_set = fnv::FnvHashSet::default();
-            let mut res = Vec::new();
-            for i in 0..4 {
-                let mut pack = Pack::new(&blocks);
-                pack.rotates(i);
-                //To make pack unique
-                //5 8  0 8
-                //0 5  5 5
-                pack.drop();
-                if pack_set.contains(&pack) {
-                    continue;
+        (0..MAX_TURN)
+            .map(|_| {
+                let mut blocks = [0; 4];
+                for i in 0..4 {
+                    blocks[i] = sc.read::<u8>();
                 }
-                res.push((pack.clone(), i));
-                pack_set.insert(pack);
-            }
-            res
-        }).collect()
+                let end: String = sc.read();
+                debug_assert_eq!(end, "END");
+
+                let mut pack_set = fnv::FnvHashSet::default();
+                let mut res = Vec::new();
+                for i in 0..4 {
+                    let mut pack = Pack::new(&blocks);
+                    pack.rotates(i);
+                    //To make pack unique
+                    //5 8  0 8
+                    //0 5  5 5
+                    pack.drop();
+                    if pack_set.contains(&pack) {
+                        continue;
+                    }
+                    res.push((pack.clone(), i));
+                    pack_set.insert(pack);
+                }
+                res
+            })
+            .collect()
     }
 
     pub fn read_game_status<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> GameStatus {
@@ -132,7 +160,8 @@ impl Solver {
         let skill_point: u32 = sc.read();
         let cumulative_game_score: u32 = sc.read();
 
-        let mut input_board: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT] = [[0; FIELD_WIDTH]; INPUT_FIELD_HEIGHT];
+        let mut input_board: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT] =
+            [[0; FIELD_WIDTH]; INPUT_FIELD_HEIGHT];
         for y in 0..INPUT_FIELD_HEIGHT {
             for x in 0..FIELD_WIDTH {
                 input_board[y][x] = sc.read::<u8>();
@@ -141,7 +170,13 @@ impl Solver {
         let end: String = sc.read();
         debug_assert_eq!(end, "END");
         let board = Board::new(input_board);
-        GameStatus { rest_time_milliseconds, obstacle_block_count, skill_point, cumulative_game_score, board }
+        GameStatus {
+            rest_time_milliseconds,
+            obstacle_block_count,
+            skill_point,
+            cumulative_game_score,
+            board,
+        }
     }
     pub fn output_command(command: Command) {
         match command {
@@ -153,30 +188,47 @@ impl Solver {
             }
         }
     }
-    fn should_fire_right_now(&self, chain_count: u8, max_enemy_chain_count: u8, need_kill_chain_count: u8) -> bool {
+    fn should_fire_right_now(
+        &self,
+        chain_count: u8,
+        max_enemy_chain_count: u8,
+        need_kill_chain_count: u8,
+    ) -> bool {
         //chain count is fatal max chain count
         if chain_count >= need_kill_chain_count {
             if self.debug {
-                eprintln!("Fire!!: A chain count is over to kill enemy!!: {} {}", chain_count, need_kill_chain_count);
+                eprintln!(
+                    "Fire!!: A chain count is over to kill enemy!!: {} {}",
+                    chain_count, need_kill_chain_count
+                );
             }
             return true;
         }
 
 
         if self.enemy.obstacle_block_count < 10 && chain_count >= max_enemy_chain_count {
-            let enemy_obstacle_count = simulator::calculate_obstacle_count_from_chain_count(max_enemy_chain_count);
+            let enemy_obstacle_count =
+                simulator::calculate_obstacle_count_from_chain_count(max_enemy_chain_count);
             let total_enemy_obstacle_count = enemy_obstacle_count + self.enemy.obstacle_block_count;
-            let player_obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
+            let player_obstacle_count =
+                simulator::calculate_obstacle_count_from_chain_count(chain_count);
             if player_obstacle_count > self.player.obstacle_block_count {
-                let player_spawned_obstacle_count = player_obstacle_count - self.player.obstacle_block_count;
+                let player_spawned_obstacle_count =
+                    player_obstacle_count - self.player.obstacle_block_count;
                 if player_spawned_obstacle_count <= total_enemy_obstacle_count {
                     return false;
                 }
-                let spawned_obstacle_count = player_spawned_obstacle_count - total_enemy_obstacle_count;
-                let line_block = simulator::calculate_spawn_obstacle_line_from_obstacle_count(spawned_obstacle_count);
+                let spawned_obstacle_count =
+                    player_spawned_obstacle_count - total_enemy_obstacle_count;
+                let line_block = simulator::calculate_spawn_obstacle_line_from_obstacle_count(
+                    spawned_obstacle_count,
+                );
                 if line_block >= 3 {
                     if self.debug {
-                        eprintln!("Fire!!: Must spawn three line!! {}", player_spawned_obstacle_count);
+                        eprintln!(
+                            "Fire!!: Must spawn three line!! {}",
+                            player_spawned_obstacle_count
+                        );
                     }
                     return true;
                 }
@@ -199,7 +251,8 @@ impl Solver {
         }
         let need_kill_line = (DANGER_LINE_HEIGHT - spawned_obstacle_count) as u8;
         for chain_count in 0..DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT {
-            let spawned_obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
+            let spawned_obstacle_count =
+                simulator::calculate_obstacle_count_from_chain_count(chain_count);
             let spawned_line = (spawned_obstacle_count / 10) as u8;
             if spawned_line >= need_kill_line {
                 return chain_count;
@@ -223,10 +276,12 @@ impl Solver {
     }
     pub fn beam_search_config(&self) -> (usize, usize) {
         let player = &self.player;
-        if player.rest_time_milliseconds >= 30000 {//more than 30 seconds
+        if player.rest_time_milliseconds >= 30000 {
+            //more than 30 seconds
             return self.config.beam();
         }
-        if player.rest_time_milliseconds >= 10000 {//more thatn 10 seconds
+        if player.rest_time_milliseconds >= 10000 {
+            //more thatn 10 seconds
             return (5, 100);
         }
         (3, 100)
@@ -252,7 +307,8 @@ impl Solver {
         if self.debug {
             eprintln!("Beam depth: {}, Beam width: {}", beam_depth, beam_width);
         }
-        let mut search_state_heap: Vec<MinMaxHeap<SearchState>> = (0..beam_depth + 1).map(|_| MinMaxHeap::new()).collect();
+        let mut search_state_heap: Vec<MinMaxHeap<SearchState>> =
+            (0..beam_depth + 1).map(|_| MinMaxHeap::new()).collect();
         let mut searched_state = fnv::FnvHashSet::default();
 
         //push an initial search state
@@ -289,14 +345,23 @@ impl Solver {
                         }
 
                         //consider whether solver should fire at depth 0
-                        if depth == 0 && self.should_fire_right_now(chain_count, max_enemy_chain_count, need_kill_chain_count) {
+                        if depth == 0
+                            && self.should_fire_right_now(
+                                chain_count,
+                                max_enemy_chain_count,
+                                need_kill_chain_count,
+                            )
+                        {
                             fire_right_now = true;
                             //pick best chain count one
                             if chain_count > best_search_result.last_chain_count {
                                 best_search_result.last_chain_count = chain_count;
                                 best_search_result.command = Command::Drop((point, *rotate_count));
-                                best_search_result.gain_game_score = simulator::calculate_game_score(chain_count);
-                                best_search_result.cumulative_game_score = search_state.cumulative_game_score() + simulator::calculate_game_score(chain_count);
+                                best_search_result.gain_game_score =
+                                    simulator::calculate_game_score(chain_count);
+                                best_search_result.cumulative_game_score = search_state
+                                    .cumulative_game_score()
+                                    + simulator::calculate_game_score(chain_count);
                                 best_search_result.search_depth = depth;
                                 best_search_result.board = board.clone();
                             }
@@ -307,11 +372,15 @@ impl Solver {
                         //update these values
                         let gain_chain_game_score = simulator::calculate_game_score(chain_count);
                         let next_board = board;
-                        let next_cumulative_game_score = gain_chain_game_score + search_state.cumulative_game_score();
-                        let next_spawn_obstacle_block_count = simulator::calculate_obstacle_count_from_chain_count(chain_count) + search_state.spawn_obstacle_block_count();
+                        let next_cumulative_game_score =
+                            gain_chain_game_score + search_state.cumulative_game_score();
+                        let next_spawn_obstacle_block_count =
+                            simulator::calculate_obstacle_count_from_chain_count(chain_count)
+                                + search_state.spawn_obstacle_block_count();
                         next_search_state.set_board(next_board);
                         next_search_state.set_cumulative_game_score(next_cumulative_game_score);
-                        next_search_state.set_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
+                        next_search_state
+                            .set_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
                         if !next_search_state.is_command() {
                             debug_assert_eq!(depth, 0);
                             next_search_state.set_command(Command::Drop((point, *rotate_count)));
@@ -323,11 +392,17 @@ impl Solver {
                         }
                         //push it to hash set
                         searched_state.insert(next_search_state.zobrist_hash());
-                        debug_assert_eq!(search_state.cumulative_game_score() + gain_chain_game_score, next_search_state.cumulative_game_score());
+                        debug_assert_eq!(
+                            search_state.cumulative_game_score() + gain_chain_game_score,
+                            next_search_state.cumulative_game_score()
+                        );
 
                         // Add a tiny value(0.0 ~ 1.0) to search score
                         // To randomize search score for the diversity of search
-                        let next_search_score = self.evaluate_cache.evaluate_search_score(&mut self.simulator, &next_search_state) + rnd.randf();
+                        let next_search_score = self
+                            .evaluate_cache
+                            .evaluate_search_score(&mut self.simulator, &next_search_state)
+                            + rnd.randf();
                         next_search_state.set_search_score(next_search_score);
 
                         //push it to next beam
@@ -341,11 +416,19 @@ impl Solver {
                             debug_assert!(search_state_heap[depth + 1].len() <= beam_width);
                         }
 
-                        let best_score = evaluate_game_score_by_depth( best_search_result.gain_game_score, best_search_result.search_depth);
-                        let target_score = evaluate_game_score_by_depth(gain_chain_game_score, depth);
-                        if target_score > best_score || (target_score == best_score && chain_count > best_search_result.last_chain_count) {
+                        let best_score = evaluate_game_score_by_depth(
+                            best_search_result.gain_game_score,
+                            best_search_result.search_depth,
+                        );
+                        let target_score =
+                            evaluate_game_score_by_depth(gain_chain_game_score, depth);
+                        if target_score > best_score
+                            || (target_score == best_score
+                                && chain_count > best_search_result.last_chain_count)
+                        {
                             best_search_result.gain_game_score = gain_chain_game_score;
-                            best_search_result.cumulative_game_score = next_search_state.cumulative_game_score();
+                            best_search_result.cumulative_game_score =
+                                next_search_state.cumulative_game_score();
                             best_search_result.last_chain_count = chain_count;
                             best_search_result.search_depth = depth;
                             best_search_result.board = next_search_state.board();
