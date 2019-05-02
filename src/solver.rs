@@ -14,7 +14,7 @@ use crate::solver_config::{SolverConfig, DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT};
 use crate::search_result::SearchResult;
 use self::min_max_heap::MinMaxHeap;
 use crate::simulator::{calculate_obstacle_count, CHAIN_CUMULATIVE_SCORES};
-use crate::evaluation::evaluate_game_score_by_depth;
+use crate::evaluation::{evaluate_game_score_by_depth, EvaluateCache};
 
 
 pub struct Solver {
@@ -24,6 +24,7 @@ pub struct Solver {
     player: GameStatus,
     enemy: GameStatus,
     config: SolverConfig,
+    evaluate_cach: EvaluateCache,
     debug: bool, //debug mode
 }
 
@@ -31,10 +32,10 @@ const MAX_TURN: usize = 500;
 
 impl Solver {
     pub fn default() -> Solver {
-        Solver { packs: Vec::new(), cumulative_sum_pack: [[0; 10]; MAX_TURN], player: GameStatus::default(), enemy: GameStatus::default(), config: SolverConfig::default(), debug: false }
+        Solver { packs: Vec::new(), cumulative_sum_pack: [[0; 10]; MAX_TURN], player: GameStatus::default(), enemy: GameStatus::default(), config: SolverConfig::default(), evaluate_cach: EvaluateCache::new(), debug: false }
     }
     pub fn new(packs: Vec<Vec<(Pack, usize)>>, player: GameStatus, enemy: GameStatus, config: SolverConfig, debug: bool) -> Solver {
-        Solver { packs, player, enemy, config, cumulative_sum_pack: [[0; 10]; MAX_TURN], debug: debug }
+        Solver { packs, player, enemy, config, cumulative_sum_pack: [[0; 10]; MAX_TURN], evaluate_cach:EvaluateCache::new(), debug }
     }
     pub fn set_packs(&mut self, packs: Vec<Vec<(Pack, usize)>>) {
         self.packs = packs;
@@ -295,7 +296,7 @@ impl Solver {
 
                         // Add a tiny value(0.0 ~ 1.0) to search score
                         // To randomize search score for the diversity of search
-                        let next_search_score = evaluation::evaluate_search_score(&next_search_state) + rnd.randf();
+                        let next_search_score = self.evaluate_cach.evaluate_search_score(&next_search_state) + rnd.randf();
                         next_search_state.set_search_score(next_search_score);
 
                         //push it to next beam
