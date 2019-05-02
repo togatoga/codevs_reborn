@@ -161,12 +161,12 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
             //short keima
             if y + 2 < FIELD_HEIGHT && x + 1 < FIELD_WIDTH {
                 if block + board.get(y + 2, x + 1) == ERASING_SUM {
-                    pattern_match_cnt += 1;
+                    pattern_match_cnt += 2;
                 }
             }
             if y + 2 < FIELD_HEIGHT && x > 1 {
                 if block + board.get(y + 2, x - 1) == ERASING_SUM {
-                    pattern_match_cnt += 1;
+                    pattern_match_cnt += 2;
                 }
             }
             /*//big keima
