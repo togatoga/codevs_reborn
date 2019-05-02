@@ -48,9 +48,27 @@ impl EvaluateCache {
         let mut estimated_max_chain_count = 0;
 
         for x in 0..FIELD_WIDTH {
-            let y = board.heights[x] as i8;
+            let y = board.heights[x];
+            let x = x;
+            let mut prune = true;
+            if x > 0 {
+                let left = board.heights[x - 1];
+                if y <= left + 1 {
+                    prune = false;
+                }
+            }
+            if x < FIELD_WIDTH - 1 {
+                let right = board.heights[x + 1];
+                if y <= right + 1{
+                    prune = false;
+                }
+            }
+            if prune {
+                continue;
+            }
+            let y = y as i8;
             let x = x as i8;
-            let mut dropped_num = HashSet::new();
+            let mut dropped_num_bit: u16 = 0;
             for &dyx in DIRECTION_YXS.iter() {
                 if !simulator::is_on_board(y + dyx.0, x + dyx.1) {
                     continue;
@@ -62,11 +80,11 @@ impl EvaluateCache {
                     continue;
                 }
                 let num = ERASING_SUM - neighbor_block;
-                //skip
-                if dropped_num.contains(&num) {
+                if (dropped_num_bit >> num) == 1 {
                     continue;
                 }
-                dropped_num.insert(num);
+                dropped_num_bit |= 1 << num;
+
                 let mut pack = Pack::default();
                 let mut point = x as usize;
                 if x != 9 {
