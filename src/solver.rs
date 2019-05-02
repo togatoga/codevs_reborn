@@ -5,15 +5,13 @@ use crate::scanner;
 use crate::pack::Pack;
 use crate::command::Command;
 use crate::search_state::SearchState;
-use crate::board::{Board, FIELD_WIDTH, INPUT_FIELD_HEIGHT, FIELD_HEIGHT, OBSTACLE_BLOCK, DANGER_LINE_HEIGHT};
+use crate::board::{Board, FIELD_WIDTH, INPUT_FIELD_HEIGHT, OBSTACLE_BLOCK, DANGER_LINE_HEIGHT};
 use crate::xorshift::Xorshift;
-use crate::evaluation;
 use crate::simulator;
 use crate::game_status::GameStatus;
 use crate::solver_config::{SolverConfig, DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT};
 use crate::search_result::SearchResult;
 use self::min_max_heap::MinMaxHeap;
-use crate::simulator::{calculate_obstacle_count, CHAIN_CUMULATIVE_SCORES};
 use crate::evaluation::{evaluate_game_score_by_depth, EvaluateCache};
 
 
@@ -181,7 +179,7 @@ impl Solver {
     fn gaze_enemy_max_chain_count(&self, current_turn: usize) -> u8 {
         let enemy = &self.enemy;
         let mut max_chain_count = 0;
-        for (pack, rotate_count) in self.packs[current_turn].iter() {
+        for (pack, _) in self.packs[current_turn].iter() {
             for point in 0..9 {
                 let mut board = enemy.board.clone();
                 let chain_count = simulator::simulate(&mut board, point, &pack);

@@ -3,7 +3,6 @@ use crate::pack::Pack;
 use crate::simulator;
 use crate::search_state::SearchState;
 use crate::simulator::DIRECTION_YXS;
-use crate::solver_config;
 use std::collections::HashSet;
 use crate::solver_config::DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT;
 use fnv::FnvHashMap;
@@ -19,6 +18,7 @@ const GAME_SCORE_DEPTH_RATES: [f64; 20] = [1.0, 0.9090909090909091, 0.8264462809
 //chain count: 7
 //score: 19
 //line obstacle: (19 / 2) = 9 / 10 = 0
+#[warn(dead_code)]
 const NOT_SPAWN_MAX_CHAIN_COUNT: u8 = 7;
 
 
@@ -33,11 +33,9 @@ impl EvaluateCache {
     //too heavy function
     pub fn estimate_max_chain_count(&mut self, board: &Board) -> u8 {
         if let Some(cache_max_chain_count) = self.cache.get(&board.zobrist_hash()) {
-            return cache_max_chain_count.clone();
+            return *cache_max_chain_count;
         }
         let mut estimated_max_chain_count = 0;
-        let mut estimated_board = board.clone();
-        //drop single block and evaluate chain count
 
         for x in 0..FIELD_WIDTH {
             let y = board.heights[x] as i8;
@@ -67,11 +65,10 @@ impl EvaluateCache {
                     point -= 1;
                     pack.set(3, num);
                 }
-                let mut simulated_board = board.clone();
-                let chain_count = simulator::simulate(&mut simulated_board, point, &pack);
+
+                let chain_count = simulator::simulate(&mut board.clone(), point, &pack);
                 if chain_count > estimated_max_chain_count {
                     estimated_max_chain_count = chain_count;
-                    estimated_board = simulated_board;
                 }
             }
         }

@@ -1,4 +1,4 @@
-use crate::board::{Board, FIELD_HEIGHT, FIELD_WIDTH};
+use crate::board::Board;
 use crate::command::Command;
 
 extern crate csv;
