@@ -211,7 +211,8 @@ fn test_estimate_max_chain_count() {
         [0, 0, 0, 0, 0, 0, 0, 0, 11, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 11, 9],
     ];
-    let max_chain_count = estimate_max_chain_count(&Board::new(board));
+    let mut evaluate_cache = EvaluateCache::new();
+    let max_chain_count = evaluate_cache.estimate_max_chain_count(&Board::new(board));
     debug_assert_eq!(max_chain_count, 1);
 
 
@@ -233,5 +234,6 @@ fn test_estimate_max_chain_count() {
         [0, 0, 0, 8, 1, 4, 8, 0, 0, 0],
         [0, 0, 1, 5, 1, 7, 7, 0, 0, 0]
     ];
+    let max_chain_count = evaluate_cache.estimate_max_chain_count(&Board::new(board));
     debug_assert_eq!(max_chain_count, 12);
 }
