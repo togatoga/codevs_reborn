@@ -3,7 +3,6 @@ use crate::pack::Pack;
 use crate::simulator;
 use crate::search_state::SearchState;
 use crate::simulator::{DIRECTION_YXS, Simulator};
-use std::collections::HashSet;
 use crate::solver_config::DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT;
 use fnv::FnvHashMap;
 use crate::zobrist_hash_table::ZobristHash;
@@ -69,7 +68,12 @@ impl EvaluateCache {
             let y = y as i8;
             let x = x as i8;
             let mut dropped_num_bit: u16 = 0;
+            let mut pack = Pack::default();
             for &dyx in DIRECTION_YXS.iter() {
+                //top
+                if dyx == (1, 0) {
+                    continue;
+                }
                 if !simulator::is_on_board(y + dyx.0, x + dyx.1) {
                     continue;
                 }
@@ -85,8 +89,8 @@ impl EvaluateCache {
                 }
                 dropped_num_bit |= 1 << num;
 
-                let mut pack = Pack::default();
                 let mut point = x as usize;
+                pack.clear();
                 if x != 9 {
                     pack.set(2, num);
                 } else {
