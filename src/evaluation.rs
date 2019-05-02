@@ -2,7 +2,7 @@ use crate::board::{Board, FIELD_WIDTH, EMPTY_BLOCK, OBSTACLE_BLOCK, ERASING_SUM,
 use crate::pack::Pack;
 use crate::simulator;
 use crate::search_state::SearchState;
-use crate::simulator::DIRECTION_YXS;
+use crate::simulator::{DIRECTION_YXS, Simulator};
 use std::collections::HashSet;
 use crate::solver_config::DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT;
 use fnv::FnvHashMap;
@@ -31,7 +31,7 @@ impl EvaluateCache {
         EvaluateCache { cache: FnvHashMap::default() }
     }
     //too heavy function
-    pub fn estimate_max_chain_count(&mut self, board: &Board) -> u8 {
+    pub fn estimate_max_chain_count(&mut self, simulator: &mut Simulator, board: &Board) -> u8 {
         if let Some(cache_max_chain_count) = self.cache.get(&board.zobrist_hash()) {
             return *cache_max_chain_count;
         }
@@ -66,7 +66,7 @@ impl EvaluateCache {
                     pack.set(3, num);
                 }
 
-                let chain_count = simulator::simulate(&mut board.clone(), point, &pack);
+                let chain_count = simulator.simulate(&mut board.clone(), point, &pack);
                 if chain_count > estimated_max_chain_count {
                     estimated_max_chain_count = chain_count;
                 }
@@ -77,14 +77,14 @@ impl EvaluateCache {
     }
 
 
-    pub fn evaluate_search_score(&mut self, search_state: &SearchState) -> f64 {
+    pub fn evaluate_search_score(&mut self, simulator: &mut Simulator, search_state: &SearchState) -> f64 {
         let mut search_score: f64 = 0.0;
 
         let board = search_state.board();
         // game score
         // max chain count
 
-        let estimated_max_chain_count = self.estimate_max_chain_count(&board);
+        let estimated_max_chain_count = self.estimate_max_chain_count(simulator, &board);
         search_score += estimated_max_chain_count as f64 * 10e5;
         // count live block
         search_score += (board.count_live_blocks() as f64 * 1000.0) as f64;

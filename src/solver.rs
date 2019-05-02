@@ -13,6 +13,7 @@ use crate::solver_config::{SolverConfig, DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT};
 use crate::search_result::SearchResult;
 use self::min_max_heap::MinMaxHeap;
 use crate::evaluation::{evaluate_game_score_by_depth, EvaluateCache};
+use crate::simulator::Simulator;
 
 
 pub struct Solver {
@@ -22,7 +23,8 @@ pub struct Solver {
     player: GameStatus,
     enemy: GameStatus,
     config: SolverConfig,
-    evaluate_cach: EvaluateCache,
+    simulator: Simulator,
+    evaluate_cache: EvaluateCache,
     debug: bool, //debug mode
 }
 
@@ -30,10 +32,10 @@ const MAX_TURN: usize = 500;
 
 impl Solver {
     pub fn default() -> Solver {
-        Solver { packs: Vec::new(), cumulative_sum_pack: [[0; 10]; MAX_TURN], player: GameStatus::default(), enemy: GameStatus::default(), config: SolverConfig::default(), evaluate_cach: EvaluateCache::new(), debug: false }
+        Solver { packs: Vec::new(), cumulative_sum_pack: [[0; 10]; MAX_TURN], player: GameStatus::default(), enemy: GameStatus::default(), config: SolverConfig::default(), simulator: Simulator::default(), evaluate_cache: EvaluateCache::new(), debug: false }
     }
     pub fn new(packs: Vec<Vec<(Pack, usize)>>, player: GameStatus, enemy: GameStatus, config: SolverConfig, debug: bool) -> Solver {
-        Solver { packs, player, enemy, config, cumulative_sum_pack: [[0; 10]; MAX_TURN], evaluate_cach:EvaluateCache::new(), debug }
+        Solver { packs, player, enemy, config, cumulative_sum_pack: [[0; 10]; MAX_TURN], simulator: Simulator::new(), evaluate_cache:EvaluateCache::new(), debug }
     }
     pub fn set_packs(&mut self, packs: Vec<Vec<(Pack, usize)>>) {
         self.packs = packs;
@@ -176,13 +178,13 @@ impl Solver {
     }
     //gaze enemy
     #[allow(dead_code)]
-    fn gaze_enemy_max_chain_count(&self, current_turn: usize) -> u8 {
+    fn gaze_enemy_max_chain_count(&mut self, current_turn: usize) -> u8 {
         let enemy = &self.enemy;
         let mut max_chain_count = 0;
         for (pack, _) in self.packs[current_turn].iter() {
             for point in 0..9 {
                 let mut board = enemy.board.clone();
-                let chain_count = simulator::simulate(&mut board, point, &pack);
+                let chain_count = self.simulator.simulate(&mut board, point, &pack);
                 max_chain_count = std::cmp::max(max_chain_count, chain_count);
             }
         }
@@ -249,7 +251,7 @@ impl Solver {
                 for (pack, rotate_count) in self.packs[search_turn].iter() {
                     for point in 0..9 {
                         let mut board = search_state.board();
-                        let chain_count = simulator::simulate(&mut board, point, &pack);
+                        let chain_count = self.simulator.simulate(&mut board, point, &pack);
                         //Next board is dead and not to put it in state heap
                         if board.is_game_over() {
                             continue;
@@ -294,7 +296,7 @@ impl Solver {
 
                         // Add a tiny value(0.0 ~ 1.0) to search score
                         // To randomize search score for the diversity of search
-                        let next_search_score = self.evaluate_cach.evaluate_search_score(&next_search_state) + rnd.randf();
+                        let next_search_score = self.evaluate_cache.evaluate_search_score(&mut self.simulator, &next_search_state) + rnd.randf();
                         next_search_state.set_search_score(next_search_score);
 
                         //push it to next beam
