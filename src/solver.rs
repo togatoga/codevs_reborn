@@ -165,10 +165,15 @@ impl Solver {
 
         if self.enemy.obstacle_block_count < 10 && chain_count >= max_enemy_chain_count {
             let enemy_obstacle_count = simulator::calculate_obstacle_count_from_chain_count(max_enemy_chain_count);
+            let total_enemy_obstacle_count = enemy_obstacle_count + self.enemy.obstacle_block_count;
             let player_obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
             if player_obstacle_count > self.player.obstacle_block_count {
                 let player_spawned_obstacle_count = player_obstacle_count - self.player.obstacle_block_count;
-                let line_block = player_spawned_obstacle_count / 10;
+                if player_spawned_obstacle_count <= total_enemy_obstacle_count {
+                    return false;
+                }
+                let spawned_obstacle_count = player_spawned_obstacle_count - total_enemy_obstacle_count;
+                let line_block = simulator::calculate_spawn_obstacle_line_from_obstacle_count(spawned_obstacle_count);
                 if line_block >= 3 {
                     if self.debug {
                         eprintln!("Fire!!: Must spawn three line!! {}", player_spawned_obstacle_count);

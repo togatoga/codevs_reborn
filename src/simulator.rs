@@ -147,7 +147,9 @@ pub fn is_on_board(y: i8, x: i8) -> bool {
     return true;
 }
 
-
+pub fn calculate_spawn_obstacle_line_from_obstacle_count(obstacle_count: u32) -> u32 {
+    obstacle_count / 10
+}
 pub fn calculate_obstacle_count_from_chain_count(chain_count: u8) -> u32 {
     calculate_obstacle_count(calculate_game_score(chain_count), 0)
 }
