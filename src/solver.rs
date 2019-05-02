@@ -343,7 +343,7 @@ impl Solver {
 
                         let best_score = evaluate_game_score_by_depth( best_search_result.gain_game_score, best_search_result.search_depth);
                         let target_score = evaluate_game_score_by_depth(gain_chain_game_score, depth);
-                        if target_score > best_score {
+                        if target_score > best_score || (target_score == best_score && chain_count > best_search_result.last_chain_count) {
                             best_search_result.gain_game_score = gain_chain_game_score;
                             best_search_result.cumulative_game_score = next_search_state.cumulative_game_score();
                             best_search_result.last_chain_count = chain_count;
