@@ -15,6 +15,125 @@ pub const DIRECTION_YXS: [(i8, i8); 8] = [
     (1, 1), //down right
 ];
 
+
+pub struct Simulator {
+    modified_blocks: Vec<(usize, usize)>,
+    erase_blocks: Vec<(usize, usize)>,
+}
+
+impl Simulator {
+    pub fn new() -> Simulator {
+        let total = FIELD_HEIGHT * FIELD_WIDTH;
+        Simulator { modified_blocks: Vec::with_capacity(total), erase_blocks: Vec::with_capacity(total) }
+    }
+    pub fn default() -> Simulator {
+        let total = FIELD_HEIGHT * FIELD_WIDTH;
+        Simulator { modified_blocks: Vec::with_capacity(total), erase_blocks: Vec::with_capacity(total) }
+    }
+
+    pub fn init(&mut self) {
+        self.modified_blocks.clear();
+        self.erase_blocks.clear();
+        assert_eq!(self.modified_blocks.capacity(), FIELD_HEIGHT * FIELD_WIDTH);
+        assert_eq!(self.erase_blocks.capacity(), FIELD_HEIGHT * FIELD_WIDTH);
+    }
+    pub fn simulate(&mut self, board: &mut board::Board, point: usize, pack: &pack::Pack) -> u8 {
+        self.init();
+        self.drop_pack(board, point, &pack);
+        let mut chain_count: u8 = 0;
+        while !self.modified_blocks.is_empty() {
+            self.calculate_erase_blocks(&board);
+            if self.erase_blocks.is_empty() {
+                break;
+            }
+            chain_count += 1;
+            self.apply_erase_blocks(board);
+        }
+        chain_count
+    }
+
+    fn drop_pack(&mut self, board: &mut board::Board, point: usize, pack: &pack::Pack) {
+        debug_assert!(point <= 8);
+        for idx in (0..4).rev() {
+            let block = pack.get(idx);
+            let x = idx % 2;
+            if block == EMPTY_BLOCK {
+                continue;
+            }
+            let nx = point + x;
+            let ny = board.heights[nx];
+            debug_assert!(nx < FIELD_WIDTH);
+            debug_assert!(ny < FIELD_HEIGHT);
+            board.set(ny, nx, block);
+            board.heights[nx] += 1;
+            self.modified_blocks.push((ny, nx));
+        }
+    }
+
+    fn calculate_erase_blocks(&mut self, board: &board::Board) {
+        self.erase_blocks.clear();
+        for &(y, x) in self.modified_blocks.iter() {
+            let block = board.get(y, x);
+            debug_assert!(block != EMPTY_BLOCK && block != OBSTACLE_BLOCK);
+            let y: i8 = y as i8;
+            let x: i8 = x as i8;
+            for &dyx in DIRECTION_YXS.iter() {
+                if !is_on_board(y + dyx.0, x + dyx.1) {
+                    continue;
+                }
+                let ny: usize = (y + dyx.0) as usize;
+                let nx: usize = (x + dyx.1) as usize;
+                let neighbor_block = board.get(ny, nx);
+                if neighbor_block == EMPTY_BLOCK || neighbor_block == OBSTACLE_BLOCK {
+                    continue;
+                }
+                //block and neighbor_block are erased
+                if block + neighbor_block == ERASING_SUM {
+                    self.erase_blocks.push((y as usize, x as usize));
+                    self.erase_blocks.push((ny, nx));
+                }
+            }
+        }
+        //unique
+        self.erase_blocks.sort();
+        self.erase_blocks.dedup();
+    }
+
+    fn apply_erase_blocks(&mut self, board: &mut board::Board) {
+        debug_assert!(!self.erase_blocks.is_empty());
+
+        let old_heights = board.heights;
+        //erase
+        for &(y, x) in self.erase_blocks.iter() {
+            board.set(y, x, EMPTY_BLOCK);
+            //update heights
+            board.heights[x] = std::cmp::min(board.heights[x], y);
+        }
+        self.modified_blocks.clear();
+        //erase and drop
+        for x in 0..FIELD_WIDTH {
+            let new_height = board.heights[x];
+            let old_height = old_heights[x];
+            for y in new_height + 1..old_height {
+                let drop_block = board.get(y, x);
+                if drop_block == EMPTY_BLOCK {
+                    continue;
+                }
+                let ny = board.heights[x];
+                board.set(ny, x, drop_block);
+                if drop_block != OBSTACLE_BLOCK {
+                    self.modified_blocks.push((ny, x));
+                }
+                board.heights[x] += 1;
+                board.set(y, x, EMPTY_BLOCK);
+            }
+        }
+        //unique
+        self.modified_blocks.sort();
+        self.modified_blocks.dedup();
+    }
+}
+
 pub fn is_on_board(y: i8, x: i8) -> bool {
     if y < 0 || y as usize >= FIELD_HEIGHT {
         return false;
@@ -25,118 +144,18 @@ pub fn is_on_board(y: i8, x: i8) -> bool {
     return true;
 }
 
-fn drop_pack(board: &mut board::Board, point: usize, pack: &pack::Pack) -> Vec<(usize, usize)> {
-    debug_assert!(point <= 8);
-
-    let mut modified_blocks: Vec<(usize, usize)> = Vec::new(); //(y, x)
-
-    for idx in (0..4).rev() {
-        let block = pack.get(idx);
-        let x = idx % 2;
-        if block == EMPTY_BLOCK {
-            continue;
-        }
-        let nx = point + x;
-        let ny = board.heights[nx];
-        debug_assert!(nx < FIELD_WIDTH);
-        debug_assert!(ny < FIELD_HEIGHT);
-        board.set(ny, nx, block);
-        board.heights[nx] += 1;
-        modified_blocks.push((ny, nx));
-    }
-    modified_blocks
-}
 
 pub fn calculate_obstacle_count_from_chain_count(chain_count: u8) -> u32 {
     calculate_obstacle_count(calculate_game_score(chain_count), 0)
 }
+
 pub fn calculate_game_score(chain_count: u8) -> u32 {
     CHAIN_CUMULATIVE_SCORES[chain_count as usize]
 }
+
 pub fn calculate_obstacle_count(chain_score: u32, skill_chain_score: u32) -> u32 {
     chain_score / 2 + skill_chain_score / 2
 }
-
-fn calculate_erase_blocks(board: &board::Board, modified_blocks: &Vec<(usize, usize)>) -> Vec<(usize, usize)> {
-    let mut erase_blocks: Vec<(usize, usize)> = Vec::new();
-    for &(y, x) in modified_blocks.iter() {
-        let block = board.get(y, x);
-        debug_assert!(block != EMPTY_BLOCK && block != OBSTACLE_BLOCK);
-        let y: i8 = y as i8;
-        let x: i8 = x as i8;
-        for &dyx in DIRECTION_YXS.iter() {
-            if !is_on_board(y + dyx.0, x + dyx.1) {
-                continue;
-            }
-            let ny: usize = (y + dyx.0) as usize;
-            let nx: usize = (x + dyx.1) as usize;
-            let neighbor_block = board.get(ny, nx);
-            if neighbor_block == EMPTY_BLOCK || neighbor_block == OBSTACLE_BLOCK {
-                continue;
-            }
-            //block and neighbor_block are erased
-            if block + neighbor_block == ERASING_SUM {
-                erase_blocks.push((y as usize, x as usize));
-                erase_blocks.push((ny, nx));
-            }
-        }
-    }
-    //unique
-    erase_blocks.sort();
-    erase_blocks.dedup();
-    return erase_blocks;
-}
-
-fn apply_erase_blocks(board: &mut board::Board, erase_blocks: &Vec<(usize, usize)>) -> Vec<(usize, usize)> {
-    debug_assert!(!erase_blocks.is_empty());
-
-    let old_heights = board.heights;
-    //erase
-    for &(y, x) in erase_blocks.iter() {
-        board.set(y, x, EMPTY_BLOCK);
-        //update heights
-        board.heights[x] = std::cmp::min(board.heights[x], y);
-    }
-
-    let mut modified_blocks: Vec<(usize, usize)> = Vec::new();
-    //erase and drop
-    for x in 0..FIELD_WIDTH {
-        let new_height = board.heights[x];
-        let old_height = old_heights[x];
-        for y in new_height + 1..old_height {
-            let drop_block = board.get(y, x);
-            if drop_block == EMPTY_BLOCK {
-                continue;
-            }
-            let ny = board.heights[x];
-            board.set(ny, x, drop_block);
-            if drop_block != OBSTACLE_BLOCK {
-                modified_blocks.push((ny, x));
-            }
-            board.heights[x] += 1;
-            board.set(y, x, EMPTY_BLOCK);
-        }
-    }
-    //unique
-    modified_blocks.sort();
-    modified_blocks.dedup();
-    modified_blocks
-}
-
-pub fn simulate(board: &mut board::Board, point: usize, pack: &pack::Pack) -> u8 {
-    let mut modified_blocks = drop_pack(board, point, &pack);
-    let mut chain_count: u8 = 0;
-    while !modified_blocks.is_empty() {
-        let erase_blocks = calculate_erase_blocks(&board, &modified_blocks);
-        if erase_blocks.is_empty() {
-            break;
-        }
-        chain_count += 1;
-        modified_blocks = apply_erase_blocks(board, &erase_blocks);
-    }
-    chain_count
-}
-
 
 #[test]
 fn test_calculate_obstacle_count() {

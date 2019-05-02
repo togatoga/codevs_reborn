@@ -50,5 +50,5 @@ mod solver {
     }
 }
 
-criterion_group!(benches,solver::think, simulator::estimate_max_chain_count);
+criterion_group!(benches,solver::think);
 criterion_main!(benches);
