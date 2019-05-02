@@ -7,6 +7,7 @@ use crate::solver_config;
 use std::collections::HashSet;
 use crate::solver_config::DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT;
 use fnv::FnvHashMap;
+use crate::zobrist_hash_table::ZobristHash;
 
 //max 20
 
@@ -22,7 +23,7 @@ const NOT_SPAWN_MAX_CHAIN_COUNT: u8 = 7;
 
 
 pub struct EvaluateCache {
-    cache: FnvHashMap<Board, u8>,
+    cache: FnvHashMap<ZobristHash, u8>,
 }
 
 impl EvaluateCache {
@@ -31,7 +32,7 @@ impl EvaluateCache {
     }
     //too heavy function
     pub fn estimate_max_chain_count(&mut self, board: &Board) -> u8 {
-        if let Some(cache_max_chain_count) = self.cache.get(board) {
+        if let Some(cache_max_chain_count) = self.cache.get(&board.zobrist_hash()) {
             return cache_max_chain_count.clone();
         }
         let mut estimated_max_chain_count = 0;
@@ -74,7 +75,7 @@ impl EvaluateCache {
                 }
             }
         }
-        self.cache.insert(board.clone(), estimated_max_chain_count);
+        self.cache.insert(board.zobrist_hash(), estimated_max_chain_count);
         estimated_max_chain_count
     }
 
