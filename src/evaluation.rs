@@ -30,6 +30,16 @@ impl EvaluateCache {
     pub fn new() -> EvaluateCache {
         EvaluateCache { cache: FnvHashMap::default() }
     }
+    pub fn default() -> EvaluateCache { EvaluateCache { cache: FnvHashMap::default() } }
+    pub fn empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn len(&self) -> usize {
+        self.cache.len()
+    }
+    pub fn clear(&mut self) {
+        self.cache.clear();
+    }
     //too heavy function
     pub fn estimate_max_chain_count(&mut self, simulator: &mut Simulator, board: &Board) -> u8 {
         if let Some(cache_max_chain_count) = self.cache.get(&board.zobrist_hash()) {
@@ -152,9 +162,6 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
     }
     pattern_match_cnt
 }
-
-
-
 
 
 #[test]
