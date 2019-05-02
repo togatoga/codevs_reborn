@@ -41,6 +41,8 @@ impl Solver {
         self.packs = packs;
     }
     pub fn set_game_status(&mut self, player: GameStatus, enemy: GameStatus) {
+        //check whether solver should clear cache
+        self.clear_cache_if_needed(&player);
         self.player = player;
         self.enemy = enemy;
     }
@@ -50,7 +52,31 @@ impl Solver {
     pub fn set_debug(&mut self, debug: bool) {
         self.debug = debug;
     }
+    fn clear_cache_if_needed(&mut self, player: &GameStatus) {
+        if self.debug {
+            eprintln!("Cache size {}", self.evaluate_cache.len());
+        }
 
+        let previous_obstacle_count = self.player.obstacle_block_count;
+        if previous_obstacle_count == 0 {
+            //new player obstacle_block_count
+            let line_block = player.obstacle_block_count / 10;
+            //enemy spawn new obstacle block
+            if line_block > 0 {
+                if self.debug {
+                    eprintln!("Cache Clear because board get dirty!!");
+                }
+                self.evaluate_cache.clear();
+                debug_assert!(self.evaluate_cache.empty());
+            }
+        }
+        //512MB
+        if self.evaluate_cache.len() > 512 * 1024 * 1024 {
+            eprintln!("Cache Clear because cache is too big: {}", self.evaluate_cache.len());
+            self.evaluate_cache.clear();
+        }
+
+    }
     #[allow(dead_code)]
     pub fn get_cumulative_sum_pack(&self, turn: usize) -> &[u8; 10] {
         &self.cumulative_sum_pack[turn]
