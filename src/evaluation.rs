@@ -6,6 +6,7 @@ use crate::simulator::DIRECTION_YXS;
 use crate::solver_config;
 use std::collections::HashSet;
 use crate::solver_config::DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT;
+use fnv::FnvHashMap;
 
 //max 20
 
@@ -19,50 +20,83 @@ const GAME_SCORE_DEPTH_RATES: [f64; 20] = [1.0, 0.9090909090909091, 0.8264462809
 //line obstacle: (19 / 2) = 9 / 10 = 0
 const NOT_SPAWN_MAX_CHAIN_COUNT: u8 = 7;
 
-pub fn estimate_max_chain_count(board: &Board) -> (u8, Board) {
-    let mut estimated_max_chain_count = 0;
-    let mut estimated_board = board.clone();
-    //drop single block and evaluate chain count
 
-    for x in 0..FIELD_WIDTH {
-        let y = board.heights[x] as i8;
-        let x = x as i8;
-        let mut dropped_num = HashSet::new();
-        for &dyx in DIRECTION_YXS.iter() {
-            if !simulator::is_on_board(y + dyx.0, x + dyx.1) {
-                continue;
-            }
-            let ny: usize = (y + dyx.0) as usize;
-            let nx: usize = (x + dyx.1) as usize;
-            let neighbor_block = board.get(ny, nx);
-            if neighbor_block == EMPTY_BLOCK || neighbor_block == OBSTACLE_BLOCK {
-                continue;
-            }
-            let num = ERASING_SUM - neighbor_block;
-            //skip
-            if dropped_num.contains(&num) {
-                continue;
-            }
-            dropped_num.insert(num);
-            let mut pack = Pack::default();
-            let mut point = x as usize;
-            if x != 9 {
-                pack.set(2, num);
-            } else {
-                point -= 1;
-                pack.set(3, num);
-            }
-            let mut simulated_board = board.clone();
-            let chain_count = simulator::simulate(&mut simulated_board, point, &pack);
-            if chain_count > estimated_max_chain_count {
-                estimated_max_chain_count = chain_count;
-                estimated_board = simulated_board;
+pub struct EvaluateCache {
+    cache: FnvHashMap<Board, u8>,
+}
+
+impl EvaluateCache {
+    pub fn new() -> EvaluateCache {
+        EvaluateCache { cache: FnvHashMap::default() }
+    }
+    //too heavy function
+    pub fn estimate_max_chain_count(&mut self, board: &Board) -> u8 {
+        if let Some(cache_max_chain_count) = self.cache.get(board) {
+            return cache_max_chain_count.clone();
+        }
+        let mut estimated_max_chain_count = 0;
+        let mut estimated_board = board.clone();
+        //drop single block and evaluate chain count
+
+        for x in 0..FIELD_WIDTH {
+            let y = board.heights[x] as i8;
+            let x = x as i8;
+            let mut dropped_num = HashSet::new();
+            for &dyx in DIRECTION_YXS.iter() {
+                if !simulator::is_on_board(y + dyx.0, x + dyx.1) {
+                    continue;
+                }
+                let ny: usize = (y + dyx.0) as usize;
+                let nx: usize = (x + dyx.1) as usize;
+                let neighbor_block = board.get(ny, nx);
+                if neighbor_block == EMPTY_BLOCK || neighbor_block == OBSTACLE_BLOCK {
+                    continue;
+                }
+                let num = ERASING_SUM - neighbor_block;
+                //skip
+                if dropped_num.contains(&num) {
+                    continue;
+                }
+                dropped_num.insert(num);
+                let mut pack = Pack::default();
+                let mut point = x as usize;
+                if x != 9 {
+                    pack.set(2, num);
+                } else {
+                    point -= 1;
+                    pack.set(3, num);
+                }
+                let mut simulated_board = board.clone();
+                let chain_count = simulator::simulate(&mut simulated_board, point, &pack);
+                if chain_count > estimated_max_chain_count {
+                    estimated_max_chain_count = chain_count;
+                    estimated_board = simulated_board;
+                }
             }
         }
+        self.cache.insert(board.clone(), estimated_max_chain_count);
+        estimated_max_chain_count
     }
 
-    (estimated_max_chain_count, estimated_board)
+
+    pub fn evaluate_search_score(&mut self, search_state: &SearchState) -> f64 {
+        let mut search_score: f64 = 0.0;
+
+        let board = search_state.board();
+        // game score
+        // max chain count
+
+        let estimated_max_chain_count = self.estimate_max_chain_count(&board);
+        search_score += estimated_max_chain_count as f64 * 10e5;
+        // count live block
+        search_score += (board.count_live_blocks() as f64 * 1000.0) as f64;
+        // pattern match
+        search_score += evaluate_pattern_match_cnt(&board) as f64 * 1.0;
+
+        search_score
+    }
 }
+
 
 pub fn evaluate_game_score_by_depth(game_score: u32, depth: usize) -> f64 {
     debug_assert!(depth < 20);
@@ -122,25 +156,7 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
 }
 
 
-pub fn evaluate_search_score(search_state: &SearchState) -> f64 {
-    let mut search_score: f64 = 0.0;
 
-    let board = search_state.board();
-    // game score
-    // max chain count
-    let (estimated_max_chain_count, _) = estimate_max_chain_count(&board);
-    search_score += estimated_max_chain_count as f64 * 10e5;
-    // count live block
-    search_score += (board.count_live_blocks() as f64 * 1000.0) as f64;
-    // pattern match
-    search_score += evaluate_pattern_match_cnt(&board) as f64 * 1.0;
-
-    // penalty scores
-    // count live block after estimating
-    //search_score -= estimated_board.count_live_blocks() as f64 * 0.5;
-
-    search_score
-}
 
 
 #[test]
@@ -149,6 +165,7 @@ fn test_evaluate_game_score_by_depth() {
     let score = 120;
     debug_assert_eq!(evaluate_game_score_by_depth(score, depth), 76.80000000000001);
 }
+
 #[test]
 fn test_evaluate_pattern_match() {
     let board = [
@@ -194,27 +211,8 @@ fn test_estimate_max_chain_count() {
         [0, 0, 0, 0, 0, 0, 0, 0, 11, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 11, 9],
     ];
-    let (max_chain_count, estimated_board) = estimate_max_chain_count(&Board::new(board));
-    let board = [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 11, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 11, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 11, 0],
-    ];
+    let max_chain_count = estimate_max_chain_count(&Board::new(board));
     debug_assert_eq!(max_chain_count, 1);
-    debug_assert_eq!(estimated_board, Board::new(board));
 
 
     let board = [
@@ -235,6 +233,5 @@ fn test_estimate_max_chain_count() {
         [0, 0, 0, 8, 1, 4, 8, 0, 0, 0],
         [0, 0, 1, 5, 1, 7, 7, 0, 0, 0]
     ];
-    let (max_chain_count, _) = estimate_max_chain_count(&Board::new(board));
     debug_assert_eq!(max_chain_count, 12);
 }
