@@ -1,18 +1,40 @@
-use crate::board::{Board, FIELD_WIDTH, EMPTY_BLOCK, OBSTACLE_BLOCK, ERASING_SUM, FIELD_HEIGHT};
+use crate::board::{Board, EMPTY_BLOCK, ERASING_SUM, FIELD_HEIGHT, FIELD_WIDTH, OBSTACLE_BLOCK};
 use crate::pack::Pack;
-use crate::simulator;
-use crate::search_state::SearchState;
-use crate::simulator::{DIRECTION_YXS, Simulator};
-use crate::solver_config::DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT;
-use fnv::FnvHashMap;
-use crate::zobrist_hash_table::ZobristHash;
 
+use crate::search_state::SearchState;
+use crate::simulator;
+use crate::simulator::{Simulator, DIRECTION_YXS};
+use crate::solver_config::DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT;
+
+use crate::zobrist_hash_table::ZobristHash;
+use fnv::FnvHashMap;
 //max 20
 
 //(10 / 13) ^ 0 (10 / 13) ^ 1 (10 / 13) ^ 2
 //a = 4 / 5
 //a ^ 0 a ^ 1 a ^  2
-const GAME_SCORE_DEPTH_RATES: [f64; 20] = [1.0, 0.9090909090909091, 0.8264462809917354, 0.7513148009015777, 0.6830134553650706, 0.620921323059155, 0.5644739300537773, 0.5131581182307067, 0.4665073802097333, 0.4240976183724848, 0.38554328942953164, 0.35049389948139237, 0.3186308177103567, 0.2896643797366879, 0.2633312543060799, 0.23939204936916353, 0.21762913579014864, 0.19784466890013513, 0.17985878990921375, 0.16350799082655795];
+const GAME_SCORE_DEPTH_RATES: [f64; 20] = [
+    1.0,
+    0.9090909090909091,
+    0.8264462809917354,
+    0.7513148009015777,
+    0.6830134553650706,
+    0.620921323059155,
+    0.5644739300537773,
+    0.5131581182307067,
+    0.4665073802097333,
+    0.4240976183724848,
+    0.38554328942953164,
+    0.35049389948139237,
+    0.3186308177103567,
+    0.2896643797366879,
+    0.2633312543060799,
+    0.23939204936916353,
+    0.21762913579014864,
+    0.19784466890013513,
+    0.17985878990921375,
+    0.16350799082655795,
+];
 
 //chain count: 7
 //score: 19
@@ -27,9 +49,15 @@ pub struct EvaluateCache {
 
 impl EvaluateCache {
     pub fn new() -> EvaluateCache {
-        EvaluateCache { cache: FnvHashMap::default() }
+        EvaluateCache {
+            cache: FnvHashMap::default(),
+        }
     }
-    pub fn default() -> EvaluateCache { EvaluateCache { cache: FnvHashMap::default() } }
+    pub fn default() -> EvaluateCache {
+        EvaluateCache {
+            cache: FnvHashMap::default(),
+        }
+    }
     pub fn empty(&self) -> bool {
         self.len() == 0
     }
@@ -58,7 +86,7 @@ impl EvaluateCache {
             }
             if x < FIELD_WIDTH - 1 {
                 let right = board.heights[x + 1];
-                if y <= right + 1{
+                if y <= right + 1 {
                     prune = false;
                 }
             }
@@ -104,12 +132,16 @@ impl EvaluateCache {
                 }
             }
         }
-        self.cache.insert(board.zobrist_hash(), estimated_max_chain_count);
+        self.cache
+            .insert(board.zobrist_hash(), estimated_max_chain_count);
         estimated_max_chain_count
     }
 
-
-    pub fn evaluate_search_score(&mut self, simulator: &mut Simulator, search_state: &SearchState) -> f64 {
+    pub fn evaluate_search_score(
+        &mut self,
+        simulator: &mut Simulator,
+        search_state: &SearchState,
+    ) -> f64 {
         let mut search_score: f64 = 0.0;
 
         let board = search_state.board();
@@ -141,7 +173,8 @@ pub fn evaluate_game_score_for_bomber(chain_count: u8, depth: usize) -> f64 {
 }
 pub fn evaluate_game_score_by_depth(game_score: u32, depth: usize) -> f64 {
     debug_assert!(depth < 20);
-    let max_fatal_gain_score = simulator::calculate_obstacle_count_from_chain_count(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT);
+    let max_fatal_gain_score =
+        simulator::calculate_obstacle_count_from_chain_count(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT);
     //small chain count
     /*if game_score <= simulator::calculate_game_score(NOT_SPAWN_MAX_CHAIN_COUNT) {
         return 1.0 * GAME_SCORE_DEPTH_RATES[depth] * GAME_SCORE_DEPTH_RATES[depth];
@@ -201,7 +234,10 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
 fn test_evaluate_game_score_by_depth() {
     let depth = 2;
     let score = 120;
-    debug_assert_eq!(evaluate_game_score_by_depth(score, depth), 76.80000000000001);
+    debug_assert_eq!(
+        evaluate_game_score_by_depth(score, depth),
+        76.80000000000001
+    );
 }
 
 #[test]
@@ -251,7 +287,8 @@ fn test_estimate_max_chain_count() {
     ];
     let mut evaluate_cache = EvaluateCache::new();
 
-    let max_chain_count = evaluate_cache.estimate_max_chain_count(&mut Simulator::new(), &Board::new(board));
+    let max_chain_count =
+        evaluate_cache.estimate_max_chain_count(&mut Simulator::new(), &Board::new(board));
     debug_assert_eq!(max_chain_count, 1);
 
 
@@ -271,8 +308,9 @@ fn test_estimate_max_chain_count() {
         [0, 0, 0, 8, 6, 1, 5, 0, 0, 0],
         [0, 0, 0, 1, 5, 3, 3, 0, 0, 0],
         [0, 0, 0, 8, 1, 4, 8, 0, 0, 0],
-        [0, 0, 1, 5, 1, 7, 7, 0, 0, 0]
+        [0, 0, 1, 5, 1, 7, 7, 0, 0, 0],
     ];
-    let max_chain_count = evaluate_cache.estimate_max_chain_count(&mut Simulator::new(), &Board::new(board));
+    let max_chain_count =
+        evaluate_cache.estimate_max_chain_count(&mut Simulator::new(), &Board::new(board));
     debug_assert_eq!(max_chain_count, 12);
 }
