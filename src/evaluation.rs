@@ -127,7 +127,18 @@ impl EvaluateCache {
     }
 }
 
-
+pub fn evaluate_game_score_for_bomber(chain_count: u8, depth: usize) -> f64 {
+    debug_assert!(depth < 20);
+    if chain_count == 1 {
+        return -100.0;
+    } else if chain_count == 2 {
+        return -200.0;
+    }
+    //bomber
+    let game_score = simulator::calculate_game_score(chain_count);
+    let max_score = simulator::calculate_obstacle_count_from_chain_count(3);
+    std::cmp::min(max_score, game_score) as f64 * GAME_SCORE_DEPTH_RATES[depth]
+}
 pub fn evaluate_game_score_by_depth(game_score: u32, depth: usize) -> f64 {
     debug_assert!(depth < 20);
     let max_fatal_gain_score = simulator::calculate_obstacle_count_from_chain_count(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT);
