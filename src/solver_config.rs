@@ -16,7 +16,7 @@ pub const DEFAULT_GAZE_BEAM_DEPTH: usize = 3;
 pub const DEFAULT_GAZE_BEAM_WIDTH: usize = 50;
 
 
-pub const SOLVER_VERSION: &str = "2.9";
+pub const SOLVER_VERSION: &str = "3.0";
 impl SolverConfig {
     pub fn default() -> SolverConfig {
         SolverConfig {
