@@ -80,13 +80,7 @@ fn run(matches: ArgMatches) {
         //read player data
         let player = Solver::read_game_status(&mut sc);
         let enemy = Solver::read_game_status(&mut sc);
-        //force to spell magic!!!
-        if player.skill_point >= 80 {
-            Solver::output_command(Command::Spell);
-            continue;
-        }
         solver.set_game_status(player, enemy);
-
         let best_result = solver.think(current_turn);
         Solver::output_command(best_result.command);
     }

@@ -1,10 +1,10 @@
-
 extern crate fnv;
 extern crate min_max_heap;
+
 use self::min_max_heap::MinMaxHeap;
-use crate::board::{Board, DANGER_LINE_HEIGHT, FIELD_WIDTH, INPUT_FIELD_HEIGHT, OBSTACLE_BLOCK};
+use crate::board::{Board, DANGER_LINE_HEIGHT, FIELD_WIDTH, INPUT_FIELD_HEIGHT, OBSTACLE_BLOCK, FIELD_HEIGHT};
 use crate::command::Command;
-use crate::evaluation::{evaluate_game_score_by_depth, EvaluateCache};
+use crate::evaluation::{evaluate_game_score_by_depth, EvaluateCache, evaluate_game_score_for_bomber};
 use crate::game_status::GameStatus;
 use crate::pack::Pack;
 use crate::scanner;
@@ -101,7 +101,6 @@ impl Solver {
             );
             self.evaluate_cache.clear();
         }
-
     }
     #[allow(dead_code)]
     pub fn get_cumulative_sum_pack(&self, turn: usize) -> &[u8; 10] {
@@ -263,11 +262,10 @@ impl Solver {
     //gaze enemy
     #[allow(dead_code)]
     fn gaze_enemy_max_chain_count(&mut self, current_turn: usize) -> u8 {
-        let enemy = &self.enemy;
         let mut max_chain_count = 0;
         for (pack, _) in self.packs[current_turn].iter() {
             for point in 0..9 {
-                let mut board = enemy.board.clone();
+                let mut board = self.enemy.board.clone();
                 let chain_count = self.simulator.simulate(&mut board, point, &pack);
                 max_chain_count = std::cmp::max(max_chain_count, chain_count);
             }
@@ -287,19 +285,43 @@ impl Solver {
         (3, 100)
     }
     pub fn think(&mut self, current_turn: usize) -> SearchResult {
-        let player = &self.player;
-        let enemy = &self.enemy;
         let mut best_search_result = SearchResult::default();
+
+        let mut kill_bomber = false;
+        if self.enemy.skill_point >= 48 {
+            if self.player.cumulative_game_score >= self.enemy.cumulative_game_score {
+                let diff = self.player.cumulative_game_score - self.enemy.cumulative_game_score;
+                if diff >= 50 {
+                    kill_bomber = true;
+                    if self.debug {
+                        eprintln!("Kill Bomber!!");
+                    }
+                }
+            }
+        }
+        if !kill_bomber && self.player.skill_point >= 80 {
+            for y in 0..FIELD_HEIGHT {
+                for x in 0..FIELD_WIDTH {
+                    //at least one 5
+                    if self.player.board.get(y, x) == 5 {
+                        best_search_result.command = Command::Spell;
+                        if self.debug {
+                            eprintln!("Sepll Magic!!");
+                        }
+                        return best_search_result;
+                    }
+                }
+            }
+        }
         if self.debug {
             eprintln!("Turn: {}", current_turn);
-            eprintln!("Rest Time(msec): {}", player.rest_time_milliseconds);
+            eprintln!("Rest Time(msec): {}", self.player.rest_time_milliseconds);
         }
-
         let mut root_search_state = SearchState::default();
-        root_search_state.set_board(player.board);
-        root_search_state.set_obstacle_block_count(player.obstacle_block_count);
-        root_search_state.set_spawn_obstacle_block_count(enemy.obstacle_block_count);
-        root_search_state.set_cumulative_game_score(player.cumulative_game_score);
+        root_search_state.set_board(self.player.board);
+        root_search_state.set_obstacle_block_count(self.player.obstacle_block_count);
+        root_search_state.set_spawn_obstacle_block_count(self.enemy.obstacle_block_count);
+        root_search_state.set_cumulative_game_score(self.player.cumulative_game_score);
 
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.beam_search_config();
@@ -347,10 +369,10 @@ impl Solver {
                         //consider whether solver should fire at depth 0
                         if depth == 0
                             && self.should_fire_right_now(
-                                chain_count,
-                                max_enemy_chain_count,
-                                need_kill_chain_count,
-                            )
+                            chain_count,
+                            max_enemy_chain_count,
+                            need_kill_chain_count,
+                        )
                         {
                             fire_right_now = true;
                             //pick best chain count one
@@ -420,11 +442,18 @@ impl Solver {
                             best_search_result.gain_game_score,
                             best_search_result.search_depth,
                         );
-                        let target_score =
-                            evaluate_game_score_by_depth(gain_chain_game_score, depth);
+                        let mut target_score = 0.0;
+                        //NOTE
+                        //This method is very first aid
+                        //Kill bomber
+                        if kill_bomber {
+                            target_score = evaluate_game_score_for_bomber(chain_count, depth);
+                        } else {
+                            target_score = evaluate_game_score_by_depth(gain_chain_game_score, depth);
+                        }
                         if target_score > best_score
                             || (target_score == best_score
-                                && chain_count > best_search_result.last_chain_count)
+                            && chain_count > best_search_result.last_chain_count)
                         {
                             best_search_result.gain_game_score = gain_chain_game_score;
                             best_search_result.cumulative_game_score =
