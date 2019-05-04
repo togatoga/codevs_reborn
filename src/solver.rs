@@ -451,14 +451,19 @@ impl Solver {
                         //Kill bomber
                         if kill_bomber {
                             target_score = evaluate_game_score_for_bomber(chain_count, depth)
-                                + next_search_score.log10() * GAME_SCORE_DEPTH_RATES[depth];
+                        /*+ 0.000001
+                         * next_search_score.log10()
+                         * GAME_SCORE_DEPTH_RATES[depth];*/
                         } else {
-                            target_score =
-                                evaluate_game_score_by_depth(gain_chain_game_score, depth)
-                                    + next_search_score.log10() * GAME_SCORE_DEPTH_RATES[depth];
+                            target_score = 1e5
+                                * evaluate_game_score_by_depth(gain_chain_game_score, depth)
+                                + 0.000001
+                                    * next_search_score.log10()
+                                    * GAME_SCORE_DEPTH_RATES[depth];
                         }
                         if target_score > best_search_result.search_result_score {
                             /*if self.debug {
+                                // eprintln!("{}", 0.000001 * next_search_score.log10());
                                 eprintln!(
                                     "depth {}, chain_count {} target_score {}",
                                     depth, chain_count, target_score
