@@ -13,7 +13,7 @@ use fnv::FnvHashMap;
 //(10 / 13) ^ 0 (10 / 13) ^ 1 (10 / 13) ^ 2
 //a = 4 / 5
 //a ^ 0 a ^ 1 a ^  2
-const GAME_SCORE_DEPTH_RATES: [f64; 20] = [
+pub const GAME_SCORE_DEPTH_RATES: [f64; 20] = [
     1.0,
     0.9090909090909091,
     0.8264462809917354,

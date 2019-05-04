@@ -2,9 +2,14 @@ extern crate fnv;
 extern crate min_max_heap;
 
 use self::min_max_heap::MinMaxHeap;
-use crate::board::{Board, DANGER_LINE_HEIGHT, FIELD_WIDTH, INPUT_FIELD_HEIGHT, OBSTACLE_BLOCK, FIELD_HEIGHT};
+use crate::board::{
+    Board, DANGER_LINE_HEIGHT, FIELD_HEIGHT, FIELD_WIDTH, INPUT_FIELD_HEIGHT, OBSTACLE_BLOCK,
+};
 use crate::command::Command;
-use crate::evaluation::{evaluate_game_score_by_depth, EvaluateCache, evaluate_game_score_for_bomber};
+use crate::evaluation::{
+    evaluate_game_score_by_depth, evaluate_game_score_for_bomber, EvaluateCache,
+    GAME_SCORE_DEPTH_RATES,
+};
 use crate::game_status::GameStatus;
 use crate::pack::Pack;
 use crate::scanner;
@@ -14,6 +19,7 @@ use crate::simulator;
 use crate::simulator::Simulator;
 use crate::solver_config::{SolverConfig, DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT};
 use crate::xorshift::Xorshift;
+
 
 pub struct Solver {
     packs: Vec<Vec<(Pack, usize)>>,
@@ -369,10 +375,10 @@ impl Solver {
                         //consider whether solver should fire at depth 0
                         if depth == 0
                             && self.should_fire_right_now(
-                            chain_count,
-                            max_enemy_chain_count,
-                            need_kill_chain_count,
-                        )
+                                chain_count,
+                                max_enemy_chain_count,
+                                need_kill_chain_count,
+                            )
                         {
                             fire_right_now = true;
                             //pick best chain count one
@@ -438,23 +444,27 @@ impl Solver {
                             debug_assert!(search_state_heap[depth + 1].len() <= beam_width);
                         }
 
-                        let best_score = evaluate_game_score_by_depth(
-                            best_search_result.gain_game_score,
-                            best_search_result.search_depth,
-                        );
+
                         let mut target_score = 0.0;
                         //NOTE
                         //This method is very first aid
                         //Kill bomber
                         if kill_bomber {
-                            target_score = evaluate_game_score_for_bomber(chain_count, depth);
+                            target_score = evaluate_game_score_for_bomber(chain_count, depth)
+                                + next_search_score.log10() * GAME_SCORE_DEPTH_RATES[depth];
                         } else {
-                            target_score = evaluate_game_score_by_depth(gain_chain_game_score, depth);
+                            target_score =
+                                evaluate_game_score_by_depth(gain_chain_game_score, depth)
+                                    + next_search_score.log10() * GAME_SCORE_DEPTH_RATES[depth];
                         }
-                        if target_score > best_score
-                            || (target_score == best_score
-                            && chain_count > best_search_result.last_chain_count)
-                        {
+                        if target_score > best_search_result.search_result_score {
+                            if self.debug {
+                                eprintln!(
+                                    "depth {}, chain_count {} target_score {}",
+                                    depth, chain_count, target_score
+                                );
+                            }
+                            best_search_result.search_result_score = target_score;
                             best_search_result.gain_game_score = gain_chain_game_score;
                             best_search_result.cumulative_game_score =
                                 next_search_state.cumulative_game_score();
