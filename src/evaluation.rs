@@ -44,7 +44,7 @@ const NOT_SPAWN_MAX_CHAIN_COUNT: u8 = 7;
 
 
 pub struct EvaluateCache {
-    cache: FnvHashMap<ZobristHash, u8>,
+    cache: FnvHashMap<ZobristHash, (u8, usize)>,
 }
 
 impl EvaluateCache {
@@ -68,11 +68,11 @@ impl EvaluateCache {
         self.cache.clear();
     }
     //too heavy function
-    pub fn estimate_max_chain_count(&mut self, simulator: &mut Simulator, board: &Board) -> u8 {
+    pub fn estimate_max_chain_count(&mut self, simulator: &mut Simulator, board: &Board) -> (u8, usize) {
         if let Some(cache_max_chain_count) = self.cache.get(&board.zobrist_hash()) {
             return *cache_max_chain_count;
         }
-        let mut estimated_max_chain_count = 0;
+        let mut estimated_max_chain: (u8, usize) = (0, 0);
 
         for x in 0..FIELD_WIDTH {
             let y = board.heights[x];
@@ -127,14 +127,14 @@ impl EvaluateCache {
                 }
 
                 let chain_count = simulator.simulate(&mut board.clone(), point, &pack);
-                if chain_count > estimated_max_chain_count {
-                    estimated_max_chain_count = chain_count;
+                if (chain_count, y as usize) > estimated_max_chain {
+                    estimated_max_chain = (chain_count, y as usize);
                 }
             }
         }
         self.cache
-            .insert(board.zobrist_hash(), estimated_max_chain_count);
-        estimated_max_chain_count
+            .insert(board.zobrist_hash(), estimated_max_chain);
+        estimated_max_chain
     }
 
     pub fn evaluate_search_score(
@@ -148,10 +148,13 @@ impl EvaluateCache {
         // game score
         // max chain count
 
-        let estimated_max_chain_count = self.estimate_max_chain_count(simulator, &board);
+        let (estimated_max_chain_count, height) = self.estimate_max_chain_count(simulator, &board);
+
         search_score += estimated_max_chain_count as f64 * 10e5;
+        search_score += (height as f64 * 0.1);
         // count live block
         search_score += (board.count_live_blocks() as f64 * 1000.0) as f64;
+
         // pattern match
         search_score += evaluate_pattern_match_cnt(&board) as f64 * 10.0;
 
@@ -211,6 +214,7 @@ pub fn evaluate_game_score_for_bomber(chain_count: u8, depth: usize) -> f64 {
     let max_score = simulator::calculate_obstacle_count_from_chain_count(3);
     std::cmp::min(max_score, game_score) as f64 * GAME_SCORE_DEPTH_RATES[depth]
 }
+
 pub fn evaluate_game_score_by_depth(game_score: u32, depth: usize) -> f64 {
     debug_assert!(depth < 20);
 
@@ -325,9 +329,9 @@ fn test_estimate_max_chain_count() {
     ];
     let mut evaluate_cache = EvaluateCache::new();
 
-    let max_chain_count =
+    let (max_chain_count, height) =
         evaluate_cache.estimate_max_chain_count(&mut Simulator::new(), &Board::new(board));
-    debug_assert_eq!(max_chain_count, 1);
+    debug_assert_eq!((max_chain_count, height), (1, 1));
 
 
     let board = [
@@ -348,7 +352,7 @@ fn test_estimate_max_chain_count() {
         [0, 0, 0, 8, 1, 4, 8, 0, 0, 0],
         [0, 0, 1, 5, 1, 7, 7, 0, 0, 0],
     ];
-    let max_chain_count =
+    let (max_chain_count, height) =
         evaluate_cache.estimate_max_chain_count(&mut Simulator::new(), &Board::new(board));
-    debug_assert_eq!(max_chain_count, 12);
+    debug_assert_eq!((max_chain_count, height), (12, 0));
 }
