@@ -175,10 +175,6 @@ pub fn evaluate_game_score_by_depth(game_score: u32, depth: usize) -> f64 {
     debug_assert!(depth < 20);
     let max_fatal_gain_score =
         simulator::calculate_obstacle_count_from_chain_count(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT);
-    //small chain count
-    /*if game_score <= simulator::calculate_game_score(NOT_SPAWN_MAX_CHAIN_COUNT) {
-        return 1.0 * GAME_SCORE_DEPTH_RATES[depth] * GAME_SCORE_DEPTH_RATES[depth];
-    }*/
     std::cmp::min(max_fatal_gain_score, game_score) as f64 * GAME_SCORE_DEPTH_RATES[depth]
 }
 
