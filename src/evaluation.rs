@@ -153,7 +153,47 @@ impl EvaluateCache {
         // count live block
         search_score += (board.count_live_blocks() as f64 * 1000.0) as f64;
         // pattern match
-        search_score += evaluate_pattern_match_cnt(&board) as f64 * 1.0;
+        search_score += evaluate_pattern_match_cnt(&board) as f64 * 10.0;
+
+        for x in 0..FIELD_WIDTH {
+            //height
+            search_score += 0.01 * board.heights[x] as f64;
+
+            for y in 0..board.heights[x] {
+                debug_assert_ne!(board.get(y, x), EMPTY_BLOCK);
+                if board.get(y, x) == OBSTACLE_BLOCK {
+                    continue;
+                }
+                //down right
+                if y >= 1 && x + 1 < FIELD_WIDTH {
+                    let target_block = board.get(y - 1, x + 1);
+                    if target_block != OBSTACLE_BLOCK && target_block != EMPTY_BLOCK {
+                        search_score += 0.1;
+                    }
+                }
+                //right
+                if x + 1 < FIELD_WIDTH {
+                    let target_block = board.get(y, x + 1);
+                    if target_block != OBSTACLE_BLOCK && target_block != EMPTY_BLOCK {
+                        search_score += 0.1;
+                    }
+                }
+                //top right
+                if y + 1 < FIELD_HEIGHT && x + 1 < FIELD_WIDTH {
+                    let target_block = board.get(y + 1, x + 1);
+                    if target_block != OBSTACLE_BLOCK && target_block != EMPTY_BLOCK {
+                        search_score += 0.1;
+                    }
+                }
+                //top
+                if y + 1 < FIELD_HEIGHT {
+                    let target_block = board.get(y + 1, x);
+                    if target_block != OBSTACLE_BLOCK && target_block != EMPTY_BLOCK {
+                        search_score += 0.1;
+                    }
+                }
+            }
+        }
 
         search_score
     }
