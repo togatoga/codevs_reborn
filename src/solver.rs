@@ -458,12 +458,12 @@ impl Solver {
                                     + next_search_score.log10() * GAME_SCORE_DEPTH_RATES[depth];
                         }
                         if target_score > best_search_result.search_result_score {
-                            if self.debug {
+                            /*if self.debug {
                                 eprintln!(
                                     "depth {}, chain_count {} target_score {}",
                                     depth, chain_count, target_score
                                 );
-                            }
+                            }*/
                             best_search_result.search_result_score = target_score;
                             best_search_result.gain_game_score = gain_chain_game_score;
                             best_search_result.cumulative_game_score =
