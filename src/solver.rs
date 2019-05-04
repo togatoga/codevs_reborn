@@ -341,7 +341,7 @@ impl Solver {
 
         //push an initial search state
         search_state_heap[0].push(root_search_state);
-        let mut rnd = Xorshift::with_seed((current_turn + 31) as u64);
+        let mut rnd = Xorshift::with_seed((current_turn + 28) as u64);
         let mut fire_right_now = false;
         //gaze enemy...
         let max_enemy_chain_count = self.gaze_enemy_max_chain_count(current_turn);
