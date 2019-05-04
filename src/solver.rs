@@ -450,10 +450,10 @@ impl Solver {
                         //This method is very first aid
                         //Kill bomber
                         if kill_bomber {
-                            target_score = evaluate_game_score_for_bomber(chain_count, depth)
-                        /*+ 0.000001
-                         * next_search_score.log10()
-                         * GAME_SCORE_DEPTH_RATES[depth];*/
+                            target_score = 1e5 * evaluate_game_score_for_bomber(chain_count, depth)
+                                + 0.000001
+                                    * next_search_score.log10()
+                                    * GAME_SCORE_DEPTH_RATES[depth];
                         } else {
                             target_score = 1e5
                                 * evaluate_game_score_by_depth(gain_chain_game_score, depth)
