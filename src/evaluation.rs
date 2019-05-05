@@ -227,7 +227,6 @@ pub fn evaluate_game_score_by_depth(game_score: u32, depth: usize) -> f64 {
 }
 
 pub fn evaluate_pattern_match_cnt(board: &Board) -> (u8, u8) {
-
     let mut keima = 0;
     let mut jump = 0;
     for x in 0..FIELD_WIDTH {
@@ -309,6 +308,28 @@ fn test_evaluate_pattern_match() {
     let board = Board::new(board);
     let (keima, jump) = evaluate_pattern_match_cnt(&board);
     debug_assert_eq!((keima, jump), (2, 1));
+
+
+    let board = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 2, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0, 4, 7, 0, 0, 0],
+        [0, 0, 0, 0, 0, 8, 4, 0, 0, 0],
+        [0, 0, 0, 0, 0, 9, 3, 0, 0, 0],
+        [0, 0, 0, 0, 0, 6, 3, 0, 0, 0],
+        [0, 0, 0, 0, 0, 6, 2, 0, 0, 0],
+        [0, 0, 0, 0, 8, 6, 2, 0, 0, 0],
+        [0, 0, 0, 0, 8, 9, 6, 0, 0, 0],
+        [0, 0, 0, 0, 7, 8, 8, 0, 0, 0],
+        [0, 0, 0, 0, 8, 4, 4, 0, 0, 0],
+        [0, 0, 0, 6, 1, 3, 2, 4, 0, 0]
+    ];
+    let (keima, jump) = evaluate_pattern_match_cnt(&Board::new(board));
+    debug_assert_eq!((keima, jump), (5 , 5));
 }
 
 #[test]
@@ -359,4 +380,25 @@ fn test_estimate_max_chain_count() {
     let (max_chain_count, height) =
         evaluate_cache.estimate_max_chain_count(&mut Simulator::new(), &Board::new(board));
     debug_assert_eq!((max_chain_count, height), (12, 0));
+
+     let board = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 2, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0, 4, 7, 0, 0, 0],
+        [0, 0, 0, 0, 0, 8, 4, 0, 0, 0],
+        [0, 0, 0, 0, 0, 9, 3, 0, 0, 0],
+        [0, 0, 0, 0, 0, 6, 3, 0, 0, 0],
+        [0, 0, 0, 0, 0, 6, 2, 0, 0, 0],
+        [0, 0, 0, 0, 8, 6, 2, 0, 0, 0],
+        [0, 0, 0, 0, 8, 9, 6, 0, 0, 0],
+        [0, 0, 0, 0, 7, 8, 8, 0, 0, 0],
+        [0, 0, 0, 0, 8, 4, 4, 0, 0, 0],
+        [0, 0, 0, 6, 1, 3, 2, 4, 0, 0]
+    ];
+    let (max_chain_count, height) = evaluate_cache.estimate_max_chain_count(&mut Simulator::new(), &Board::new(board));
+    debug_assert_eq!((max_chain_count, height), (11, 1));
 }
