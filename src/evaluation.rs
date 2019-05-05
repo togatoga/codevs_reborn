@@ -288,6 +288,14 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> (u8, u8) {
 
 
 #[test]
+fn test_evaluate_search_result_score() {
+    let p1 = evaluate_search_result_score(simulator::calculate_game_score(10), 100.0, 1);
+    let p2 = evaluate_search_result_score(simulator::calculate_game_score(9), 6727592.0, 1);
+    assert!(p1 >= p2);
+}
+
+
+#[test]
 fn test_evaluate_game_score_by_depth() {
     
     let score = simulator::calculate_game_score(10);
