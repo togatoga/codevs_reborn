@@ -321,11 +321,11 @@ impl Solver {
             eprintln!("Turn: {}", current_turn);
             eprintln!("Rest Time(msec): {}", self.player.rest_time_milliseconds());
         }
-        let mut root_search_state = SearchState::default();
-        root_search_state.set_board(self.player.board());
-        root_search_state.set_obstacle_block_count(self.player.obstacle_block_count());
-        root_search_state.set_spawn_obstacle_block_count(self.enemy.obstacle_block_count());
-        root_search_state.set_cumulative_game_score(self.player.cumulative_game_score());
+        let root_search_state = SearchState::default()
+            .with_board(self.player.board())
+            .with_obstacle_block_count(self.player.obstacle_block_count())
+            .with_spawn_obstacle_block_count(self.enemy.obstacle_block_count())
+            .with_cumulative_game_score(self.player.cumulative_game_score());
 
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.beam_search_config();
@@ -393,8 +393,8 @@ impl Solver {
                             }
                         }
 
-                        //create next search state from a previous state
-                        let mut next_search_state = search_state.clone();
+
+
                         //update these values
                         let gain_chain_game_score = simulator::calculate_game_score(chain_count);
                         let next_board = board;
@@ -403,10 +403,11 @@ impl Solver {
                         let next_spawn_obstacle_block_count =
                             simulator::calculate_obstacle_count_from_chain_count(chain_count)
                                 + search_state.spawn_obstacle_block_count();
-                        next_search_state.set_board(next_board);
-                        next_search_state.set_cumulative_game_score(next_cumulative_game_score);
-                        next_search_state
-                            .set_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
+                        //create next search state from a previous state
+                        let mut next_search_state = search_state.clone()
+                            .with_board(next_board)
+                            .with_cumulative_game_score(next_cumulative_game_score)
+                            .with_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
                         if !next_search_state.is_command() {
                             debug_assert_eq!(depth, 0);
                             next_search_state.set_command(Command::Drop((point, *rotate_count)));

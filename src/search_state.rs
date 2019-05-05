@@ -7,8 +7,10 @@ use crate::xorshift::Xorshift;
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct SearchState {
     board: Board,
-    obstacle_block_count: u32, //obstacle block count what enemy spawned and attacked player
-    spawn_obstacle_block_count: u32, //spawn obstacle block count what player spawned and attacked enemy
+    obstacle_block_count: u32,
+    //obstacle block count what enemy spawned and attacked player
+    spawn_obstacle_block_count: u32,
+    //spawn obstacle block count what player spawned and attacked enemy
     skill_point: u32,
     cumulative_game_score: u32,
     command: Option<Command>,
@@ -55,26 +57,32 @@ impl SearchState {
     pub fn obstacle_block_count(&self) -> u32 {
         self.obstacle_block_count
     }
-    pub fn set_obstacle_block_count(&mut self, count: u32) {
+    pub fn with_obstacle_block_count(mut self, count: u32) -> Self
+    {
         self.obstacle_block_count = count;
+        self
     }
     pub fn spawn_obstacle_block_count(&self) -> u32 {
         self.spawn_obstacle_block_count
     }
-    pub fn set_spawn_obstacle_block_count(&mut self, count: u32) {
+    pub fn with_spawn_obstacle_block_count(mut self, count: u32) -> Self {
         self.spawn_obstacle_block_count += count;
+        self
     }
     pub fn board(&self) -> Board {
         self.board
     }
-    pub fn set_board(&mut self, board: Board) {
+    pub fn with_board(mut self, board: Board) -> Self
+    {
         self.board = board;
+        self
     }
     pub fn cumulative_game_score(&self) -> u32 {
         self.cumulative_game_score
     }
-    pub fn set_cumulative_game_score(&mut self, cumulative_game_score: u32) {
+    pub fn with_cumulative_game_score(mut self, cumulative_game_score: u32) -> Self {
         self.cumulative_game_score = cumulative_game_score;
+        self
     }
     pub fn search_score(&self) -> f64 {
         self.search_score
@@ -82,9 +90,18 @@ impl SearchState {
     pub fn set_search_score(&mut self, search_score: f64) {
         self.search_score = search_score;
     }
+    pub fn with_search_score(mut self, search_score: f64) -> Self {
+        self.search_score = search_score;
+        self
+    }
     pub fn set_command(&mut self, command: Command) {
+        self.command = Some(command);
+    }
+    pub fn with_command(mut self, command: Command) -> Self
+    {
         debug_assert!(self.command.is_none());
         self.command = Some(command);
+        self
     }
     pub fn is_command(&self) -> bool {
         self.command.is_some()
@@ -106,12 +123,9 @@ impl SearchState {
 #[test]
 fn test_compare_search_state() {
     extern crate min_max_heap;
-    let mut lower = SearchState::default();
-    lower.set_search_score(-1000.0);
-    let mut med = SearchState::default();
-    med.set_search_score(-1000.0);
-    let mut higher = SearchState::default();
-    higher.set_search_score(1000.0);
+    let lower = SearchState::default().with_search_score(-1000.0);
+    let med = SearchState::default().with_search_score(-100.0);
+    let higher = SearchState::default().with_search_score(10000.0);
     let mut heaps = min_max_heap::MinMaxHeap::new();
     heaps.push(med);
     heaps.push(higher);
