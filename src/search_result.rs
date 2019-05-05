@@ -50,3 +50,16 @@ impl SearchResult {
 }
 
 
+#[test]
+fn test_search_result_score_compare() {
+    let mut x1 = SearchResult::default();
+    x1.search_result_score = (1000000.0, 10.0);
+    let mut x2  = SearchResult::default();
+    x2.search_result_score = (1000000.0, 9.0);
+    assert!(x1.search_result_score > x2.search_result_score);
+    x2.search_result_score = (1000000.1, 9.0);
+    assert!(x1.search_result_score < x2.search_result_score);
+    x2.search_result_score = (-100.0, 10000000000000000000000000.0);
+    assert!(x1.search_result_score > x2.search_result_score);
+}
+
