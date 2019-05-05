@@ -5,6 +5,7 @@ extern crate csv;
 
 use csv::Writer;
 
+pub const FIRE_RIGHT_NOW_BOOST_SCORE: f64 = 1e30;
 
 #[derive(Debug, Clone)]
 pub struct SearchResult {
