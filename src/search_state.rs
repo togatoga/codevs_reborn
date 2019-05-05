@@ -3,6 +3,7 @@ use crate::command::Command;
 use std::cmp::Ordering;
 use crate::zobrist_hash_table::ZobristHash;
 use crate::xorshift::Xorshift;
+use crate::search_result::SearchResult;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct SearchState {
@@ -119,7 +120,41 @@ impl SearchState {
     }
 }
 
+#[test]
+fn test_zobrist_hash() {
+    let board = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 4, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 7, 0, 0, 0, 0],
+        [0, 0, 0, 0, 8, 9, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 6, 0, 0, 0, 0],
+        [0, 0, 0, 0, 7, 9, 0, 0, 0, 0],
+        [0, 0, 0, 0, 4, 9, 0, 0, 0, 0],
+        [0, 0, 0, 8, 3, 5, 0, 0, 0, 0],
+        [0, 0, 0, 5, 8, 1, 0, 0, 0, 0],
+        [0, 0, 0, 8, 6, 1, 5, 0, 0, 0],
+        [0, 0, 0, 1, 5, 3, 3, 0, 0, 0],
+        [0, 0, 0, 8, 1, 4, 8, 0, 0, 0],
+        [0, 0, 1, 5, 1, 7, 7, 0, 0, 0],
+    ];
+    let x1 = SearchState::default()
+        .with_cumulative_game_score(120)
+        .with_board(Board::new(board))
+        .with_cumulative_game_score(100);
 
+    let x2 = SearchState::default()
+        .with_cumulative_game_score(200)
+        .with_board(Board::new(board));
+    assert_ne!(x1, x2);
+    let x2 = SearchState::default()
+        .with_cumulative_game_score(120)
+        .with_board(Board::default());
+
+    assert_ne!(x1, x2);
+}
 #[test]
 fn test_compare_search_state() {
     extern crate min_max_heap;
