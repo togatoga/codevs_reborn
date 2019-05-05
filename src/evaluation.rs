@@ -201,27 +201,28 @@ impl EvaluateCache {
                 }
             }
         }
+        search_score *= 1e10;
         search_score
     }
 }
 
 pub fn evaluate_search_result_score_for_bomber(chain_count: u8, search_score: f64, depth: usize) -> f64 {
     1e5 * evaluate_game_score_for_bomber(chain_count, depth)
-        + (0.001  * search_score.log10() * GAME_SCORE_DEPTH_RATES[depth])
+        + (0.0001  * search_score.log10().log10() * GAME_SCORE_DEPTH_RATES[depth])
 }
 
 pub fn evaluate_search_result_score(chain_game_score: u32, search_score: f64, depth: usize) -> f64 {
     1e5 * evaluate_game_score_by_depth(chain_game_score, depth)
-        + (0.001  * search_score.log10() * GAME_SCORE_DEPTH_RATES[depth])
+        + (0.0001  * search_score.log10().log10() * GAME_SCORE_DEPTH_RATES[depth])
 }
 
 
 pub fn evaluate_game_score_for_bomber(chain_count: u8, depth: usize) -> f64 {
     debug_assert!(depth < 20);
     if chain_count == 1 {
-        return -100.0;
+        return 1e-10;
     } else if chain_count == 2 {
-        return -200.0;
+        return 1e-100;
     }
     //bomber
     let game_score = simulator::calculate_game_score(chain_count);
