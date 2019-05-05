@@ -10,11 +10,11 @@ use togatog_ai::solver::Solver;
 use togatog_ai::solver_config::{SolverConfig, SOLVER_VERSION};
 use togatog_ai::command::Command;
 
-fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
+fn bench(pack: std::fs::File, info: std::fs::File, seed: u64, output_file: std::fs::File) {
     let mut pack = scanner::Scanner { stdin: pack };
     let mut information = scanner::Scanner { stdin: info };
 
-    let mut solver = Solver::default();
+    let mut solver = Solver::default().with_seed(seed);
     solver.set_packs(Solver::read_packs(&mut pack));
 
     //read information and think at only one turn
@@ -58,7 +58,8 @@ fn run(matches: ArgMatches) {
         let pack = std::fs::File::open(matches.value_of("pack").expect("Invalid for pack file")).expect("Can't open a file");
         let info = std::fs::File::open(matches.value_of("info").expect("Invalid for information file")).expect("Can't open a file");
         let output = std::fs::File::create(matches.value_of("output").expect("Invalid for output file")).expect("Can't create a file");
-        bench(pack, info, output);
+        let seed: u64 = matches.value_of("seed").unwrap().parse().unwrap();
+        bench(pack, info, seed, output);
         return;
     }
     let seed: u64 = matches.value_of("seed").unwrap().parse().unwrap();
