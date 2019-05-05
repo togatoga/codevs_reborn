@@ -28,6 +28,7 @@ pub struct Solver {
     config: SolverConfig,
     simulator: Simulator,
     evaluate_cache: EvaluateCache,
+    seed: u64,
     debug: bool, //debug mode
 }
 
@@ -42,6 +43,7 @@ impl Solver {
             config: SolverConfig::default(),
             simulator: Simulator::default(),
             evaluate_cache: EvaluateCache::new(),
+            seed: 1024,
             debug: false,
         }
     }
@@ -50,6 +52,7 @@ impl Solver {
         player: GameStatus,
         enemy: GameStatus,
         config: SolverConfig,
+        seed: u64,
         debug: bool,
     ) -> Solver {
         Solver {
@@ -59,6 +62,7 @@ impl Solver {
             config,
             simulator: Simulator::new(),
             evaluate_cache: EvaluateCache::new(),
+            seed,
             debug,
         }
     }
@@ -322,7 +326,7 @@ impl Solver {
 
         //push an initial search state
         search_state_heap[0].push(root_search_state);
-        let mut rnd = Xorshift::with_seed((current_turn + 28) as u64);
+        let mut rnd = Xorshift::with_seed(current_turn as u64 + self.seed);
         let mut fire_right_now = false;
         //gaze enemy...
         let max_enemy_chain_count = self.gaze_enemy_max_chain_count(current_turn);
