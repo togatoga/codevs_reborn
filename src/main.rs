@@ -69,7 +69,7 @@ fn run(matches: ArgMatches) {
     let s = std::io::stdin();
     let mut sc = scanner::Scanner { stdin: s.lock() };
     //create a default solver object
-    let mut solver = Solver::default();
+    let mut solver = Solver::default().with_seed(seed);
     //set debug option
     solver.set_debug(debug);
     //read and set packs

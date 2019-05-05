@@ -66,6 +66,10 @@ impl Solver {
             debug,
         }
     }
+    pub fn with_seed(mut self, seed: u64) -> Self {
+        self.seed = seed;
+        self
+    }
     pub fn set_packs(&mut self, packs: Vec<Vec<(Pack, usize)>>) {
         self.packs = packs;
     }
@@ -86,10 +90,10 @@ impl Solver {
             eprintln!("Cache size {}", self.evaluate_cache.len());
         }
 
-        let previous_obstacle_count = self.player.obstacle_block_count;
+        let previous_obstacle_count = self.player.obstacle_block_count();
         if previous_obstacle_count == 0 {
             //new player obstacle_block_count
-            let line_block = player.obstacle_block_count / 10;
+            let line_block = simulator::calculate_spawn_obstacle_line_from_obstacle_count(player.obstacle_block_count());
             //enemy spawn new obstacle block
             if line_block > 0 {
                 if self.debug {
@@ -175,13 +179,13 @@ impl Solver {
         let end: String = sc.read();
         debug_assert_eq!(end, "END");
         let board = Board::new(input_board);
-        GameStatus {
-            rest_time_milliseconds,
-            obstacle_block_count,
-            skill_point,
-            cumulative_game_score,
-            board,
-        }
+         GameStatus::default()
+            .with_rest_time_milliseconds(rest_time_milliseconds)
+            .with_obstacle_block_count(obstacle_block_count)
+            .with_skill_point(skill_point)
+            .with_cumulative_game_score(cumulative_game_score)
+            .with_board(board)
+
     }
     pub fn output_command(command: Command) {
         match command {
@@ -211,15 +215,15 @@ impl Solver {
         }
 
 
-        if self.enemy.obstacle_block_count < 10 && chain_count >= max_enemy_chain_count {
+        if self.enemy.obstacle_block_count() < 10 && chain_count >= max_enemy_chain_count {
             let enemy_obstacle_count =
                 simulator::calculate_obstacle_count_from_chain_count(max_enemy_chain_count);
-            let total_enemy_obstacle_count = enemy_obstacle_count + self.enemy.obstacle_block_count;
+            let total_enemy_obstacle_count = enemy_obstacle_count + self.enemy.obstacle_block_count();
             let player_obstacle_count =
                 simulator::calculate_obstacle_count_from_chain_count(chain_count);
-            if player_obstacle_count > self.player.obstacle_block_count {
+            if player_obstacle_count > self.player.obstacle_block_count() {
                 let player_spawned_obstacle_count =
-                    player_obstacle_count - self.player.obstacle_block_count;
+                    player_obstacle_count - self.player.obstacle_block_count();
                 if player_spawned_obstacle_count <= total_enemy_obstacle_count {
                     return false;
                 }
@@ -244,7 +248,7 @@ impl Solver {
     }
     fn gaze_enemy_need_kill_chain_count(&self) -> u8 {
         let enemy = &self.enemy;
-        let board = enemy.board;
+        let board = enemy.board();
         let mut spawned_obstacle_count = 0;
         for x in 0..FIELD_WIDTH {
             for y in (0..board.heights[x]).rev() {
@@ -271,7 +275,7 @@ impl Solver {
         let mut max_chain_count = 0;
         for (pack, _) in self.packs[current_turn].iter() {
             for point in 0..9 {
-                let mut board = self.enemy.board.clone();
+                let mut board = self.enemy.board().clone();
                 let chain_count = self.simulator.simulate(&mut board, point, &pack);
                 max_chain_count = std::cmp::max(max_chain_count, chain_count);
             }
@@ -280,11 +284,11 @@ impl Solver {
     }
     pub fn beam_search_config(&self) -> (usize, usize) {
         let player = &self.player;
-        if player.rest_time_milliseconds >= 30000 {
+        if player.rest_time_milliseconds() >= 30000 {
             //more than 30 seconds
             return self.config.beam();
         }
-        if player.rest_time_milliseconds >= 10000 {
+        if player.rest_time_milliseconds() >= 10000 {
             //more thatn 10 seconds
             return (5, 100);
         }
@@ -294,9 +298,9 @@ impl Solver {
         let mut best_search_result = SearchResult::default();
 
         let mut kill_bomber = false;
-        if self.enemy.skill_point >= 48 {
-            if self.player.cumulative_game_score >= self.enemy.cumulative_game_score {
-                let diff = self.player.cumulative_game_score - self.enemy.cumulative_game_score;
+        if self.enemy.skill_point() >= 48 {
+            if self.player.cumulative_game_score() >= self.enemy.cumulative_game_score() {
+                let diff = self.player.cumulative_game_score() - self.enemy.cumulative_game_score();
                 if diff >= 50 {
                     kill_bomber = true;
                     if self.debug {
@@ -305,11 +309,11 @@ impl Solver {
                 }
             }
         }
-        if !kill_bomber && self.player.skill_point >= 80 {
+        if !kill_bomber && self.player.skill_point() >= 80 {
             for y in 0..FIELD_HEIGHT {
                 for x in 0..FIELD_WIDTH {
                     //at least one 5
-                    if self.player.board.get(y, x) == 5 {
+                    if self.player.board().get(y, x) == 5 {
                         best_search_result.command = Command::Spell;
                         if self.debug {
                             eprintln!("Sepll Magic!!");
@@ -321,13 +325,13 @@ impl Solver {
         }
         if self.debug {
             eprintln!("Turn: {}", current_turn);
-            eprintln!("Rest Time(msec): {}", self.player.rest_time_milliseconds);
+            eprintln!("Rest Time(msec): {}", self.player.rest_time_milliseconds());
         }
         let mut root_search_state = SearchState::default();
-        root_search_state.set_board(self.player.board);
-        root_search_state.set_obstacle_block_count(self.player.obstacle_block_count);
-        root_search_state.set_spawn_obstacle_block_count(self.enemy.obstacle_block_count);
-        root_search_state.set_cumulative_game_score(self.player.cumulative_game_score);
+        root_search_state.set_board(self.player.board());
+        root_search_state.set_obstacle_block_count(self.player.obstacle_block_count());
+        root_search_state.set_spawn_obstacle_block_count(self.enemy.obstacle_block_count());
+        root_search_state.set_cumulative_game_score(self.player.cumulative_game_score());
 
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.beam_search_config();
