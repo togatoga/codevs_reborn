@@ -10,7 +10,7 @@ use crate::evaluation::{evaluate_game_score_by_depth, evaluate_game_score_for_bo
 use crate::game_status::GameStatus;
 use crate::pack::Pack;
 use crate::scanner;
-use crate::search_result::SearchResult;
+use crate::search_result::{SearchResult, FIRE_RIGHT_NOW_BOOST_SCORE};
 use crate::search_state::SearchState;
 use crate::simulator;
 use crate::simulator::Simulator;
@@ -345,7 +345,7 @@ impl Solver {
         for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
-            if best_search_result.search_result_score >= 1e30 {
+            if best_search_result.search_result_score >= FIRE_RIGHT_NOW_BOOST_SCORE {
                 eprintln!("Fire right now!!");
                 break;
             }
@@ -420,7 +420,7 @@ impl Solver {
 
                         //consider whether solver should fire at depth 0
                         let fire_right_now_boost_score = if depth == 0 && self.should_fire_right_now(chain_count, max_enemy_chain_count, need_kill_chain_count) {
-                            1e30
+                            FIRE_RIGHT_NOW_BOOST_SCORE
                         } else {
                             0.0
                         };
@@ -443,7 +443,6 @@ impl Solver {
         }
         if self.debug {
             eprintln!("== Search Result ==");
-
             best_search_result.log();
         }
         best_search_result
