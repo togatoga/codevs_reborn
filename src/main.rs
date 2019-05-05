@@ -28,11 +28,12 @@ fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
     best_result.to_csv(output_file).unwrap();
 }
 
-fn profile(pack: std::fs::File, info: std::fs::File) {
+fn profile(pack: std::fs::File, info: std::fs::File, seed: u64) {
     let mut pack = scanner::Scanner { stdin: pack };
     let mut information = scanner::Scanner { stdin: info };
 
-    let mut solver = Solver::default();
+    let mut solver = Solver::default().with_seed(seed);
+
     solver.set_packs(Solver::read_packs(&mut pack));
     //read information and think at only one turn
     let current_turn: usize = information.read();
@@ -49,7 +50,8 @@ fn run(matches: ArgMatches) {
     if let Some(matches) = matches.subcommand_matches("profile") {
         let pack = std::fs::File::open(matches.value_of("pack").expect("Invalid for pack file")).expect("Can't open a file");
         let info = std::fs::File::open(matches.value_of("info").expect("Invalid for information file")).expect("Can't open a file");
-        profile(pack, info);
+        let seed: u64 = matches.value_of("seed").unwrap().parse().unwrap();
+        profile(pack, info, seed);
         return ;
     }
     if let Some(matches) = matches.subcommand_matches("bench") {
@@ -96,6 +98,7 @@ fn main() {
             .arg(clap::Arg::with_name("pack").help("The path of a pack file").short("p").long("pack").value_name("PACK").required(true))
             .arg(clap::Arg::with_name("info").help("The path of an information file").short("i").long("info").value_name("INFORMATION").required(true))
             .arg(clap::Arg::with_name("output").help("The path of an output csv file").short("o").long("output").value_name("OUTPUT").required(true))
+            .arg(clap::Arg::with_name("seed").short("s").long("seed").help("seed for generating random number").default_value("28"))
         )
         .subcommand(SubCommand::with_name("profile").about("Run for profiler")
             .arg(clap::Arg::with_name("pack").help("The path of a pack file").short("p").long("pack").value_name("PACK").required(true))
