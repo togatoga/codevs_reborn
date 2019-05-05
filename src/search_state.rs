@@ -130,6 +130,23 @@ impl SearchState {
 }
 
 #[test]
+fn test_update_obstacle_block() {
+    let mut s = SearchState::default().with_spawn_obstacle_block_count(30).with_obstacle_block_count(20);
+    assert_eq!(s.obstacle_block_count(), 20);
+    assert_eq!(s.spawn_obstacle_block_count(), 30);
+    s.update_obstacle_block();
+    assert_eq!(s.obstacle_block_count(), 0);
+    assert_eq!(s.spawn_obstacle_block_count(), 10);
+    let mut s = SearchState::default().with_spawn_obstacle_block_count(30).with_obstacle_block_count(60);
+    assert_eq!(s.obstacle_block_count(), 60);
+    assert_eq!(s.spawn_obstacle_block_count(), 30);
+    s.update_obstacle_block();
+    s.update_obstacle_block();
+    assert_eq!(s.obstacle_block_count(), 30);
+    assert_eq!(s.spawn_obstacle_block_count(), 0);
+}
+
+#[test]
 fn test_zobrist_hash() {
     let board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
