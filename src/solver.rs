@@ -425,7 +425,7 @@ impl Solver {
                             false
                         };
                         if fire_right_now {
-                            target_search_result_score *= FIRE_RIGHT_NOW_BOOST_SCORE;
+                            target_search_result_score.0 *= FIRE_RIGHT_NOW_BOOST_SCORE;
                         }
 
 
