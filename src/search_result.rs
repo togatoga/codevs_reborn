@@ -5,7 +5,7 @@ extern crate csv;
 
 use csv::Writer;
 
-pub const FIRE_RIGHT_NOW_BOOST_SCORE: f64 = 1e10;
+pub const FIRE_RIGHT_NOW_BOOST_SCORE: f64 = 1e20;
 
 #[derive(Debug, Clone)]
 pub struct SearchResult {
@@ -16,12 +16,13 @@ pub struct SearchResult {
     pub search_depth: usize,
     pub board: Board,
     pub command: Command,
+    pub fire_right_now: bool
 }
 
 
 impl SearchResult {
     pub fn default() -> SearchResult {
-        SearchResult { search_result_score: 0.0, last_chain_count: 0, cumulative_game_score: 0, gain_game_score: 0, search_depth: 0, board: Board::default(), command: Command::default() }
+        SearchResult { search_result_score: 0.0, last_chain_count: 0, cumulative_game_score: 0, gain_game_score: 0, search_depth: 0, board: Board::default(), command: Command::default(), fire_right_now: false }
     }
     pub fn to_csv<T: std::io::Write>(&self, file: T) -> Result<(), Box<std::error::Error>> {
         let mut wtr = Writer::from_writer(file);
@@ -36,6 +37,7 @@ impl SearchResult {
         eprintln!("gain_game_score: {}", self.gain_game_score);
         eprintln!("last_chain_count: {}", self.last_chain_count);
         eprintln!("search_depth: {}", self.search_depth);
+        eprintln!("fire_right_now: {}", self.fire_right_now);
         /*eprintln!("Board: ");
         for y in 0..FIELD_HEIGHT {
             for x in 0..FIELD_WIDTH {
