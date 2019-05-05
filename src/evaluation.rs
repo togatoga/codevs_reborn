@@ -327,6 +327,10 @@ fn test_evaluate_game_score_by_depth() {
     debug_assert_eq!(
         evaluate_game_score_by_depth(score, 3),
         81.0894512189861);
+
+    let s1 = evaluate_game_score_by_depth(simulator::calculate_game_score(14), 11);
+    let s2 = evaluate_game_score_by_depth(simulator::calculate_game_score(12), 7);
+    debug_assert!(s1 < s2);
 }
 
 #[test]
