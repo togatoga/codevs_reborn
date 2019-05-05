@@ -345,7 +345,7 @@ impl Solver {
         for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
-            if best_search_result.search_result_score >= FIRE_RIGHT_NOW_BOOST_SCORE {
+            if best_search_result.fire_right_now {
                 eprintln!("Fire right now!!");
                 break;
             }
@@ -419,12 +419,15 @@ impl Solver {
                         };
 
                         //consider whether solver should fire at depth 0
-                        let fire_right_now_boost_score = if depth == 0 && self.should_fire_right_now(chain_count, max_enemy_chain_count, need_kill_chain_count) {
-                            FIRE_RIGHT_NOW_BOOST_SCORE
+                        let fire_right_now = if depth == 0 && self.should_fire_right_now(chain_count, max_enemy_chain_count, need_kill_chain_count) {
+                            true
                         } else {
-                            0.0
+                            false
                         };
-                        target_search_result_score += fire_right_now_boost_score;
+                        if fire_right_now {
+                            target_search_result_score *= FIRE_RIGHT_NOW_BOOST_SCORE;
+                        }
+
 
                         //pick highest search result score
                         if target_search_result_score > best_search_result.search_result_score {
@@ -436,6 +439,7 @@ impl Solver {
                             best_search_result.search_depth = depth;
                             best_search_result.board = next_search_state.board();
                             best_search_result.command = next_search_state.command().unwrap();
+                            best_search_result.fire_right_now = fire_right_now;
                         }
                     }
                 }
