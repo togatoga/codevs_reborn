@@ -112,7 +112,7 @@ impl EvaluateCache {
                     continue;
                 }
                 let num = ERASING_SUM - neighbor_block;
-                if (dropped_num_bit >> num) == 1 {
+                if ((dropped_num_bit >> num) & 1) == 1 {
                     continue;
                 }
                 dropped_num_bit |= 1 << num;
