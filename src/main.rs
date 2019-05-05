@@ -59,10 +59,13 @@ fn run(matches: ArgMatches) {
         bench(pack, info, output);
         return;
     }
+    let seed: u64 = matches.value_of("seed").unwrap().parse().unwrap();
+
     let debug = matches.is_present("debug");
     //START!!
     if debug {
         eprintln!("togatog_ai_{}", SOLVER_VERSION);
+        eprintln!("seed: {}", seed);
     }
     println!("togatog_ai_{}", SOLVER_VERSION);
     let s = std::io::stdin();
@@ -99,6 +102,7 @@ fn main() {
             .arg(clap::Arg::with_name("info").help("The path of an information file").short("i").long("info").value_name("INFORMATION").required(true))
         )
         .arg(clap::Arg::with_name("debug").short("d").long("debug").help("print debug information verbosely"))
+        .arg(clap::Arg::with_name("seed").short("s").long("seed").help("seed for generating random number").default_value("1024"))
         .get_matches();
     std::thread::Builder::new()
         .stack_size(64 * 1024 * 1024) // 64MB
