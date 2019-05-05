@@ -5,7 +5,7 @@ extern crate csv;
 
 use csv::Writer;
 
-pub const FIRE_RIGHT_NOW_BOOST_SCORE: f64 = 1e30;
+pub const FIRE_RIGHT_NOW_BOOST_SCORE: f64 = 1e10;
 
 #[derive(Debug, Clone)]
 pub struct SearchResult {
@@ -31,6 +31,7 @@ impl SearchResult {
     }
 
     pub fn log(&self) {
+        eprintln!("search_score: {:.10}", self.search_result_score);
         eprintln!("cumulative_game_score: {}", self.cumulative_game_score);
         eprintln!("gain_game_score: {}", self.gain_game_score);
         eprintln!("last_chain_count: {}", self.last_chain_count);
