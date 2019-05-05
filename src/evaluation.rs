@@ -201,22 +201,24 @@ impl EvaluateCache {
                 }
             }
         }
-        search_score *= 1e10;
+        search_score *= 1e20;
         search_score
     }
 }
 
 pub fn evaluate_search_result_score_for_bomber(chain_count: u8, search_score: f64, depth: usize) -> f64 {
     1e5 * evaluate_game_score_for_bomber(chain_count, depth)
-        + (0.0001  * search_score.log10().log10() * GAME_SCORE_DEPTH_RATES[depth])
+        + (0.0001 * search_score.log10().log10() * GAME_SCORE_DEPTH_RATES[depth])
 }
 
 pub fn evaluate_search_result_score(chain_game_score: u32, search_score: f64, depth: usize) -> f64 {
     1e5 * evaluate_game_score_by_depth(chain_game_score, depth)
-        + (0.0001  * search_score.log10().log10() * GAME_SCORE_DEPTH_RATES[depth])
+        + (0.0001 * search_score.log10().log10() * GAME_SCORE_DEPTH_RATES[depth])
 }
 
-
+fn sigmoid(x: f64) -> f64 {
+    1.0 / (1.0 + f64::exp(-x))
+}
 pub fn evaluate_game_score_for_bomber(chain_count: u8, depth: usize) -> f64 {
     debug_assert!(depth < 20);
     if chain_count == 1 {
@@ -286,7 +288,11 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> (u8, u8) {
     }
     (keima, jump)
 }
+#[test]
+fn test_simoid(){
+    let score = sigmoid(1e5);
 
+}
 
 #[test]
 fn test_evaluate_search_result_score() {
