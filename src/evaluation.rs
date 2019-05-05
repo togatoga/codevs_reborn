@@ -291,7 +291,7 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> (u8, u8) {
 
 #[test]
 fn test_evaluate_game_score_by_depth() {
-    let depth = 2;
+    
     let score = simulator::calculate_game_score(10);
     debug_assert_eq!(
         evaluate_game_score_by_depth(score, 0),
