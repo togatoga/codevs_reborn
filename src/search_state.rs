@@ -41,7 +41,7 @@ impl SearchState {
         SearchState { board, obstacle_block_count, spawn_obstacle_block_count, skill_point, cumulative_game_score, command, search_score }
     }
 
-    pub fn update_obstacle_block(&mut self) {
+    pub fn update_obstacle_block_and_drop(&mut self) {
         if self.spawn_obstacle_block_count >= self.obstacle_block_count {
             self.spawn_obstacle_block_count -= self.obstacle_block_count;
             self.obstacle_block_count = 0;
@@ -53,6 +53,15 @@ impl SearchState {
         if self.obstacle_block_count >= FIELD_WIDTH as u32 {
             self.board.drop_obstacles();
             self.obstacle_block_count -= FIELD_WIDTH as u32;
+        }
+    }
+    pub fn update_obstacle_block(&mut self) {
+        if self.spawn_obstacle_block_count >= self.obstacle_block_count {
+            self.spawn_obstacle_block_count -= self.obstacle_block_count;
+            self.obstacle_block_count = 0;
+        } else {
+            self.obstacle_block_count -= self.spawn_obstacle_block_count;
+            self.spawn_obstacle_block_count = 0;
         }
     }
     pub fn obstacle_block_count(&self) -> u32 {

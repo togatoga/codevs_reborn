@@ -351,7 +351,7 @@ impl Solver {
             }
             while let Some(search_state) = &mut search_state_heap[depth].pop_max() {
                 //Update obstacle block
-                search_state.update_obstacle_block();
+                search_state.update_obstacle_block_and_drop();
                 //skip duplicate
 
                 for (pack, rotate_count) in self.packs[search_turn].iter() {
@@ -376,6 +376,8 @@ impl Solver {
                             .with_board(next_board)
                             .with_cumulative_game_score(next_cumulative_game_score)
                             .with_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
+
+                        next_search_state.update_obstacle_block();
                         if !next_search_state.is_command() {
                             debug_assert_eq!(depth, 0);
                             next_search_state.set_command(Command::Drop((point, *rotate_count)));
