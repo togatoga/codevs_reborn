@@ -250,6 +250,8 @@ fn test_simulate_sandwich_obstacle_board() {
     ];
     let target_board = board::Board::new(target_board);
     debug_assert_eq!(board, target_board);
+    debug_assert_eq!(chain_count, 2);
+
 }
 
 #[test]
