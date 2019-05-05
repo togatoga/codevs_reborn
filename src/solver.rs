@@ -160,13 +160,12 @@ impl Solver {
         let end: String = sc.read();
         debug_assert_eq!(end, "END");
         let board = Board::new(input_board);
-         GameStatus::default()
+        GameStatus::default()
             .with_rest_time_milliseconds(rest_time_milliseconds)
             .with_obstacle_block_count(obstacle_block_count)
             .with_skill_point(skill_point)
             .with_cumulative_game_score(cumulative_game_score)
             .with_board(board)
-
     }
     pub fn output_command(command: Command) {
         match command {
@@ -275,35 +274,49 @@ impl Solver {
         }
         (3, 100)
     }
-    pub fn think(&mut self, current_turn: usize) -> SearchResult {
-        let mut best_search_result = SearchResult::default();
 
-        let mut kill_bomber = false;
+    fn kill_bomber_mode(&self) -> bool {
         if self.enemy.skill_point() >= 48 {
             if self.player.cumulative_game_score() >= self.enemy.cumulative_game_score() {
                 let diff = self.player.cumulative_game_score() - self.enemy.cumulative_game_score();
                 if diff >= 50 {
-                    kill_bomber = true;
-                    if self.debug {
-                        eprintln!("Kill Bomber!!");
-                    }
+                    return true;
                 }
             }
         }
-        if !kill_bomber && self.player.skill_point() >= 80 {
+        false
+    }
+    fn should_spell_magic(&self) -> bool {
+        if !self.kill_bomber_mode() && self.player.skill_point() >= 80 {
             for y in 0..FIELD_HEIGHT {
                 for x in 0..FIELD_WIDTH {
                     //at least one 5
                     if self.player.board().get(y, x) == 5 {
-                        best_search_result.command = Command::Spell;
                         if self.debug {
                             eprintln!("Sepll Magic!!");
                         }
-                        return best_search_result;
+                        return true;
                     }
                 }
             }
         }
+        false
+    }
+    pub fn think(&mut self, current_turn: usize) -> SearchResult {
+        let mut best_search_result = SearchResult::default();
+        if self.kill_bomber_mode() {
+            if self.debug {
+                eprintln!("Kill Bomber!!");
+            }
+        }
+        if self.should_spell_magic() {
+            if self.debug {
+                eprintln!("Sepll Magic!!");
+            }
+            best_search_result.command = Command::Spell;
+            return best_search_result;
+        }
+
         if self.debug {
             eprintln!("Turn: {}", current_turn);
             eprintln!("Rest Time(msec): {}", self.player.rest_time_milliseconds());
@@ -430,7 +443,7 @@ impl Solver {
                         }
 
 
-                        let target_score = if kill_bomber {
+                        let target_score = if self.kill_bomber_mode() {
                             1e5 * evaluate_game_score_for_bomber(chain_count, depth)
                                 + 0.000001
                                 * next_search_score.log10()
