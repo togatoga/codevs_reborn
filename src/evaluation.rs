@@ -152,12 +152,14 @@ impl EvaluateCache {
         // max chain count
         let (estimated_max_chain_count, height) = self.estimate_max_chain_count(simulator, &board);
         search_score += estimated_max_chain_count as f64 * 10e5;
-        search_score += (height as f64 * 0.1);
+        search_score += height as f64 * 0.1;
         // count live block
         search_score += (board.count_live_blocks() as f64 * 1000.0) as f64;
 
         // pattern match
-        search_score += evaluate_pattern_match_cnt(&board) as f64 * 10.0;
+        let (keima, jump) = evaluate_pattern_match_cnt(&board);
+        search_score += (keima * 2 * 10) as f64;
+        search_score += (jump * 10) as f64;
 
         for x in 0..FIELD_WIDTH {
             //height
@@ -224,8 +226,10 @@ pub fn evaluate_game_score_by_depth(game_score: u32, depth: usize) -> f64 {
         + (game_score as f64).log10()
 }
 
-pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
-    let mut pattern_match_cnt = 0;
+pub fn evaluate_pattern_match_cnt(board: &Board) -> (u8, u8) {
+
+    let mut keima = 0;
+    let mut jump = 0;
     for x in 0..FIELD_WIDTH {
         for y in 0..board.heights[x] {
             let block = board.get(y, x);
@@ -235,7 +239,7 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
             //short jump
             if y + 2 < FIELD_HEIGHT {
                 if block + board.get(y + 2, x) == ERASING_SUM {
-                    pattern_match_cnt += 1;
+                    jump += 1;
                 }
             }
             //big jump
@@ -247,12 +251,12 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
             //short keima
             if y + 2 < FIELD_HEIGHT && x + 1 < FIELD_WIDTH {
                 if block + board.get(y + 2, x + 1) == ERASING_SUM {
-                    pattern_match_cnt += 2;
+                    keima += 1;
                 }
             }
             if y + 2 < FIELD_HEIGHT && x > 1 {
                 if block + board.get(y + 2, x - 1) == ERASING_SUM {
-                    pattern_match_cnt += 2;
+                    keima += 1;
                 }
             }
             /*//big keima
@@ -268,7 +272,7 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> u8 {
             }*/
         }
     }
-    pattern_match_cnt
+    (keima, jump)
 }
 
 
@@ -303,8 +307,8 @@ fn test_evaluate_pattern_match() {
         [0, 11, 1, 11, 0, 0, 0, 0, 0, 0],
     ];
     let board = Board::new(board);
-    let cnt = evaluate_pattern_match_cnt(&board);
-    debug_assert_eq!(cnt, 3);
+    let (keima, jump) = evaluate_pattern_match_cnt(&board);
+    debug_assert_eq!((keima, jump), (2, 1));
 }
 
 #[test]
