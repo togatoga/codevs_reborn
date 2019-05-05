@@ -25,6 +25,25 @@ def read_score_files(dir_path, limit):
     return contents
 
 
+def analyze_search_result_score(search_result_scores):
+    print("========== Search Result ============")
+    mean = statistics.mean(search_result_scores)
+    median = statistics.median(search_result_scores)
+    min_score = min(search_result_scores)
+    max_score = max(search_result_scores)
+    # with open(file_path, "w") as f:
+    #     f.write(f'Number   : {len(sear_scores)}\n')
+    #     f.write(f'min_score: {min_score}\n')
+    #     f.write(f'max_score: {max_score}\n')
+    #     f.write(f'mean     : {mean}\n')
+    #     f.write(f'median   : {median}\n')
+    print(f'Number   : {len(search_result_scores)}')
+    print(f'min_score: {min_score}')
+    print(f'max_score: {max_score}')
+    print(f'mean     : {mean}')
+    print(f'median   : {median}')
+
+
 def analyze_score(cumulative_game_scores, file_path):
     mean = statistics.mean(cumulative_game_scores)
     median = statistics.median(cumulative_game_scores)
@@ -59,19 +78,29 @@ def plot_hist_score(cumulative_game_scores, file_path):
     plt.show()
 
 
-def get_scores(contents):
+def get_cumulative_scores(contents):
     cumulative_game_scores = []
     for file_name, content in contents.items():
         cumulative_game_scores.append(int(content['cumulative_game_score']))
     return cumulative_game_scores
 
 
+def get_search_result_scores(contents):
+    search_result_scores = []
+    for file_name, content in contents.items():
+        search_depth = int(content['search_depth'])
+        rate = pow(10 / 11, search_depth)
+        search_result_score = int(content['cumulative_game_score']) * rate
+        search_result_scores.append(search_result_score)
+    return search_result_scores
+
+
 def battle(args):
     source = args.source
     dest = args.dest
     limit = args.number
-    source_scores = get_scores(read_score_files(source, limit))
-    dest_scores = get_scores(read_score_files(dest, limit))
+    source_scores = get_cumulative_scores(read_score_files(source, limit))
+    dest_scores = get_cumulative_scores(read_score_files(dest, limit))
     draw = 0
     win = 0
     lose = 0
@@ -94,8 +123,9 @@ def analyze(args):
     contents = read_score_files(root, limit)
 
     # analyze
-    cumulative_game_scores = get_scores(contents)
-
+    cumulative_game_scores = get_cumulative_scores(contents)
+    search_result_scores = get_search_result_scores(contents)
+    analyze_search_result_score(search_result_scores)
     output_path = f'data/analysis/'
 
     os.makedirs(output_path, exist_ok=True)
