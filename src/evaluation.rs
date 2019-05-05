@@ -144,12 +144,13 @@ impl EvaluateCache {
     ) -> f64 {
         let mut search_score: f64 = 0.0;
 
-        let board = search_state.board();
+        let mut board = search_state.board();
+        if search_state.obstacle_block_count() >= 10 {
+            board.drop_obstacles();
+        }
         // game score
         // max chain count
-
         let (estimated_max_chain_count, height) = self.estimate_max_chain_count(simulator, &board);
-
         search_score += estimated_max_chain_count as f64 * 10e5;
         search_score += (height as f64 * 0.1);
         // count live block
@@ -197,7 +198,6 @@ impl EvaluateCache {
                 }
             }
         }
-
         search_score
     }
 }
