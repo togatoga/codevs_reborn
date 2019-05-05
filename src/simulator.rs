@@ -150,6 +150,7 @@ pub fn is_on_board(y: i8, x: i8) -> bool {
 pub fn calculate_spawn_obstacle_line_from_obstacle_count(obstacle_count: u32) -> u32 {
     obstacle_count / 10
 }
+
 pub fn calculate_obstacle_count_from_chain_count(chain_count: u8) -> u32 {
     calculate_obstacle_count(calculate_game_score(chain_count), 0)
 }
@@ -212,6 +213,32 @@ fn test_simulate_sandwich_obstacle_board() {
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 11, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 11, 0, 0],
+        [0, 0, 0, 1, 0, 0, 0, 11, 0, 0],
+        [0, 0, 7, 7, 0, 0, 11, 11, 0, 0],
+        [0, 0, 1, 4, 5, 11, 11, 8, 11, 0],
+        [0, 0, 8, 3, 3, 11, 11, 4, 11, 0],
+        [0, 6, 6, 11, 11, 1, 3, 4, 11, 0],
+        [0, 11, 9, 7, 11, 4, 11, 8, 11, 0],
+        [11, 11, 11, 2, 9, 11, 1, 6, 1, 0],
+        [11, 11, 1, 11, 11, 5, 2, 7, 7, 11],
+        [11, 11, 11, 11, 11, 7, 6, 9, 6, 11],
+        [11, 7, 11, 11, 6, 11, 9, 6, 3, 11],
+        [7, 7, 11, 7, 7, 6, 9, 5, 2, 11]
+    ];
+    let mut board = board::Board::new(board);
+
+    let mut pack = pack::Pack::new(&[4, 9, 3, 0]);
+    pack.rotates(3);
+    println!("{:?}", pack.vec());
+    let chain_count = Simulator::new().simulate(&mut board, 8, &pack);
+    assert_eq!(chain_count, 12);
+
+    let board = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -251,7 +278,6 @@ fn test_simulate_sandwich_obstacle_board() {
     let target_board = board::Board::new(target_board);
     debug_assert_eq!(board, target_board);
     debug_assert_eq!(chain_count, 2);
-
 }
 
 #[test]
