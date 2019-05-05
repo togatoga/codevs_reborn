@@ -23,8 +23,6 @@ use crate::xorshift::Xorshift;
 
 pub struct Solver {
     packs: Vec<Vec<(Pack, usize)>>,
-    cumulative_sum_pack: [[u8; 10]; MAX_TURN],
-    //cumulative_sum_pack[block][turn]
     player: GameStatus,
     enemy: GameStatus,
     config: SolverConfig,
@@ -39,7 +37,6 @@ impl Solver {
     pub fn default() -> Solver {
         Solver {
             packs: Vec::new(),
-            cumulative_sum_pack: [[0; 10]; MAX_TURN],
             player: GameStatus::default(),
             enemy: GameStatus::default(),
             config: SolverConfig::default(),
@@ -60,7 +57,6 @@ impl Solver {
             player,
             enemy,
             config,
-            cumulative_sum_pack: [[0; 10]; MAX_TURN],
             simulator: Simulator::new(),
             evaluate_cache: EvaluateCache::new(),
             debug,
@@ -112,26 +108,7 @@ impl Solver {
             self.evaluate_cache.clear();
         }
     }
-    #[allow(dead_code)]
-    pub fn get_cumulative_sum_pack(&self, turn: usize) -> &[u8; 10] {
-        &self.cumulative_sum_pack[turn]
-    }
-    #[allow(dead_code)]
-    pub fn calculate_cumulative_sum_pack(&mut self) {
-        for i in 0..MAX_TURN {
-            let pack = &self.packs[i][0].0;
-            for idx in 0..4 {
-                let block = pack.get(idx);
-                self.cumulative_sum_pack[i][block as usize] += 1;
-            }
-            if i >= 1 {
-                for block in 1..10 {
-                    //println!("{} {} {}", block, self.cumulative_sum_pack[i][block], self.cumulative_sum_pack[i - 1][block]);
-                    self.cumulative_sum_pack[i][block] += self.cumulative_sum_pack[i - 1][block];
-                }
-            }
-        }
-    }
+
     pub fn read_packs<R: std::io::Read>(sc: &mut scanner::Scanner<R>) -> Vec<Vec<(Pack, usize)>> {
         (0..MAX_TURN)
             .map(|_| {

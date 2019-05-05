@@ -16,7 +16,7 @@ fn bench(pack: std::fs::File, info: std::fs::File, output_file: std::fs::File) {
 
     let mut solver = Solver::default();
     solver.set_packs(Solver::read_packs(&mut pack));
-    solver.calculate_cumulative_sum_pack();
+
     //read information and think at only one turn
     let current_turn: usize = information.read();
     let player = Solver::read_game_status(&mut information);
@@ -34,7 +34,6 @@ fn profile(pack: std::fs::File, info: std::fs::File) {
 
     let mut solver = Solver::default();
     solver.set_packs(Solver::read_packs(&mut pack));
-    solver.calculate_cumulative_sum_pack();
     //read information and think at only one turn
     let current_turn: usize = information.read();
     let player = Solver::read_game_status(&mut information);
@@ -74,7 +73,6 @@ fn run(matches: ArgMatches) {
     solver.set_debug(debug);
     //read and set packs
     solver.set_packs(Solver::read_packs(&mut sc));
-    solver.calculate_cumulative_sum_pack();
     loop {
         let current_turn: usize = sc.read();
         //read player data
