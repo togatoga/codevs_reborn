@@ -278,11 +278,32 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> (u8, u8) {
 #[test]
 fn test_evaluate_game_score_by_depth() {
     let depth = 2;
-    let score = 120;
+    let score = simulator::calculate_game_score(10);
     debug_assert_eq!(
-        evaluate_game_score_by_depth(score, depth),
-        76.80000000000001
+        evaluate_game_score_by_depth(score, 0),
+        51.69897000433602
     );
+    let score = simulator::calculate_game_score(11);
+    debug_assert_eq!(
+        evaluate_game_score_by_depth(score, 0),
+        68.82607480270083
+    );
+
+    let score = simulator::calculate_game_score(12);
+    debug_assert_eq!(
+        evaluate_game_score_by_depth(score, 2),
+        76.33440779869551
+    );
+    let score = simulator::calculate_game_score(13);
+    debug_assert_eq!(
+        evaluate_game_score_by_depth(score, 2),
+        88.85604075017984);
+
+    let score = simulator::calculate_game_score(14);
+    debug_assert_eq!(
+        evaluate_game_score_by_depth(score, 3),
+        81.0894512189861);
+
 }
 
 #[test]
@@ -329,7 +350,7 @@ fn test_evaluate_pattern_match() {
         [0, 0, 0, 6, 1, 3, 2, 4, 0, 0]
     ];
     let (keima, jump) = evaluate_pattern_match_cnt(&Board::new(board));
-    debug_assert_eq!((keima, jump), (5 , 5));
+    debug_assert_eq!((keima, jump), (5, 5));
 }
 
 #[test]
@@ -381,7 +402,7 @@ fn test_estimate_max_chain_count() {
         evaluate_cache.estimate_max_chain_count(&mut Simulator::new(), &Board::new(board));
     debug_assert_eq!((max_chain_count, height), (12, 0));
 
-     let board = [
+    let board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
