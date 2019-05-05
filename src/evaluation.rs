@@ -137,6 +137,7 @@ impl EvaluateCache {
         estimated_max_chain
     }
 
+
     pub fn evaluate_search_score(
         &mut self,
         simulator: &mut Simulator,
@@ -203,6 +204,21 @@ impl EvaluateCache {
         search_score
     }
 }
+
+pub fn evaluate_search_result_score_for_bomber(chain_count: u8, search_score: f64, depth: usize) -> f64 {
+    1e5 * evaluate_game_score_for_bomber(chain_count, depth)
+        + 0.000001
+        * search_score.log10()
+        * GAME_SCORE_DEPTH_RATES[depth]
+}
+
+pub fn evaluate_search_result_score(chain_game_score: u32, search_score: f64, depth: usize) -> f64 {
+    1e5 * evaluate_game_score_by_depth(chain_game_score, depth)
+        + 0.000001
+        * search_score.log10()
+        * GAME_SCORE_DEPTH_RATES[depth]
+}
+
 
 pub fn evaluate_game_score_for_bomber(chain_count: u8, depth: usize) -> f64 {
     debug_assert!(depth < 20);
@@ -303,7 +319,6 @@ fn test_evaluate_game_score_by_depth() {
     debug_assert_eq!(
         evaluate_game_score_by_depth(score, 3),
         81.0894512189861);
-
 }
 
 #[test]

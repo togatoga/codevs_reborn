@@ -6,10 +6,7 @@ use crate::board::{
     Board, DANGER_LINE_HEIGHT, FIELD_HEIGHT, FIELD_WIDTH, INPUT_FIELD_HEIGHT, OBSTACLE_BLOCK,
 };
 use crate::command::Command;
-use crate::evaluation::{
-    evaluate_game_score_by_depth, evaluate_game_score_for_bomber, EvaluateCache,
-    GAME_SCORE_DEPTH_RATES,
-};
+use crate::evaluation::{evaluate_game_score_by_depth, evaluate_game_score_for_bomber, EvaluateCache, GAME_SCORE_DEPTH_RATES, evaluate_search_result_score, evaluate_search_result_score_for_bomber};
 use crate::game_status::GameStatus;
 use crate::pack::Pack;
 use crate::scanner;
@@ -321,15 +318,9 @@ impl Solver {
             eprintln!("Turn: {}", current_turn);
             eprintln!("Rest Time(msec): {}", self.player.rest_time_milliseconds());
         }
-        let root_search_state = SearchState::default()
-            .with_board(self.player.board())
-            .with_obstacle_block_count(self.player.obstacle_block_count())
-            .with_spawn_obstacle_block_count(self.enemy.obstacle_block_count())
-            .with_cumulative_game_score(self.player.cumulative_game_score());
 
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.beam_search_config();
-
         if self.debug {
             eprintln!("Beam depth: {}, Beam width: {}", beam_depth, beam_width);
         }
@@ -337,10 +328,16 @@ impl Solver {
             (0..beam_depth + 1).map(|_| MinMaxHeap::new()).collect();
         let mut searched_state = fnv::FnvHashSet::default();
 
+        //Create an initial state
+        let root_search_state = SearchState::default()
+            .with_board(self.player.board())
+            .with_obstacle_block_count(self.player.obstacle_block_count())
+            .with_spawn_obstacle_block_count(self.enemy.obstacle_block_count())
+            .with_cumulative_game_score(self.player.cumulative_game_score());
         //push an initial search state
         search_state_heap[0].push(root_search_state);
         let mut rnd = Xorshift::with_seed(current_turn as u64 + self.seed);
-        let mut fire_right_now = false;
+
         //gaze enemy...
         let max_enemy_chain_count = self.gaze_enemy_max_chain_count(current_turn);
         let need_kill_chain_count = self.gaze_enemy_need_kill_chain_count();
@@ -348,14 +345,10 @@ impl Solver {
         for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
-            if fire_right_now {
-                if self.debug {
-                    eprintln!("Fire!! now");
-                }
-                debug_assert_eq!(depth, 1);
+            if best_search_result.search_result_score >= 1e30 {
+                eprintln!("Fire right now!!");
                 break;
             }
-
             while let Some(search_state) = &mut search_state_heap[depth].pop_max() {
                 //Update obstacle block
                 search_state.update_obstacle_block();
@@ -369,31 +362,6 @@ impl Solver {
                         if board.is_game_over() {
                             continue;
                         }
-
-                        //consider whether solver should fire at depth 0
-                        if depth == 0
-                            && self.should_fire_right_now(
-                            chain_count,
-                            max_enemy_chain_count,
-                            need_kill_chain_count,
-                        )
-                        {
-                            fire_right_now = true;
-                            //pick best chain count one
-                            if chain_count > best_search_result.last_chain_count {
-                                best_search_result.last_chain_count = chain_count;
-                                best_search_result.command = Command::Drop((point, *rotate_count));
-                                best_search_result.gain_game_score =
-                                    simulator::calculate_game_score(chain_count);
-                                best_search_result.cumulative_game_score = search_state
-                                    .cumulative_game_score()
-                                    + simulator::calculate_game_score(chain_count);
-                                best_search_result.search_depth = depth;
-                                best_search_result.board = board.clone();
-                            }
-                        }
-
-
 
                         //update these values
                         let gain_chain_game_score = simulator::calculate_game_score(chain_count);
@@ -444,30 +412,23 @@ impl Solver {
                         }
 
 
-                        let target_score = if self.kill_bomber_mode() {
-                            1e5 * evaluate_game_score_for_bomber(chain_count, depth)
-                                + 0.000001
-                                * next_search_score.log10()
-                                * GAME_SCORE_DEPTH_RATES[depth]
+                        let mut target_search_result_score = if self.kill_bomber_mode() {
+                            evaluate_search_result_score_for_bomber(chain_count, next_search_score, depth)
                         } else {
-                            1e5 * evaluate_game_score_by_depth(gain_chain_game_score, depth)
-                                + 0.000001
-                                * next_search_score.log10()
-                                * GAME_SCORE_DEPTH_RATES[depth]
+                            evaluate_search_result_score(gain_chain_game_score, next_search_score, depth)
                         };
-                        //NOTE
-                        //This method is very first aid
-                        //Kill bomber
 
-                        if target_score > best_search_result.search_result_score {
-                            /*if self.debug {
-                                // eprintln!("{}", 0.000001 * next_search_score.log10());
-                                eprintln!(
-                                    "depth {}, chain_count {} target_score {}",
-                                    depth, chain_count, target_score
-                                );
-                            }*/
-                            best_search_result.search_result_score = target_score;
+                        //consider whether solver should fire at depth 0
+                        let fire_right_now_boost_score = if depth == 0 && self.should_fire_right_now(chain_count, max_enemy_chain_count, need_kill_chain_count) {
+                            1e30
+                        } else {
+                            0.0
+                        };
+                        target_search_result_score += fire_right_now_boost_score;
+
+                        //pick highest search result score
+                        if target_search_result_score > best_search_result.search_result_score {
+                            best_search_result.search_result_score = target_search_result_score;
                             best_search_result.gain_game_score = gain_chain_game_score;
                             best_search_result.cumulative_game_score =
                                 next_search_state.cumulative_game_score();
