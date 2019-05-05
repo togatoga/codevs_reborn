@@ -130,6 +130,54 @@ impl SearchState {
 }
 
 #[test]
+fn test_update_obstacle_block_and_drop() {
+
+
+    let board = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 4, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 7, 0, 0, 0, 0],
+        [0, 0, 0, 0, 8, 9, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 6, 0, 0, 0, 0],
+        [0, 0, 0, 0, 7, 9, 0, 0, 0, 0],
+        [0, 0, 0, 0, 4, 9, 0, 0, 0, 0],
+        [0, 0, 0, 8, 3, 5, 0, 0, 0, 0],
+        [0, 0, 0, 5, 8, 1, 0, 0, 0, 0],
+        [0, 0, 0, 8, 6, 1, 5, 0, 0, 0],
+        [0, 0, 0, 1, 5, 3, 3, 0, 0, 0],
+        [0, 0, 0, 8, 1, 4, 8, 0, 0, 0],
+        [0, 0, 1, 5, 1, 7, 7, 0, 0, 0],
+    ];
+    Board::new(board);
+    let mut s = SearchState::default().with_spawn_obstacle_block_count(0).with_obstacle_block_count(20).with_board(Board::new(board));
+    s.update_obstacle_block_and_drop();
+    assert_eq!(s.spawn_obstacle_block_count, 0);
+    assert_eq!(s.obstacle_block_count, 10);
+    let board = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 11, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 4, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 2, 11, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 7, 0, 0, 0, 0],
+        [0, 0, 0, 0, 8, 9, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 6, 0, 0, 0, 0],
+        [0, 0, 0, 0, 7, 9, 0, 0, 0, 0],
+        [0, 0, 0, 11, 4, 9, 0, 0, 0, 0],
+        [0, 0, 0, 8, 3, 5, 0, 0, 0, 0],
+        [0, 0, 0, 5, 8, 1, 11, 0, 0, 0],
+        [0, 0, 0, 8, 6, 1, 5, 0, 0, 0],
+        [0, 0, 0, 1, 5, 3, 3, 0, 0, 0],
+        [0, 0, 11, 8, 1, 4, 8, 0, 0, 0],
+        [11, 11, 1, 5, 1, 7, 7, 11, 11, 11],
+    ];
+    assert_eq!(s.board, Board::new(board));
+}
+
+#[test]
 fn test_update_obstacle_block() {
     let mut s = SearchState::default().with_spawn_obstacle_block_count(30).with_obstacle_block_count(20);
     assert_eq!(s.obstacle_block_count(), 20);
