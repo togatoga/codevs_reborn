@@ -208,12 +208,12 @@ impl EvaluateCache {
 
 pub fn evaluate_search_result_score_for_bomber(chain_count: u8, search_score: f64, depth: usize) -> f64 {
     1e5 * evaluate_game_score_for_bomber(chain_count, depth)
-        + (0.0001 * search_score.log10().log10() * GAME_SCORE_DEPTH_RATES[depth])
+        + search_score.log10().log10() * GAME_SCORE_DEPTH_RATES[depth]
 }
 
 pub fn evaluate_search_result_score(chain_game_score: u32, search_score: f64, depth: usize) -> f64 {
     1e5 * evaluate_game_score_by_depth(chain_game_score, depth)
-        + (0.0001 * search_score.log10().log10() * GAME_SCORE_DEPTH_RATES[depth])
+        + search_score.log10().log10() * GAME_SCORE_DEPTH_RATES[depth]
 }
 
 fn sigmoid(x: f64) -> f64 {
