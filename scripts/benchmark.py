@@ -15,7 +15,8 @@ def task(exec_cmd):
 @click.argument("pack", required=True)
 @click.argument("info", required=True)
 @click.option("--num", "-n", default=500)
-def cmd(solver, pack, info, num):
+@click.option("--seed", "-s", default=1024)
+def cmd(solver, pack, info, num, seed):
     files = [os.path.join(pack, p) for p in os.listdir(pack)]
     files.sort()
     files = files[:num]
@@ -30,7 +31,7 @@ def cmd(solver, pack, info, num):
 
         for file in files:
             file_name = f'{os.path.basename(solver)}_{os.path.basename(file)}_{os.path.basename(info)}_result'
-            exec_cmd = f'{solver} bench --pack {file} --info {info} --output {output_dir}/{file_name}.csv'
+            exec_cmd = f'{solver} bench --pack {file} --info {info} --output {output_dir}/{file_name}.csv --seed {seed}'
             try:
                 executor.submit(task, exec_cmd)
             except KeyboardInterrupt:
