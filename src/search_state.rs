@@ -5,6 +5,9 @@ use crate::search_result::SearchResult;
 use crate::xorshift::Xorshift;
 use crate::zobrist_hash_table::ZobristHash;
 use std::cmp::Ordering;
+use crate::pack::Pack;
+use std::hash::Hash;
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct SearchState {
     board: Board,
@@ -142,7 +145,47 @@ impl SearchState {
         let mut rnd = Xorshift::with_seed(self.cumulative_game_score as u64);
         self.board.zobrist_hash() ^ rnd.next()
     }
+    #[inline]
+    pub fn transition_zobrist_hash(&self, point: usize, pack: &Pack) -> ZobristHash {
+        let mut rnd = Xorshift::with_seed(point as u64);
+        self.zobrist_hash() ^ rnd.next() ^ pack.hash()
+    }
 }
+
+#[test]
+fn test_transition_zobrist_hash() {
+    let board = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 4, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 4, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 9, 4, 0, 0, 0],
+        [0, 0, 0, 0, 0, 2, 3, 0, 0, 0],
+        [0, 0, 0, 0, 6, 9, 4, 0, 0, 0],
+        [0, 0, 4, 0, 11, 11, 8, 0, 0, 0],
+        [0, 0, 8, 0, 11, 11, 7, 0, 11, 0],
+        [0, 6, 11, 9, 11, 11, 5, 0, 3, 0],
+        [0, 11, 11, 7, 2, 2, 11, 3, 1, 0],
+        [11, 11, 11, 11, 2, 6, 11, 11, 11, 11],
+        [11, 11, 3, 11, 3, 9, 11, 11, 11, 11],
+        [11, 3, 5, 11, 3, 9, 8, 11, 6, 11]
+    ];
+
+    let s = SearchState::default()
+        .with_spawn_obstacle_block_count(0)
+        .with_obstacle_block_count(0)
+        .with_board(Board::new(board));
+    let point = 3;
+    let mut pack = Pack::new(&[4, 5, 6, 0]);
+    let rotate_count = 3;
+    //5 0 4 6
+    pack.rotates(3);
+    debug_assert_eq!(s.transition_zobrist_hash(point, &pack), s.transition_zobrist_hash(point, &Pack::new(&[5, 0, 4, 6])));
+    debug_assert_ne!(s.transition_zobrist_hash(point, &pack), s.transition_zobrist_hash(1, &Pack::new(&[5, 0, 4, 6])));
+}
+
 #[test]
 fn test_drop_obstacle_board() {
     let board = [
@@ -175,7 +218,6 @@ fn test_drop_obstacle_board() {
 
 #[test]
 fn test_update_obstacle_block_and_drop() {
-
     let board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -279,6 +321,7 @@ fn test_zobrist_hash() {
 
     assert_ne!(x1, x2);
 }
+
 #[test]
 fn test_compare_search_state() {
     extern crate min_max_heap;
