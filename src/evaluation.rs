@@ -65,7 +65,7 @@ impl EvaluateCache {
         self.len() == 0
     }
     pub fn len(&self) -> usize {
-        self.cache.len()
+        self.cache_estimate_max_chain_count.len()
     }
     pub fn clear(&mut self) {
 
