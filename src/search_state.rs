@@ -18,6 +18,8 @@ pub struct SearchState {
     skill_point: u32,
     cumulative_game_score: u32,
     command: Option<Command>,
+    point: usize,
+    pack: Pack,
     search_score: f64,
 }
 
@@ -45,6 +47,8 @@ impl SearchState {
             skill_point: 0,
             cumulative_game_score: 0,
             command: None,
+            point: 0,
+            pack: Pack::default(),
             search_score: 0.0,
         }
     }
@@ -55,6 +59,8 @@ impl SearchState {
         skill_point: u32,
         cumulative_game_score: u32,
         command: Option<Command>,
+        point: usize,
+        pack: Pack,
         search_score: f64,
     ) -> SearchState {
         SearchState {
@@ -64,6 +70,8 @@ impl SearchState {
             skill_point,
             cumulative_game_score,
             command,
+            point,
+            pack,
             search_score,
         }
     }
@@ -131,6 +139,20 @@ impl SearchState {
         self.command = Some(command);
         self
     }
+    pub fn set_point(&mut self, point: usize) {
+        self.point = point;
+    }
+    pub fn with_point(mut self, point: usize) -> Self {
+        self.point = point;
+        self
+    }
+    pub fn set_pack(&mut self, pack: Pack) {
+        self.pack = pack;
+    }
+    pub fn with_pack(mut self, pack: Pack) -> Self {
+        self.pack = pack;
+        self
+    }
     pub fn is_command(&self) -> bool {
         self.command.is_some()
     }
@@ -146,9 +168,9 @@ impl SearchState {
         self.board.zobrist_hash() ^ rnd.next()
     }
     #[inline]
-    pub fn transition_zobrist_hash(&self, point: usize, pack: &Pack) -> ZobristHash {
-        let mut rnd = Xorshift::with_seed(point as u64);
-        self.zobrist_hash() ^ rnd.next() ^ pack.hash()
+    pub fn transition_zobrist_hash(&self) -> ZobristHash {
+        let mut rnd = Xorshift::with_seed(self.point as u64);
+        self.zobrist_hash() ^ rnd.next() ^ self.pack.hash()
     }
 }
 
@@ -173,17 +195,21 @@ fn test_transition_zobrist_hash() {
         [11, 3, 5, 11, 3, 9, 8, 11, 6, 11]
     ];
 
-    let s = SearchState::default()
-        .with_spawn_obstacle_block_count(0)
-        .with_obstacle_block_count(0)
-        .with_board(Board::new(board));
-    let point = 3;
     let mut pack = Pack::new(&[4, 5, 6, 0]);
     let rotate_count = 3;
     //5 0 4 6
     pack.rotates(3);
-    debug_assert_eq!(s.transition_zobrist_hash(point, &pack), s.transition_zobrist_hash(point, &Pack::new(&[5, 0, 4, 6])));
-    debug_assert_ne!(s.transition_zobrist_hash(point, &pack), s.transition_zobrist_hash(1, &Pack::new(&[5, 0, 4, 6])));
+    let s = SearchState::default()
+        .with_spawn_obstacle_block_count(0)
+        .with_obstacle_block_count(0)
+        .with_board(Board::new(board))
+        .with_point(3)
+        .with_pack(pack);
+
+    let mut t = s.clone().with_pack(Pack::new(&[5, 0, 4, 6]));
+    debug_assert_eq!(s.transition_zobrist_hash(), t.transition_zobrist_hash());
+    t.set_point(1);
+    debug_assert_ne!(s.transition_zobrist_hash(),t.zobrist_hash());
 }
 
 #[test]
