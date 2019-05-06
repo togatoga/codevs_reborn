@@ -67,6 +67,70 @@ impl EvaluateCache {
     pub fn clear(&mut self) {
         self.cache.clear();
     }
+
+    pub fn estimate_with_erasing_all_max_chain_count(&mut self, simulator: &mut Simulator, board: &Board) -> u8 {
+        let mut max_chain_count = 0;
+        for x in 0..FIELD_WIDTH {
+            for y in 0..board.heights[x] {
+                let block = board.get(y, x);
+                if block == OBSTACLE_BLOCK || block == EMPTY_BLOCK {
+                    continue;
+                }
+                let erasable: bool = {
+                    let mut ok = false;
+                    //top
+                    if y + 1 < FIELD_HEIGHT {
+                        //top
+                        if board.get(y + 1, x) == EMPTY_BLOCK {
+                            ok = true;
+                        }
+                        //top right
+                        if x + 1 < FIELD_WIDTH && board.get(y + 1, x + 1) == EMPTY_BLOCK {
+                            ok = true;
+                        }
+                        //top left
+                        if x >= 1 && board.get(y + 1, x - 1) == EMPTY_BLOCK {
+                            ok = true;
+                        }
+                    }
+                    //right
+                    if x + 1 < FIELD_WIDTH && board.get(y, x + 1) == EMPTY_BLOCK {
+                        ok = true;
+                    }
+                    //left
+                    if x >= 1 && board.get(y, x - 1) == EMPTY_BLOCK {
+                        ok = true;
+                    }
+                    //down
+                    if y >= 1 {
+                        //down
+                        if board.get(y - 1, x) == EMPTY_BLOCK {
+                            ok = true;
+                        }
+                        //down right
+                        if x + 1 < FIELD_WIDTH && board.get(y - 1, x + 1) == EMPTY_BLOCK {
+                            ok = true;
+                        }
+                        //down left
+                        if x >= 1 && board.get(y - 1, x - 1) == EMPTY_BLOCK {
+                            ok = true;
+                        }
+                    }
+                    ok
+                };
+                if !erasable {
+                    continue;
+                }
+                simulator.init();
+                let mut simulated_board = board.clone();
+                simulator.erase_blocks.push((y, x));
+                simulator.apply_erase_blocks(&mut simulated_board);
+                let chain_count = simulator.calculate_chain_count(&mut simulated_board);
+                max_chain_count = std::cmp::max(max_chain_count, chain_count + 1);
+            }
+        }
+        max_chain_count
+    }
     //too heavy function
     pub fn estimate_max_chain_count(
         &mut self,
@@ -138,7 +202,6 @@ impl EvaluateCache {
                         estimated_max_chain.1 += 1;
                     }
                 }
-
             }
         }
         self.cache.insert(board.zobrist_hash(), estimated_max_chain);
@@ -160,8 +223,10 @@ impl EvaluateCache {
         }*/
         // game score
         // max chain count
-        let (estimated_max_chain_count, _) = self.estimate_max_chain_count(simulator, &board);
-        search_score += estimated_max_chain_count as f64 * 10e5;
+        //let (estimated_max_chain_count, _) = self.estimate_max_chain_count(simulator, &board);
+        //search_score += estimated_max_chain_count as f64 * 10e5;
+        let estimated_max_erasing_chain_count = self.estimate_with_erasing_all_max_chain_count(simulator, &search_state.board());
+        search_score += estimated_max_erasing_chain_count as f64 * 10e5;
 
         // count live block
         let (live_block_count, obstacle_block_count) = board.count_blocks();
@@ -249,6 +314,7 @@ pub fn evaluate_search_result_score(
 fn sigmoid(x: f64) -> f64 {
     1.0 / (1.0 + f64::exp(-x))
 }
+
 pub fn evaluate_game_score_for_bomber(chain_count: u8, depth: usize) -> f64 {
     debug_assert!(depth < 20);
     if chain_count == 1 {
@@ -356,11 +422,59 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> (u8, u8, u8) {
     }
     (keima, jump, three_chain)
 }
+
 #[test]
 fn test_simoid() {
     let score = sigmoid(1.0) - sigmoid(0.0);
     debug_assert_eq!(score, 10.0);
 }
+
+
+#[test]
+fn test_estimate_with_erasing_all() {
+    let board = [
+        [0, 0, 0, 0, 0, 6, 0, 0, 0, 0],
+        [0, 0, 0, 6, 0, 5, 0, 0, 0, 0],
+        [0, 0, 11, 3, 0, 11, 7, 0, 0, 0],
+        [0, 0, 11, 11, 0, 6, 1, 0, 0, 0],
+        [0, 0, 11, 11, 0, 8, 7, 0, 0, 0],
+        [0, 0, 7, 11, 8, 11, 4, 0, 0, 0],
+        [0, 0, 11, 6, 5, 11, 9, 3, 0, 0],
+        [0, 0, 11, 11, 3, 11, 11, 3, 0, 0],
+        [0, 0, 1, 11, 11, 5, 11, 1, 0, 0],
+        [0, 0, 8, 3, 11, 11, 8, 11, 0, 0],
+        [0, 0, 6, 5, 11, 9, 11, 11, 1, 0],
+        [11, 11, 2, 1, 11, 8, 11, 6, 11, 11],
+        [11, 11, 4, 3, 11, 3, 3, 6, 11, 11],
+        [11, 11, 1, 2, 1, 5, 11, 11, 11, 11],
+        [11, 11, 2, 7, 4, 4, 2, 11, 11, 11],
+        [11, 11, 9, 9, 5, 3, 3, 11, 11, 11]
+    ];
+    let mut evaluate_cache = EvaluateCache::new();
+    let chain_count = evaluate_cache.estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
+    assert_eq!(chain_count, 11);
+    let board = [
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 09, 11, 11, 11, 11]
+    ];
+    let chain_count = evaluate_cache.estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
+    assert_eq!(chain_count, 0);
+}
+
 
 #[test]
 fn test_evaluate_search_result_score() {
@@ -372,7 +486,6 @@ fn test_evaluate_search_result_score() {
 
 #[test]
 fn test_evaluate_game_score_by_depth() {
-
     let score = simulator::calculate_game_score(10);
     debug_assert_eq!(evaluate_game_score_by_depth(score, 0), 51.69897000433602);
     let score = simulator::calculate_game_score(11);
