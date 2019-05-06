@@ -17,8 +17,8 @@ pub const DIRECTION_YXS: [(i8, i8); 8] = [
 
 
 pub struct Simulator {
-    modified_blocks: Vec<(usize, usize)>,
-    erase_blocks: Vec<(usize, usize)>,
+    pub modified_blocks: Vec<(usize, usize)>,
+    pub erase_blocks: Vec<(usize, usize)>,
 }
 
 impl Simulator {
@@ -40,9 +40,8 @@ impl Simulator {
     pub fn modified_blocks(&self) -> &Vec<(usize, usize)> {
         &self.modified_blocks
     }
-    pub fn simulate(&mut self, board: &mut board::Board, point: usize, pack: &pack::Pack) -> u8 {
-        self.init();
-        self.drop_pack(board, point, &pack);
+
+    pub fn calculate_chain_count(&mut self, board: &mut board::Board) -> u8 {
         let mut chain_count: u8 = 0;
         while !self.modified_blocks.is_empty() {
             self.calculate_erase_blocks(&board);
@@ -52,6 +51,12 @@ impl Simulator {
             chain_count += 1;
             self.apply_erase_blocks(board);
         }
+        chain_count
+    }
+    pub fn simulate(&mut self, board: &mut board::Board, point: usize, pack: &pack::Pack) -> u8 {
+        self.init();
+        self.drop_pack(board, point, &pack);
+        let chain_count = self.calculate_chain_count(board);
         chain_count
     }
 
@@ -102,7 +107,7 @@ impl Simulator {
         self.erase_blocks.dedup();
     }
 
-    fn apply_erase_blocks(&mut self, board: &mut board::Board) {
+    pub fn apply_erase_blocks(&mut self, board: &mut board::Board) {
         debug_assert!(!self.erase_blocks.is_empty());
 
         let old_heights = board.heights;
