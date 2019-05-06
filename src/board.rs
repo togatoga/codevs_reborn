@@ -21,6 +21,7 @@ pub struct Board {
 
 impl PartialEq for Board {
     fn eq(&self, other: &Board) -> bool {
+        self.board.zobrist_hash() == other.board.zobrist_hash() &&
         self.board == other.board
     }
 }
