@@ -44,7 +44,7 @@ const NOT_SPAWN_MAX_CHAIN_COUNT: u8 = 7;
 
 
 pub struct EvaluateCache {
-    cache: FnvHashMap<ZobristHash, (u8, usize)>,
+    cache: FnvHashMap<ZobristHash, (u8, u8)>,
 }
 
 impl EvaluateCache {
@@ -68,11 +68,15 @@ impl EvaluateCache {
         self.cache.clear();
     }
     //too heavy function
-    pub fn estimate_max_chain_count(&mut self, simulator: &mut Simulator, board: &Board) -> (u8, usize) {
+    pub fn estimate_max_chain_count(
+        &mut self,
+        simulator: &mut Simulator,
+        board: &Board,
+    ) -> (u8, u8) {
         if let Some(cache_max_chain_count) = self.cache.get(&board.zobrist_hash()) {
             return *cache_max_chain_count;
         }
-        let mut estimated_max_chain: (u8, usize) = (0, 0);
+        let mut estimated_max_chain: (u8, u8) = (0, 0);
 
         for x in 0..FIELD_WIDTH {
             let y = board.heights[x];
@@ -127,13 +131,17 @@ impl EvaluateCache {
                 }
 
                 let chain_count = simulator.simulate(&mut board.clone(), point, &pack);
-                if (chain_count, y as usize) > estimated_max_chain {
-                    estimated_max_chain = (chain_count, y as usize);
+                if chain_count > 0 {
+                    if chain_count > estimated_max_chain.0 {
+                        estimated_max_chain = (chain_count, 1);
+                    } else if chain_count == estimated_max_chain.0 {
+                        estimated_max_chain.1 += 1;
+                    }
                 }
+
             }
         }
-        self.cache
-            .insert(board.zobrist_hash(), estimated_max_chain);
+        self.cache.insert(board.zobrist_hash(), estimated_max_chain);
         estimated_max_chain
     }
 
@@ -146,29 +154,40 @@ impl EvaluateCache {
         let mut search_score: f64 = 0.0;
 
         let mut board = search_state.board();
-        if search_state.obstacle_block_count() >= 10 {
+
+        /*if search_state.obstacle_block_count() >= 10 {
             board.drop_obstacles();
-        }
+        }*/
         // game score
         // max chain count
-        let (estimated_max_chain_count, height) = self.estimate_max_chain_count(simulator, &board);
+        let (estimated_max_chain_count, _) = self.estimate_max_chain_count(simulator, &board);
         search_score += estimated_max_chain_count as f64 * 10e5;
-        search_score += height as f64 * 0.1;
+
         // count live block
-        search_score += (board.count_live_blocks() as f64 * 1000.0) as f64;
+        let (live_block_count, obstacle_block_count) = board.count_blocks();
+        search_score += (live_block_count as f64 * 1000.0) as f64;
+        // search_score -= (obstacle_block_count as f64 * 0.1) as f64;
 
         // pattern match
-        let (keima, jump) = evaluate_pattern_match_cnt(&board);
+        let (keima, jump, _) = evaluate_pattern_match_cnt(&board);
+        // search_score += (three_chain * 10) as f64;
         search_score += (keima * 2 * 10) as f64;
-        search_score += (jump * 10) as f64;
+        search_score += (jump * 1 * 10) as f64;
 
         for x in 0..FIELD_WIDTH {
             //height
             search_score += 0.01 * board.heights[x] as f64;
 
             for y in 0..board.heights[x] {
-                debug_assert_ne!(board.get(y, x), EMPTY_BLOCK);
-                if board.get(y, x) == OBSTACLE_BLOCK {
+                let block = board.get(y, x);
+                debug_assert_ne!(block, EMPTY_BLOCK);
+                /*if block != OBSTACLE_BLOCK {
+                    search_score += y as f64 * 0.001;
+                } else {
+                    search_score -= y as f64 * 0.0001;
+                }*/
+
+                if block == OBSTACLE_BLOCK {
                     continue;
                 }
                 //down right
@@ -205,12 +224,26 @@ impl EvaluateCache {
     }
 }
 
-pub fn evaluate_search_result_score_for_bomber(chain_count: u8, search_score: f64, depth: usize) -> (f64, f64) {
-    (evaluate_game_score_for_bomber(chain_count, depth), search_score * GAME_SCORE_DEPTH_RATES[depth])
+pub fn evaluate_search_result_score_for_bomber(
+    chain_count: u8,
+    search_score: f64,
+    depth: usize,
+) -> (f64, f64) {
+    (
+        evaluate_game_score_for_bomber(chain_count, depth),
+        search_score * GAME_SCORE_DEPTH_RATES[depth],
+    )
 }
 
-pub fn evaluate_search_result_score(chain_game_score: u32, search_score: f64, depth: usize) -> (f64, f64) {
-    (evaluate_game_score_by_depth(chain_game_score, depth), search_score * GAME_SCORE_DEPTH_RATES[depth])
+pub fn evaluate_search_result_score(
+    chain_game_score: u32,
+    search_score: f64,
+    depth: usize,
+) -> (f64, f64) {
+    (
+        evaluate_game_score_by_depth(chain_game_score, depth),
+        search_score * GAME_SCORE_DEPTH_RATES[depth],
+    )
 }
 
 fn sigmoid(x: f64) -> f64 {
@@ -238,9 +271,11 @@ pub fn evaluate_game_score_by_depth(game_score: u32, depth: usize) -> f64 {
         + (game_score as f64).log10()
 }
 
-pub fn evaluate_pattern_match_cnt(board: &Board) -> (u8, u8) {
+
+pub fn evaluate_pattern_match_cnt(board: &Board) -> (u8, u8, u8) {
     let mut keima = 0;
     let mut jump = 0;
+    let mut three_chain = 0;
     for x in 0..FIELD_WIDTH {
         for y in 0..board.heights[x] {
             let block = board.get(y, x);
@@ -263,11 +298,47 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> (u8, u8) {
             if y + 2 < FIELD_HEIGHT && x + 1 < FIELD_WIDTH {
                 if block + board.get(y + 2, x + 1) == ERASING_SUM {
                     keima += 1;
+                    let a = board.get(y + 1, x + 1);
+                    //9 0 9
+                    //5 2 11
+                    //5 1 11
+                    //8 11 11
+                    //keima x keima
+                    if y + 3 < FIELD_HEIGHT {
+                        //left keima
+                        let b = board.get(y + 3, x);
+                        if a + b == ERASING_SUM {
+                            three_chain += 1;
+                        }
+                        //right keima
+                        if x + 2 < FIELD_WIDTH {
+                            let b = board.get(y + 3, x + 2);
+                            if a + b == ERASING_SUM {
+                                three_chain += 1;
+                            }
+                        }
+                    }
                 }
             }
             if y + 2 < FIELD_HEIGHT && x > 1 {
                 if block + board.get(y + 2, x - 1) == ERASING_SUM {
                     keima += 1;
+                    let a = board.get(y + 1, x - 1);
+                    if y + 3 < FIELD_HEIGHT {
+                        //keima x keima
+                        //left keima
+                        if x >= 2 {
+                            let b = board.get(y + 3, x - 2);
+                            if a + b == ERASING_SUM {
+                                three_chain += 1;
+                            }
+                        }
+                        //right keima
+                        let b = board.get(y + 3, x);
+                        if a + b == ERASING_SUM {
+                            three_chain += 1;
+                        }
+                    }
                 }
             }
             /*//big keima
@@ -283,12 +354,12 @@ pub fn evaluate_pattern_match_cnt(board: &Board) -> (u8, u8) {
             }*/
         }
     }
-    (keima, jump)
+    (keima, jump, three_chain)
 }
 #[test]
-fn test_simoid(){
-    let score = sigmoid(1e5);
-
+fn test_simoid() {
+    let score = sigmoid(1.0) - sigmoid(0.0);
+    debug_assert_eq!(score, 10.0);
 }
 
 #[test]
@@ -301,32 +372,19 @@ fn test_evaluate_search_result_score() {
 
 #[test]
 fn test_evaluate_game_score_by_depth() {
-    
+
     let score = simulator::calculate_game_score(10);
-    debug_assert_eq!(
-        evaluate_game_score_by_depth(score, 0),
-        51.69897000433602
-    );
+    debug_assert_eq!(evaluate_game_score_by_depth(score, 0), 51.69897000433602);
     let score = simulator::calculate_game_score(11);
-    debug_assert_eq!(
-        evaluate_game_score_by_depth(score, 0),
-        68.82607480270083
-    );
+    debug_assert_eq!(evaluate_game_score_by_depth(score, 0), 68.82607480270083);
 
     let score = simulator::calculate_game_score(12);
-    debug_assert_eq!(
-        evaluate_game_score_by_depth(score, 2),
-        76.33440779869551
-    );
+    debug_assert_eq!(evaluate_game_score_by_depth(score, 2), 76.33440779869551);
     let score = simulator::calculate_game_score(13);
-    debug_assert_eq!(
-        evaluate_game_score_by_depth(score, 2),
-        88.85604075017984);
+    debug_assert_eq!(evaluate_game_score_by_depth(score, 2), 88.85604075017984);
 
     let score = simulator::calculate_game_score(14);
-    debug_assert_eq!(
-        evaluate_game_score_by_depth(score, 3),
-        81.0894512189861);
+    debug_assert_eq!(evaluate_game_score_by_depth(score, 3), 81.0894512189861);
 
     let s1 = evaluate_game_score_by_depth(simulator::calculate_game_score(14), 11);
     let s2 = evaluate_game_score_by_depth(simulator::calculate_game_score(12), 7);
@@ -354,7 +412,7 @@ fn test_evaluate_pattern_match() {
         [0, 11, 1, 11, 0, 0, 0, 0, 0, 0],
     ];
     let board = Board::new(board);
-    let (keima, jump) = evaluate_pattern_match_cnt(&board);
+    let (keima, jump, _) = evaluate_pattern_match_cnt(&board);
     debug_assert_eq!((keima, jump), (2, 1));
 
 
@@ -374,9 +432,9 @@ fn test_evaluate_pattern_match() {
         [0, 0, 0, 0, 8, 9, 6, 0, 0, 0],
         [0, 0, 0, 0, 7, 8, 8, 0, 0, 0],
         [0, 0, 0, 0, 8, 4, 4, 0, 0, 0],
-        [0, 0, 0, 6, 1, 3, 2, 4, 0, 0]
+        [0, 0, 0, 6, 1, 3, 2, 4, 0, 0],
     ];
-    let (keima, jump) = evaluate_pattern_match_cnt(&Board::new(board));
+    let (keima, jump, _) = evaluate_pattern_match_cnt(&Board::new(board));
     debug_assert_eq!((keima, jump), (5, 5));
 }
 
@@ -445,8 +503,9 @@ fn test_estimate_max_chain_count() {
         [0, 0, 0, 0, 8, 9, 6, 0, 0, 0],
         [0, 0, 0, 0, 7, 8, 8, 0, 0, 0],
         [0, 0, 0, 0, 8, 4, 4, 0, 0, 0],
-        [0, 0, 0, 6, 1, 3, 2, 4, 0, 0]
+        [0, 0, 0, 6, 1, 3, 2, 4, 0, 0],
     ];
-    let (max_chain_count, height) = evaluate_cache.estimate_max_chain_count(&mut Simulator::new(), &Board::new(board));
+    let (max_chain_count, height) =
+        evaluate_cache.estimate_max_chain_count(&mut Simulator::new(), &Board::new(board));
     debug_assert_eq!((max_chain_count, height), (11, 1));
 }
