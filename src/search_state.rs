@@ -7,6 +7,7 @@ use crate::zobrist_hash_table::ZobristHash;
 use std::cmp::Ordering;
 use crate::pack::Pack;
 use std::hash::Hash;
+use crate::simulator::calculate_game_score;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct SearchState {
@@ -17,7 +18,9 @@ pub struct SearchState {
     //spawn obstacle block count what player spawned and attacked enemy
     skill_point: u32,
     cumulative_game_score: u32,
+    //transition data
     command: Option<Command>,
+    chain_count: u8,
     point: usize,
     pack: Pack,
     search_score: f64,
@@ -47,6 +50,7 @@ impl SearchState {
             skill_point: 0,
             cumulative_game_score: 0,
             command: None,
+            chain_count: 0,
             point: 0,
             pack: Pack::default(),
             search_score: 0.0,
@@ -59,6 +63,7 @@ impl SearchState {
         skill_point: u32,
         cumulative_game_score: u32,
         command: Option<Command>,
+        chain_count: u8,
         point: usize,
         pack: Pack,
         search_score: f64,
@@ -70,6 +75,7 @@ impl SearchState {
             skill_point,
             cumulative_game_score,
             command,
+            chain_count,
             point,
             pack,
             search_score,
@@ -138,6 +144,19 @@ impl SearchState {
         debug_assert!(self.command.is_none());
         self.command = Some(command);
         self
+    }
+    pub fn chain_count(&self) -> u8 {
+        self.chain_count
+    }
+    pub fn set_chain_count(&mut self, chain_count: u8) {
+        self.chain_count = chain_count;
+    }
+    pub fn with_chain_count(mut self, chain_count: u8) -> Self {
+        self.chain_count = chain_count;
+        self
+    }
+    pub fn chain_game_score(&self) -> u32 {
+        calculate_game_score(self.chain_count)
     }
     pub fn set_point(&mut self, point: usize) {
         self.point = point;
