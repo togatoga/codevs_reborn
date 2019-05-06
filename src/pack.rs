@@ -1,4 +1,6 @@
 use crate::board::EMPTY_BLOCK;
+use crate::zobrist_hash_table::ZobristHash;
+use crate::xorshift::Xorshift;
 
 pub type Block = u8;
 pub type BitBlock = u16;
@@ -31,6 +33,10 @@ impl Pack {
     }
     pub fn clear(&mut self) {
         self.bit_block = 0;
+    }
+    pub fn hash(&self) -> ZobristHash {
+        let mut rnd = Xorshift::with_seed(self.bit_block as u64);
+        rnd.next()
     }
     pub fn get(&self, idx: usize) -> Block {
         debug_assert!(idx < 4);
