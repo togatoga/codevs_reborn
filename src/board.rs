@@ -6,17 +6,17 @@ pub const EMPTY_BLOCK: u8 = 0;
 pub const OBSTACLE_BLOCK: u8 = 11;
 pub const ERASING_SUM: u8 = 10;
 
-use std::fmt;
+
 use crate::bit_board::BitBoard;
 use crate::zobrist_hash_table::ZobristHash;
-
+use std::fmt;
 
 #[derive(Debug, Copy, Clone, Eq, Hash)]
 pub struct Board {
     board: BitBoard,
     //y starts from under left point
     pub heights: [usize; FIELD_WIDTH],
- }
+}
 
 
 impl PartialEq for Board {
@@ -35,20 +35,30 @@ impl fmt::Display for Board {
             debug_assert_eq!(tmp.len(), FIELD_WIDTH);
             board.push(tmp.join(","));
         }
-        write!(f, "Board {{ board: [{}], heights: [{:?}] }}", board.join(",\n"), self.heights)
+        write!(
+            f,
+            "Board {{ board: [{}], heights: [{:?}] }}",
+            board.join(",\n"),
+            self.heights
+        )
     }
 }
 
 
 impl Board {
     pub fn default() -> Board {
-        Board {board: BitBoard::default(), heights: [0; FIELD_WIDTH]}
+        Board {
+            board: BitBoard::default(),
+            heights: [0; FIELD_WIDTH],
+        }
     }
     pub fn new(input_board: [[u8; FIELD_WIDTH]; INPUT_FIELD_HEIGHT]) -> Board {
         let mut heights: [usize; FIELD_WIDTH] = [0; FIELD_WIDTH];
         for x in 0..FIELD_WIDTH {
             let mut y = 0;
-            while y < INPUT_FIELD_HEIGHT && input_board[INPUT_FIELD_HEIGHT - 1 - y][x] != EMPTY_BLOCK {
+            while y < INPUT_FIELD_HEIGHT
+                && input_board[INPUT_FIELD_HEIGHT - 1 - y][x] != EMPTY_BLOCK
+            {
                 y += 1;
             }
             heights[x] = y;
@@ -83,17 +93,21 @@ impl Board {
             self.heights[x] += 1;
         }
     }
-    pub fn count_live_blocks(&self) -> u8 {
-        let mut count = 0;
-        for y in 0..FIELD_HEIGHT {
-            for x in 0..FIELD_WIDTH {
-                let block = self.board.get(y, x);
-                if block != EMPTY_BLOCK && block != OBSTACLE_BLOCK {
-                    count += 1;
+    pub fn count_blocks(&self) -> (u8, u8) {
+        let mut live_count = 0;
+        let mut obstacle_count = 0;
+        for x in 0..FIELD_WIDTH {
+            for y in 0..self.heights[x] {
+                let block = self.get(y, x);
+                debug_assert!(block != EMPTY_BLOCK);
+                if block != OBSTACLE_BLOCK {
+                    live_count += 1;
+                } else {
+                    obstacle_count += 1;
                 }
             }
         }
-        count
+        (live_count, obstacle_count)
     }
     pub fn is_game_over(&self) -> bool {
         for &x in self.heights.iter() {
@@ -104,7 +118,6 @@ impl Board {
         false
     }
 }
-
 
 
 #[test]
@@ -125,7 +138,7 @@ fn test_is_game_over() {
         [11, 11, 11, 4, 7, 4, 7, 11, 8, 11],
         [11, 11, 3, 11, 8, 7, 11, 11, 11, 11],
         [11, 11, 2, 5, 9, 5, 11, 5, 11, 11],
-        [11, 11, 2, 3, 3, 2, 7, 1, 11, 11]
+        [11, 11, 2, 3, 3, 2, 7, 1, 11, 11],
     ];
     let mut board = Board::new(board);
     debug_assert!(!board.is_game_over());
@@ -151,10 +164,10 @@ fn test_count_live_blocks() {
         [0, 0, 0, 5, 9, 4, 8, 0, 0, 0],
         [0, 0, 1, 6, 3, 4, 1, 0, 11, 0],
         [0, 0, 6, 5, 1, 2, 3, 4, 11, 0],
-        [0, 0, 1, 3, 6, 2, 2, 1, 11, 0]
+        [0, 0, 1, 3, 6, 2, 2, 1, 11, 0],
     ];
     let board = Board::new(board);
-    debug_assert_eq!(board.count_live_blocks(), 35);
+    debug_assert_eq!(board.count_blocks(), (35, 3));
 }
 
 #[test]

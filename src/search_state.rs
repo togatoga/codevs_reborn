@@ -1,10 +1,10 @@
 use crate::board::{Board, FIELD_WIDTH};
 use crate::command::Command;
-use std::cmp::Ordering;
-use crate::zobrist_hash_table::ZobristHash;
-use crate::xorshift::Xorshift;
-use crate::search_result::SearchResult;
 
+use crate::search_result::SearchResult;
+use crate::xorshift::Xorshift;
+use crate::zobrist_hash_table::ZobristHash;
+use std::cmp::Ordering;
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct SearchState {
     board: Board,
@@ -35,20 +35,38 @@ impl Ord for SearchState {
 
 impl SearchState {
     pub fn default() -> SearchState {
-        SearchState { board: Board::default(), obstacle_block_count: 0, spawn_obstacle_block_count: 0, skill_point: 0, cumulative_game_score: 0, command: None, search_score: 0.0 }
+        SearchState {
+            board: Board::default(),
+            obstacle_block_count: 0,
+            spawn_obstacle_block_count: 0,
+            skill_point: 0,
+            cumulative_game_score: 0,
+            command: None,
+            search_score: 0.0,
+        }
     }
-    pub fn new(board: Board, obstacle_block_count: u32, spawn_obstacle_block_count: u32, skill_point: u32, cumulative_game_score: u32, command: Option<Command>, search_score: f64) -> SearchState {
-        SearchState { board, obstacle_block_count, spawn_obstacle_block_count, skill_point, cumulative_game_score, command, search_score }
+    pub fn new(
+        board: Board,
+        obstacle_block_count: u32,
+        spawn_obstacle_block_count: u32,
+        skill_point: u32,
+        cumulative_game_score: u32,
+        command: Option<Command>,
+        search_score: f64,
+    ) -> SearchState {
+        SearchState {
+            board,
+            obstacle_block_count,
+            spawn_obstacle_block_count,
+            skill_point,
+            cumulative_game_score,
+            command,
+            search_score,
+        }
     }
 
     pub fn update_obstacle_block_and_drop(&mut self) {
-        if self.spawn_obstacle_block_count >= self.obstacle_block_count {
-            self.spawn_obstacle_block_count -= self.obstacle_block_count;
-            self.obstacle_block_count = 0;
-        } else {
-            self.obstacle_block_count -= self.spawn_obstacle_block_count;
-            self.spawn_obstacle_block_count = 0;
-        }
+        self.update_obstacle_block();
         //Drop
         if self.obstacle_block_count >= FIELD_WIDTH as u32 {
             self.board.drop_obstacles();
@@ -67,8 +85,7 @@ impl SearchState {
     pub fn obstacle_block_count(&self) -> u32 {
         self.obstacle_block_count
     }
-    pub fn with_obstacle_block_count(mut self, count: u32) -> Self
-    {
+    pub fn with_obstacle_block_count(mut self, count: u32) -> Self {
         self.obstacle_block_count = count;
         self
     }
@@ -82,8 +99,7 @@ impl SearchState {
     pub fn board(&self) -> Board {
         self.board
     }
-    pub fn with_board(mut self, board: Board) -> Self
-    {
+    pub fn with_board(mut self, board: Board) -> Self {
         self.board = board;
         self
     }
@@ -107,8 +123,7 @@ impl SearchState {
     pub fn set_command(&mut self, command: Command) {
         self.command = Some(command);
     }
-    pub fn with_command(mut self, command: Command) -> Self
-    {
+    pub fn with_command(mut self, command: Command) -> Self {
         debug_assert!(self.command.is_none());
         self.command = Some(command);
         self
@@ -128,10 +143,38 @@ impl SearchState {
         self.board.zobrist_hash() ^ rnd.next()
     }
 }
+#[test]
+fn test_drop_obstacle_board() {
+    let board = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 4, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 7, 0, 0, 0, 0],
+        [0, 0, 0, 0, 8, 9, 0, 0, 0, 0],
+        [0, 0, 0, 0, 5, 6, 0, 0, 0, 0],
+        [0, 0, 0, 0, 7, 9, 0, 0, 0, 0],
+        [0, 0, 0, 0, 4, 9, 0, 0, 0, 0],
+        [0, 0, 0, 8, 3, 5, 0, 0, 0, 0],
+        [0, 0, 0, 5, 8, 1, 0, 0, 0, 0],
+        [0, 0, 0, 8, 6, 1, 5, 0, 0, 0],
+        [0, 0, 0, 1, 5, 3, 3, 0, 0, 0],
+        [0, 0, 0, 8, 1, 4, 8, 0, 0, 0],
+        [0, 0, 1, 5, 1, 7, 7, 0, 0, 0],
+    ];
+
+    let s = SearchState::default()
+        .with_spawn_obstacle_block_count(0)
+        .with_obstacle_block_count(20)
+        .with_board(Board::new(board));
+    let mut b = s.board();
+    b.drop_obstacles();
+    assert_ne!(b, s.board());
+}
 
 #[test]
 fn test_update_obstacle_block_and_drop() {
-
 
     let board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -151,8 +194,11 @@ fn test_update_obstacle_block_and_drop() {
         [0, 0, 0, 8, 1, 4, 8, 0, 0, 0],
         [0, 0, 1, 5, 1, 7, 7, 0, 0, 0],
     ];
-    Board::new(board);
-    let mut s = SearchState::default().with_spawn_obstacle_block_count(0).with_obstacle_block_count(20).with_board(Board::new(board));
+
+    let mut s = SearchState::default()
+        .with_spawn_obstacle_block_count(0)
+        .with_obstacle_block_count(20)
+        .with_board(Board::new(board));
     s.update_obstacle_block_and_drop();
     assert_eq!(s.spawn_obstacle_block_count, 0);
     assert_eq!(s.obstacle_block_count, 10);
@@ -179,13 +225,17 @@ fn test_update_obstacle_block_and_drop() {
 
 #[test]
 fn test_update_obstacle_block() {
-    let mut s = SearchState::default().with_spawn_obstacle_block_count(30).with_obstacle_block_count(20);
+    let mut s = SearchState::default()
+        .with_spawn_obstacle_block_count(30)
+        .with_obstacle_block_count(20);
     assert_eq!(s.obstacle_block_count(), 20);
     assert_eq!(s.spawn_obstacle_block_count(), 30);
     s.update_obstacle_block();
     assert_eq!(s.obstacle_block_count(), 0);
     assert_eq!(s.spawn_obstacle_block_count(), 10);
-    let mut s = SearchState::default().with_spawn_obstacle_block_count(30).with_obstacle_block_count(60);
+    let mut s = SearchState::default()
+        .with_spawn_obstacle_block_count(30)
+        .with_obstacle_block_count(60);
     assert_eq!(s.obstacle_block_count(), 60);
     assert_eq!(s.spawn_obstacle_block_count(), 30);
     s.update_obstacle_block();
