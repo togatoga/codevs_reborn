@@ -21,9 +21,10 @@ fn bench(pack: std::fs::File, info: std::fs::File, seed: u64, output_file: std::
     let current_turn: usize = information.read();
     let player = Solver::read_game_status(&mut information);
     let enemy = Solver::read_game_status(&mut information);
+    solver.set_turn(current_turn);
     solver.set_game_status(player, enemy);
     solver.set_config(SolverConfig::default().with_beam(15, 500));
-    let best_result = solver.think(current_turn);
+    let best_result = solver.think();
 
     best_result.to_csv(output_file).unwrap();
 }
@@ -39,9 +40,10 @@ fn profile(pack: std::fs::File, info: std::fs::File, seed: u64) {
     let current_turn: usize = information.read();
     let player = Solver::read_game_status(&mut information);
     let enemy = Solver::read_game_status(&mut information);
+    solver.set_turn(current_turn);
     solver.set_game_status(player, enemy);
     solver.set_config(SolverConfig::default().with_beam(15, 500));
-    let best_result = solver.think(current_turn);
+    let best_result = solver.think();
     eprintln!("{:?}", best_result);
 }
 
@@ -81,11 +83,12 @@ fn run(matches: ArgMatches) {
     solver.set_packs(Solver::read_packs(&mut sc));
     loop {
         let current_turn: usize = sc.read();
+        solver.set_turn(current_turn);
         //read player data
         let player = Solver::read_game_status(&mut sc);
         let enemy = Solver::read_game_status(&mut sc);
         solver.set_game_status(player, enemy);
-        let best_result = solver.think(current_turn);
+        let best_result = solver.think();
         Solver::output_command(best_result.command);
     }
 }
