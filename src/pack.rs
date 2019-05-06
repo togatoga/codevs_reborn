@@ -7,7 +7,7 @@ pub type BitBlock = u16;
 
 const BASE_BIT: u16 = 4;
 
-#[derive(Clone, Debug, PartialEq, Hash)]
+#[derive(Clone, Debug, PartialEq, Hash, Copy)]
 pub struct Pack {
     //Board
     //9(0) 5(1)
