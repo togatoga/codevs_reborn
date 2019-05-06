@@ -7,7 +7,7 @@ use crate::simulator::{Simulator, DIRECTION_YXS};
 use crate::solver_config::DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT;
 
 use crate::zobrist_hash_table::ZobristHash;
-use fnv::FnvHashMap;
+use fnv::{FnvHashMap, FnvHashSet};
 //max 20
 
 //(10 / 13) ^ 0 (10 / 13) ^ 1 (10 / 13) ^ 2
@@ -44,18 +44,21 @@ const NOT_SPAWN_MAX_CHAIN_COUNT: u8 = 7;
 
 
 pub struct EvaluateCache {
-    cache: FnvHashMap<ZobristHash, (u8, u8)>,
+    cache_estimate_max_chain_count: FnvHashMap<ZobristHash, (u8, u8)>,
+    cache_estimate_with_erasing_all_max_chain_count: FnvHashMap<ZobristHash, u8>,
 }
 
 impl EvaluateCache {
     pub fn new() -> EvaluateCache {
         EvaluateCache {
-            cache: FnvHashMap::default(),
+            cache_estimate_max_chain_count: FnvHashMap::default(),
+            cache_estimate_with_erasing_all_max_chain_count: FnvHashMap::default(),
         }
     }
     pub fn default() -> EvaluateCache {
         EvaluateCache {
-            cache: FnvHashMap::default(),
+            cache_estimate_max_chain_count: FnvHashMap::default(),
+            cache_estimate_with_erasing_all_max_chain_count: FnvHashMap::default(),
         }
     }
     pub fn empty(&self) -> bool {
@@ -65,10 +68,14 @@ impl EvaluateCache {
         self.cache.len()
     }
     pub fn clear(&mut self) {
-        self.cache.clear();
+
+        self.cache_estimate_max_chain_count.clear();
     }
 
     pub fn estimate_with_erasing_all_max_chain_count(&mut self, simulator: &mut Simulator, board: &Board) -> u8 {
+        if let Some(chain_count) = self.cache_estimate_with_erasing_all_max_chain_count.get(&board.zobrist_hash()) {
+            return chain_count.clone();
+        }
         let mut max_chain_count = 0;
         for x in 0..FIELD_WIDTH {
             for y in 0..board.heights[x] {
@@ -129,6 +136,7 @@ impl EvaluateCache {
                 max_chain_count = std::cmp::max(max_chain_count, chain_count + 1);
             }
         }
+        self.cache_estimate_with_erasing_all_max_chain_count.insert(board.zobrist_hash(), max_chain_count);
         max_chain_count
     }
     //too heavy function
@@ -137,7 +145,7 @@ impl EvaluateCache {
         simulator: &mut Simulator,
         board: &Board,
     ) -> (u8, u8) {
-        if let Some(cache_max_chain_count) = self.cache.get(&board.zobrist_hash()) {
+        if let Some(cache_max_chain_count) = self.cache_estimate_max_chain_count.get(&board.zobrist_hash()) {
             return *cache_max_chain_count;
         }
         let mut estimated_max_chain: (u8, u8) = (0, 0);
@@ -204,7 +212,7 @@ impl EvaluateCache {
                 }
             }
         }
-        self.cache.insert(board.zobrist_hash(), estimated_max_chain);
+        self.cache_estimate_max_chain_count.insert(board.zobrist_hash(), estimated_max_chain);
         estimated_max_chain
     }
 
