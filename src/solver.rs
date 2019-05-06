@@ -88,7 +88,8 @@ impl Solver {
     }
     fn clear_cache_if_needed(&mut self, player: &GameStatus) {
         if self.debug {
-            eprintln!("Cache size {}", self.evaluate_cache.len());
+            eprintln!("Cache size for erasing all {}", self.evaluate_cache.len_estimate_with_erasing_all_max_chain_count());
+            eprintln!("Cache size for max chain count {}", self.evaluate_cache.len_estimate_max_chain_count());
         }
 
         let previous_obstacle_count = self.player.obstacle_block_count();
@@ -103,14 +104,21 @@ impl Solver {
                     eprintln!("Cache Clear because board get dirty!!");
                 }
                 self.evaluate_cache.clear();
-                debug_assert!(self.evaluate_cache.empty());
+                //debug_assert!(self.evaluate_cache.empty());
             }
         }
         //512MB
-        if self.evaluate_cache.len() > 512 * 1024 * 1024 {
+         if self.evaluate_cache.len_estimate_max_chain_count() > 512 * 1024 * 1024 {
             eprintln!(
                 "Cache Clear because cache is too big: {}",
-                self.evaluate_cache.len()
+                self.evaluate_cache.len_estimate_max_chain_count()
+            );
+            self.evaluate_cache.clear();
+        }
+        if self.evaluate_cache.len_estimate_with_erasing_all_max_chain_count() > 512 * 1024 * 1024 {
+            eprintln!(
+                "Cache Clear because cache is too big: {}",
+                self.evaluate_cache.len_estimate_max_chain_count()
             );
             self.evaluate_cache.clear();
         }

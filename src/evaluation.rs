@@ -61,11 +61,14 @@ impl EvaluateCache {
             cache_estimate_with_erasing_all_max_chain_count: FnvHashMap::default(),
         }
     }
-    pub fn empty(&self) -> bool {
+    /*pub fn empty(&self) -> bool {
         self.len() == 0
-    }
-    pub fn len(&self) -> usize {
+    }*/
+    pub fn len_estimate_max_chain_count(&self) -> usize {
         self.cache_estimate_max_chain_count.len()
+    }
+    pub fn len_estimate_with_erasing_all_max_chain_count(&self) -> usize {
+        self.cache_estimate_with_erasing_all_max_chain_count.len()
     }
     pub fn clear(&mut self) {
         self.cache_estimate_with_erasing_all_max_chain_count.clear();
