@@ -180,6 +180,9 @@ impl Solver {
         max_enemy_chain_count: u8,
         need_kill_chain_count: u8,
     ) -> bool {
+        if chain_count > max_enemy_chain_count {
+            return false;
+        }
         //chain count is fatal max chain count
         if chain_count >= need_kill_chain_count {
             if self.debug {
