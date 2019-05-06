@@ -29,6 +29,7 @@ pub struct Solver {
     config: SolverConfig,
     simulator: Simulator,
     evaluate_cache: EvaluateCache,
+    turn: usize,
     seed: u64,
     debug: bool, //debug mode
 }
@@ -44,6 +45,7 @@ impl Solver {
             config: SolverConfig::default(),
             simulator: Simulator::default(),
             evaluate_cache: EvaluateCache::new(),
+            turn: 0,
             seed: 1024,
             debug: false,
         }
@@ -63,9 +65,20 @@ impl Solver {
             config,
             simulator: Simulator::new(),
             evaluate_cache: EvaluateCache::new(),
+            turn: 0,
             seed,
             debug,
         }
+    }
+    pub fn turn(&self) -> usize {
+        self.turn
+    }
+    pub fn with_turn(mut self, turn: usize) -> Self {
+        self.turn = turn;
+        self
+    }
+    pub fn set_turn(&mut self, turn: usize) {
+        self.turn = turn;
     }
     pub fn with_seed(mut self, seed: u64) -> Self {
         self.seed = seed;
@@ -188,6 +201,7 @@ impl Solver {
             }
         }
     }
+
     fn should_fire_right_now(
         &self,
         chain_count: u8,
@@ -264,9 +278,13 @@ impl Solver {
         }
         DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT
     }
+    fn gaze_enemy_max_chain_count_by_beam_search(&mut self, beam_depth: usize, beam_width: usize) {
+
+    }
     //gaze enemy
     #[allow(dead_code)]
-    fn gaze_enemy_max_chain_count(&mut self, current_turn: usize) -> u8 {
+    fn gaze_enemy_max_chain_count(&mut self) -> u8 {
+        let current_turn = self.turn();
         let mut max_chain_count = 0;
         for (pack, _) in self.packs[current_turn].iter() {
             for point in 0..9 {
@@ -317,7 +335,8 @@ impl Solver {
         }
         false
     }
-    pub fn think(&mut self, current_turn: usize) -> SearchResult {
+    pub fn think(&mut self) -> SearchResult {
+        let current_turn = self.turn();
         let mut best_search_result = SearchResult::default();
         if self.kill_bomber_mode() {
             if self.debug {
@@ -361,7 +380,7 @@ impl Solver {
         let mut rnd = Xorshift::with_seed(current_turn as u64 + self.seed);
 
         //gaze enemy...
-        let max_enemy_chain_count = self.gaze_enemy_max_chain_count(current_turn);
+        let max_enemy_chain_count = self.gaze_enemy_max_chain_count();
         let need_kill_chain_count = self.gaze_enemy_need_kill_chain_count();
 
         for depth in 0..beam_depth {
