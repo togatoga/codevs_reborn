@@ -68,7 +68,7 @@ impl EvaluateCache {
         self.cache_estimate_max_chain_count.len()
     }
     pub fn clear(&mut self) {
-
+        self.cache_estimate_with_erasing_all_max_chain_count.clear();
         self.cache_estimate_max_chain_count.clear();
     }
 
