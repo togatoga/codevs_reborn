@@ -8,7 +8,7 @@ pub struct SolverConfig {
 
 }
 pub const DEFAULT_BEAM_DEPTH: usize = 13;
-pub const DEFAULT_BEAM_WIDTH: usize = 300;
+pub const DEFAULT_BEAM_WIDTH: usize = 600;
 pub const DEFAULT_FIRE_MAX_CHAIN_COUNT: u8 = 12;
 pub const DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT: u8 = 15;
 //parameters for gazing enemy
