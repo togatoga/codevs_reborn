@@ -398,7 +398,7 @@ impl Solver {
                 eprintln!("Fire right now!!");
                 break;
             }
-            for kind in 0..2 {
+            for kind in 0..1 {
                 while let Some(search_state) = &mut search_state_heap[depth][kind].pop_max() {
                     //Update obstacle block
                     search_state.update_obstacle_block_and_drop();
@@ -438,7 +438,7 @@ impl Solver {
 
                             //remove duplication
 
-                            for t in 0..2 {
+                            for t in 0..1 {
                                 if searched_state.contains(&next_search_state.zobrist_hash()) {
                                     continue;
                                 }
