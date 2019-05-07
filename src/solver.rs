@@ -363,10 +363,10 @@ impl Solver {
         if self.debug {
             eprintln!("Beam depth: {}, Beam width: {}", beam_depth, beam_width);
         }
-        let mut search_state_heap: Vec<MinMaxHeap<SearchState>> =
-            (0..beam_depth + 1).map(|_| MinMaxHeap::new()).collect();
-        let mut searched_state = fnv::FnvHashSet::default();
-
+        let mut search_state_heap: Vec<Vec<MinMaxHeap<SearchState>>> =
+            (0..beam_depth + 1).map(|_| vec![MinMaxHeap::new(), MinMaxHeap::new()]).collect();
+        let mut searched_state = vec![fnv::FnvHashSet::default(), fnv::FnvHashSet::default()];
+        let mut searched_state_root = fnv::FnvHashSet::default();
         //Create an initial state
         let root_search_state = SearchState::default()
             .with_board(self.player.board())
@@ -374,7 +374,7 @@ impl Solver {
             .with_spawn_obstacle_block_count(self.enemy.obstacle_block_count())
             .with_cumulative_game_score(self.player.cumulative_game_score());
         //push an initial search state
-        search_state_heap[0].push(root_search_state);
+        search_state_heap[0][0].push(root_search_state);
         let mut rnd = Xorshift::with_seed(current_turn as u64 + self.seed);
 
         //gaze enemy...
@@ -388,98 +388,104 @@ impl Solver {
                 eprintln!("Fire right now!!");
                 break;
             }
-            while let Some(search_state) = &mut search_state_heap[depth].pop_max() {
-                //Update obstacle block
-                search_state.update_obstacle_block_and_drop();
-                //skip duplicate
-
-                for (pack, rotate_count) in self.packs[search_turn].iter() {
-                    for point in 0..9 {
-                        let mut board = search_state.board();
-                        let chain_count = self.simulator.simulate(&mut board, point, &pack);
-                        //Next board is dead and not to put it in state heap
-                        if board.is_game_over() {
-                            continue;
-                        }
-
-                        //update these values
-                        let gain_chain_game_score = simulator::calculate_game_score(chain_count);
-                        let next_board = board;
-                        let next_cumulative_game_score =
-                            gain_chain_game_score + search_state.cumulative_game_score();
-                        let next_spawn_obstacle_block_count =
-                            simulator::calculate_obstacle_count_from_chain_count(chain_count)
-                                + search_state.spawn_obstacle_block_count();
-                        //create next search state from a previous state
-                        let mut next_search_state = search_state.clone()
-                            .with_board(next_board)
-                            .with_cumulative_game_score(next_cumulative_game_score)
-                            .with_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
-
-                        next_search_state.update_obstacle_block();
-                        if !next_search_state.is_command() {
-                            debug_assert_eq!(depth, 0);
-                            next_search_state.set_command(Command::Drop((point, *rotate_count)));
-                        }
-
-                        //remove duplication
-                        if searched_state.contains(&next_search_state.zobrist_hash()) {
-                            continue;
-                        }
-                        //push it to hash set
-                        searched_state.insert(next_search_state.zobrist_hash());
-                        debug_assert_eq!(
-                            search_state.cumulative_game_score() + gain_chain_game_score,
-                            next_search_state.cumulative_game_score()
-                        );
-
-                        // Add a tiny value(0.0 ~ 1.0) to search score
-                        // To randomize search score for the diversity of search
-                        let next_search_score = self
-                            .evaluate_cache
-                            .evaluate_search_score(&mut self.simulator, &next_search_state)
-                            + rnd.randf();
-                        next_search_state.set_search_score(next_search_score);
-
-                        //push it to next beam
-                        //prune fire state
-                        if chain_count <= 10 {
-                            search_state_heap[depth + 1].push(next_search_state);
-                            //The number of next beam is over beam_width; pop minimum state
-                            while search_state_heap[depth + 1].len() > beam_width {
-                                search_state_heap[depth + 1].pop_min();
+            for kind in 0..2 {
+                while let Some(search_state) = &mut search_state_heap[depth][kind].pop_max() {
+                    //Update obstacle block
+                    search_state.update_obstacle_block_and_drop();
+                    //skip duplicate
+                    if searched_state_root.contains(&search_state.zobrist_hash()) {
+                        continue;
+                    }
+                    searched_state_root.insert(search_state.zobrist_hash());
+                    for (pack, rotate_count) in self.packs[search_turn].iter() {
+                        for point in 0..9 {
+                            let mut board = search_state.board();
+                            let chain_count = self.simulator.simulate(&mut board, point, &pack);
+                            //Next board is dead and not to put it in state heap
+                            if board.is_game_over() {
+                                continue;
                             }
-                            debug_assert!(search_state_heap[depth + 1].len() <= beam_width);
-                        }
 
-                        let mut target_search_result_score = if self.kill_bomber_mode() {
-                            evaluate_search_result_score_for_bomber(chain_count, next_search_score, depth)
-                        } else {
-                            evaluate_search_result_score(gain_chain_game_score, next_search_score, depth)
-                        };
+                            //update these values
+                            let gain_chain_game_score = simulator::calculate_game_score(chain_count);
+                            let next_board = board;
+                            let next_cumulative_game_score =
+                                gain_chain_game_score + search_state.cumulative_game_score();
+                            let next_spawn_obstacle_block_count =
+                                simulator::calculate_obstacle_count_from_chain_count(chain_count)
+                                    + search_state.spawn_obstacle_block_count();
+                            //create next search state from a previous state
+                            let mut next_search_state = search_state.clone()
+                                .with_board(next_board)
+                                .with_cumulative_game_score(next_cumulative_game_score)
+                                .with_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
 
-                        //consider whether solver should fire at depth 0
-                        let fire_right_now = if depth == 0 && self.should_fire_right_now(chain_count, max_enemy_chain_count, need_kill_chain_count) {
-                            true
-                        } else {
-                            false
-                        };
-                        if fire_right_now {
-                            target_search_result_score.0 *= FIRE_RIGHT_NOW_BOOST_SCORE;
-                        }
+                            next_search_state.update_obstacle_block();
+                            if !next_search_state.is_command() {
+                                debug_assert_eq!(depth, 0);
+                                next_search_state.set_command(Command::Drop((point, *rotate_count)));
+                            }
+
+                            debug_assert_eq!(
+                                search_state.cumulative_game_score() + gain_chain_game_score,
+                                next_search_state.cumulative_game_score()
+                            );
 
 
-                        //pick highest search result score
-                        if target_search_result_score > best_search_result.search_result_score {
-                            best_search_result.search_result_score = target_search_result_score;
-                            best_search_result.gain_game_score = gain_chain_game_score;
-                            best_search_result.cumulative_game_score =
-                                next_search_state.cumulative_game_score();
-                            best_search_result.last_chain_count = chain_count;
-                            best_search_result.search_depth = depth;
-                            best_search_result.board = next_search_state.board();
-                            best_search_result.command = next_search_state.command().unwrap();
-                            best_search_result.fire_right_now = fire_right_now;
+                            for t in 0..2 {
+                                if searched_state[t].contains(&next_search_state.zobrist_hash()) {
+                                    continue;
+                                }
+                                searched_state[t].insert(next_search_state.zobrist_hash());
+                                // Add a tiny value(0.0 ~ 1.0) to search score
+                                // To randomize search score for the diversity of search
+                                let next_search_score = self
+                                    .evaluate_cache
+                                    .evaluate_search_score(&mut self.simulator, &next_search_state, t)
+                                    + rnd.randf();
+                                next_search_state.set_search_score(next_search_score);
+
+                                //push it to next beam
+                                //prune fire state
+                                if chain_count <= 10 {
+                                    search_state_heap[depth + 1][t].push(next_search_state);
+                                    //The number of next beam is over beam_width; pop minimum state
+                                    while search_state_heap[depth + 1][t].len() > beam_width {
+                                        search_state_heap[depth + 1][t].pop_min();
+                                    }
+                                    debug_assert!(search_state_heap[depth + 1][t].len() <= beam_width);
+                                }
+
+                                let mut target_search_result_score = if self.kill_bomber_mode() {
+                                    evaluate_search_result_score_for_bomber(chain_count, next_search_score, depth)
+                                } else {
+                                    evaluate_search_result_score(gain_chain_game_score, next_search_score, depth)
+                                };
+
+                                //consider whether solver should fire at depth 0
+                                let fire_right_now = if depth == 0 && self.should_fire_right_now(chain_count, max_enemy_chain_count, need_kill_chain_count) {
+                                    true
+                                } else {
+                                    false
+                                };
+                                if fire_right_now {
+                                    target_search_result_score.0 *= FIRE_RIGHT_NOW_BOOST_SCORE;
+                                }
+
+
+                                //pick highest search result score
+                                if target_search_result_score > best_search_result.search_result_score {
+                                    best_search_result.search_result_score = target_search_result_score;
+                                    best_search_result.gain_game_score = gain_chain_game_score;
+                                    best_search_result.cumulative_game_score =
+                                        next_search_state.cumulative_game_score();
+                                    best_search_result.last_chain_count = chain_count;
+                                    best_search_result.search_depth = depth;
+                                    best_search_result.board = next_search_state.board();
+                                    best_search_result.command = next_search_state.command().unwrap();
+                                    best_search_result.fire_right_now = fire_right_now;
+                                }
+                            }
                         }
                     }
                 }

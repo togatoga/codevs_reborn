@@ -224,6 +224,7 @@ impl EvaluateCache {
         &mut self,
         simulator: &mut Simulator,
         search_state: &SearchState,
+        kind: usize,
     ) -> f64 {
         let mut search_score: f64 = 0.0;
 
@@ -234,15 +235,21 @@ impl EvaluateCache {
         }
         // game score
         // max chain count
-        let (estimated_max_chain_count, _) = self.estimate_max_chain_count(simulator, &board);
-        search_score += estimated_max_chain_count as f64 * 10e5;
-        /*let estimated_max_erasing_chain_count = self.estimate_with_erasing_all_max_chain_count(simulator, &search_state.board());
-        search_score += estimated_max_erasing_chain_count as f64 * 10e5;*/
+        if kind == 0 {
+            let (estimated_max_chain_count, _) = self.estimate_max_chain_count(simulator, &board);
+            search_score += estimated_max_chain_count as f64 * 1e5;
+        } else {
+            let estimated_max_erasing_chain_count = self.estimate_with_erasing_all_max_chain_count(simulator, &board);
+            search_score += estimated_max_erasing_chain_count as f64 * 1e5;
+        }
 
         // count live block
         let (live_block_count, obstacle_block_count) = board.count_blocks();
-        search_score += (live_block_count as f64 * 1000.0) as f64;
-        // search_score -= (obstacle_block_count as f64 * 0.1) as f64;
+        if kind == 0 {
+            search_score += (live_block_count as f64 * 1000.0) as f64;
+        } else {
+            search_score += (live_block_count as f64 * 1100.0) as f64;
+        }
 
         // pattern match
         let (keima, jump, _) = evaluate_pattern_match_cnt(&board);
@@ -252,7 +259,11 @@ impl EvaluateCache {
 
         for x in 0..FIELD_WIDTH {
             //height
-            search_score += 0.01 * board.heights[x] as f64;
+            if kind == 0 {
+                search_score += 0.01 * board.heights[x] as f64;
+            } else {
+                search_score += 0.1 * board.heights[x] as f64;
+            }
 
             for y in 0..board.heights[x] {
                 let block = board.get(y, x);
@@ -262,11 +273,19 @@ impl EvaluateCache {
                 } else {
                     search_score -= y as f64 * 0.0001;
                 }*/
-                if x >= 5 {                                                                                                                                                                                       
-                    search_score += (9 - x) as f64 * 0.01;                                                                                                                                                        
-                } else {                                                                                                                                                                                          
-                    search_score += x as f64 * 0.01;                                                                                                                                                              
-                }             
+                if kind == 0 {
+                    if x >= 5 {
+                        search_score += (9 - x) as f64 * 0.01;
+                    } else {
+                        search_score += x as f64 * 0.01;
+                    }
+                } else {
+                    if x >= 5 {
+                        search_score += (9 - x) as f64 * 0.1;
+                    } else {
+                        search_score += x as f64 * 0.1;
+                    }
+                }
                 if block == OBSTACLE_BLOCK {
                     continue;
                 }
