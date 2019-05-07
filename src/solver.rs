@@ -101,8 +101,15 @@ impl Solver {
     }
     fn clear_cache_if_needed(&mut self, player: &GameStatus) {
         if self.debug {
-            eprintln!("Cache size for erasing all {}", self.evaluate_cache.len_estimate_with_erasing_all_max_chain_count());
-            eprintln!("Cache size for max chain count {}", self.evaluate_cache.len_estimate_max_chain_count());
+            eprintln!(
+                "Cache size for erasing all {}",
+                self.evaluate_cache
+                    .len_estimate_with_erasing_all_max_chain_count()
+            );
+            eprintln!(
+                "Cache size for max chain count {}",
+                self.evaluate_cache.len_estimate_max_chain_count()
+            );
         }
 
         let previous_obstacle_count = self.player.obstacle_block_count();
@@ -121,14 +128,18 @@ impl Solver {
             }
         }
         //512MB
-         if self.evaluate_cache.len_estimate_max_chain_count() > 512 * 1024 * 1024 {
+        if self.evaluate_cache.len_estimate_max_chain_count() > 512 * 1024 * 1024 {
             eprintln!(
                 "Cache Clear because cache is too big: {}",
                 self.evaluate_cache.len_estimate_max_chain_count()
             );
             self.evaluate_cache.clear();
         }
-        if self.evaluate_cache.len_estimate_with_erasing_all_max_chain_count() > 512 * 1024 * 1024 {
+        if self
+            .evaluate_cache
+            .len_estimate_with_erasing_all_max_chain_count()
+            > 512 * 1024 * 1024
+        {
             eprintln!(
                 "Cache Clear because cache is too big: {}",
                 self.evaluate_cache.len_estimate_max_chain_count()
@@ -278,9 +289,7 @@ impl Solver {
         }
         DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT
     }
-    fn gaze_enemy_max_chain_count_by_beam_search(&mut self, beam_depth: usize, beam_width: usize) {
-
-    }
+    fn gaze_enemy_max_chain_count_by_beam_search(&mut self, beam_depth: usize, beam_width: usize) {}
     //gaze enemy
     #[allow(dead_code)]
     fn gaze_enemy_max_chain_count(&mut self) -> u8 {
@@ -365,7 +374,6 @@ impl Solver {
             .map(|_| vec![MinMaxHeap::new(), MinMaxHeap::new()])
             .collect();
         let mut searched_state: fnv::FnvHashSet<ZobristHash> = fnv::FnvHashSet::default();
-
 
 
         //Create an initial state
