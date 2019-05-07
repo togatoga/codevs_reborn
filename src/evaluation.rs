@@ -75,15 +75,8 @@ impl EvaluateCache {
         self.cache_estimate_max_chain_count.clear();
     }
 
-    pub fn estimate_with_erasing_all_max_chain_count(
-        &mut self,
-        simulator: &mut Simulator,
-        board: &Board,
-    ) -> u8 {
-        if let Some(chain_count) = self
-            .cache_estimate_with_erasing_all_max_chain_count
-            .get(&board.zobrist_hash())
-        {
+    pub fn estimate_with_erasing_all_max_chain_count(&mut self, simulator: &mut Simulator, board: &Board) -> u8 {
+        if let Some(chain_count) = self.cache_estimate_with_erasing_all_max_chain_count.get(&board.zobrist_hash()) {
             return chain_count.clone();
         }
         let mut max_chain_count = 0;
@@ -146,8 +139,7 @@ impl EvaluateCache {
                 max_chain_count = std::cmp::max(max_chain_count, chain_count + 1);
             }
         }
-        self.cache_estimate_with_erasing_all_max_chain_count
-            .insert(board.zobrist_hash(), max_chain_count);
+        self.cache_estimate_with_erasing_all_max_chain_count.insert(board.zobrist_hash(), max_chain_count);
         max_chain_count
     }
     //too heavy function
@@ -156,10 +148,7 @@ impl EvaluateCache {
         simulator: &mut Simulator,
         board: &Board,
     ) -> (u8, u8) {
-        if let Some(cache_max_chain_count) = self
-            .cache_estimate_max_chain_count
-            .get(&board.zobrist_hash())
-        {
+        if let Some(cache_max_chain_count) = self.cache_estimate_max_chain_count.get(&board.zobrist_hash()) {
             return *cache_max_chain_count;
         }
         let mut estimated_max_chain: (u8, u8) = (0, 0);
@@ -226,8 +215,7 @@ impl EvaluateCache {
                 }
             }
         }
-        self.cache_estimate_max_chain_count
-            .insert(board.zobrist_hash(), estimated_max_chain);
+        self.cache_estimate_max_chain_count.insert(board.zobrist_hash(), estimated_max_chain);
         estimated_max_chain
     }
 
@@ -236,7 +224,6 @@ impl EvaluateCache {
         &mut self,
         simulator: &mut Simulator,
         search_state: &SearchState,
-        kind: usize,
     ) -> f64 {
         let mut search_score: f64 = 0.0;
 
@@ -247,22 +234,14 @@ impl EvaluateCache {
         }
         // game score
         // max chain count
-        if kind == 0 {
-            let (estimated_max_chain_count, _) = self.estimate_max_chain_count(simulator, &board);
-            search_score += estimated_max_chain_count as f64 * 10e5;
-        } else {
-            let estimated_max_erasing_chain_count =
-                self.estimate_with_erasing_all_max_chain_count(simulator, &search_state.board());
-            search_score += estimated_max_erasing_chain_count as f64 * 10e5;
-        }
+        let (estimated_max_chain_count, _) = self.estimate_max_chain_count(simulator, &board);
+        search_score += estimated_max_chain_count as f64 * 10e5;
+        /*let estimated_max_erasing_chain_count = self.estimate_with_erasing_all_max_chain_count(simulator, &search_state.board());
+        search_score += estimated_max_erasing_chain_count as f64 * 10e5;*/
 
         // count live block
         let (live_block_count, obstacle_block_count) = board.count_blocks();
-        if kind == 0 {
-            search_score += (live_block_count as f64 * 1000.0) as f64;
-        } else {
-            search_score += (live_block_count as f64 * 2000.0) as f64;
-        }
+        search_score += (live_block_count as f64 * 1000.0) as f64;
         // search_score -= (obstacle_block_count as f64 * 0.1) as f64;
 
         // pattern match
@@ -273,11 +252,7 @@ impl EvaluateCache {
 
         for x in 0..FIELD_WIDTH {
             //height
-            if kind == 0 {
-                search_score += 0.01 * board.heights[x] as f64;
-            } else {
-                search_score += 0.05 * board.heights[x] as f64;
-            }
+            search_score += 0.01 * board.heights[x] as f64;
 
             for y in 0..board.heights[x] {
                 let block = board.get(y, x);
@@ -287,13 +262,13 @@ impl EvaluateCache {
                 } else {
                     search_score -= y as f64 * 0.0001;
                 }*/
+                if x >= 5 {                                                                                                                                                                                       
+                    search_score += (9 - x) as f64 * 0.01;                                                                                                                                                        
+                } else {                                                                                                                                                                                          
+                    search_score += x as f64 * 0.01;                                                                                                                                                              
+                }             
                 if block == OBSTACLE_BLOCK {
                     continue;
-                }
-                if x >= 5 {
-                    search_score += (9 - x) as f64 * 0.01;
-                } else {
-                    search_score += x as f64 * 0.01;
                 }
                 //down right
                 if y >= 1 && x + 1 < FIELD_WIDTH {
@@ -488,11 +463,10 @@ fn test_estimate_with_erasing_all() {
         [11, 11, 4, 3, 11, 3, 3, 6, 11, 11],
         [11, 11, 1, 2, 1, 5, 11, 11, 11, 11],
         [11, 11, 2, 7, 4, 4, 2, 11, 11, 11],
-        [11, 11, 9, 9, 5, 3, 3, 11, 11, 11],
+        [11, 11, 9, 9, 5, 3, 3, 11, 11, 11]
     ];
     let mut evaluate_cache = EvaluateCache::new();
-    let chain_count = evaluate_cache
-        .estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
+    let chain_count = evaluate_cache.estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
     assert_eq!(chain_count, 11);
     let board = [
         [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
@@ -510,10 +484,9 @@ fn test_estimate_with_erasing_all() {
         [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
         [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
         [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
-        [11, 11, 11, 11, 11, 09, 11, 11, 11, 11],
+        [11, 11, 11, 11, 11, 09, 11, 11, 11, 11]
     ];
-    let chain_count = evaluate_cache
-        .estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
+    let chain_count = evaluate_cache.estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
     assert_eq!(chain_count, 0);
 }
 
