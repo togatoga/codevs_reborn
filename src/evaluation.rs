@@ -145,13 +145,16 @@ impl EvaluateCache {
                 simulator.apply_erase_blocks(&mut simulated_board);
                 let chain_count = simulator.calculate_chain_count(&mut simulated_board);
                 if chain_count + 1 >= max_chain_count {
+                    if chain_count + 1 > max_chain_count {
+                        height = 0;
+                    }
                     max_chain_count = chain_count + 1;
                     //left height
-                    if x >= 1 && board.heights[x] <= board.heights[x - 1] {
-                        height = std::cmp::max(height, board.heights[x - 1] - board.heights[x]);
+                    if x >= 1 && y >= board.heights[x - 1] {
+                        height = std::cmp::max(height, y - board.heights[x - 1] + 1);
                     }
-                    if x + 1 < FIELD_WIDTH && board.heights[x] <= board.heights[x + 1] {
-                        height = std::cmp::max(height, board.heights[x + 1]);
+                    if x + 1 < FIELD_WIDTH && y >= board.heights[x + 1] {
+                        height = std::cmp::max(height, y - board.heights[x + 1] + 1);
                     }
                 }
 
@@ -470,53 +473,30 @@ fn test_simoid() {
 
 #[test]
 fn test_kera_counter() {
-    //A counter ai is very bad boy!!
-    let board = [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 6, 6, 0, 0],
-        [0, 0, 0, 0, 0, 0, 2, 1, 0, 0],
-        [0, 0, 0, 0, 9, 3, 2, 1, 0, 0],
-        [0, 0, 0, 0, 2, 2, 3, 6, 0, 0],
-        [0, 0, 0, 0, 9, 3, 5, 9, 0, 0],
-        [0, 0, 0, 0, 9, 8, 9, 7, 0, 0],
-        [0, 0, 0, 0, 8, 7, 7, 9, 0, 0],
-        [0, 0, 0, 6, 7, 7, 6, 7, 0, 0],
-        [0, 0, 0, 6, 1, 8, 1, 7, 0, 0],
-    ];
-    let mut evaluate_cache = EvaluateCache::new();
-    let (chain_count, height) = evaluate_cache
-        .estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
-    assert_eq!((chain_count, height), (10, 7));
-
 
     let board = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 7, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
-        [0, 0, 8, 1, 0, 0, 0, 0, 0, 0],
-        [0, 0, 4, 3, 0, 0, 0, 0, 0, 0],
-        [0, 0, 2, 2, 0, 0, 0, 0, 0, 0],
-        [0, 0, 7, 5, 0, 0, 0, 0, 0, 0],
-        [0, 0, 2, 9, 0, 2, 0, 0, 0, 0],
-        [0, 0, 9, 9, 5, 3, 0, 0, 0, 0],
-        [0, 0, 5, 8, 6, 3, 8, 1, 0, 0],
-        [0, 4, 8, 3, 9, 5, 3, 4, 0, 0],
+        [0, 0, 0, 11, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 11, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 4, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 4, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 0, 0, 6, 0, 0, 0],
+        [0, 0, 11, 7, 0, 0, 3, 0, 0, 0],
+        [0, 0, 11, 1, 11, 9, 11, 0, 0, 0],
+        [0, 0, 3, 3, 11, 11, 6, 0, 0, 0],
+        [0, 0, 2, 6, 1, 1, 7, 0, 0, 0],
+        [0, 0, 1, 7, 8, 11, 11, 11, 0, 0],
+        [0, 0, 4, 8, 4, 5, 9, 11, 0, 11],
+        [0, 0, 9, 9, 9, 3, 8, 8, 11, 11],
+        [11, 11, 2, 3, 9, 4, 5, 3, 11, 8],
+        [11, 11, 1, 2, 4, 2, 2, 3, 5, 8],
     ];
     let mut evaluate_cache = EvaluateCache::new();
     let (chain_count, height) = evaluate_cache
         .estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
-    assert_eq!((chain_count, height), (8, 10));
+    assert_eq!((chain_count, height), (14, 3));
+
 }
 #[test]
 fn test_estimate_with_erasing_all() {
@@ -568,8 +548,18 @@ fn test_estimate_with_erasing_all() {
 
 #[test]
 fn test_evaluate_search_result_score() {
-    let p1 = evaluate_search_result_score(simulator::calculate_game_score(10), 100.0, 1);
-    let p2 = evaluate_search_result_score(simulator::calculate_game_score(9), 6727592.0, 1);
+    let p1 = evaluate_search_result_score(
+        simulator::calculate_game_score(10),
+        100.0,
+        1,
+        DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT,
+    );
+    let p2 = evaluate_search_result_score(
+        simulator::calculate_game_score(9),
+        6727592.0,
+        1,
+        DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT,
+    );
     assert!(p1 >= p2);
 }
 
@@ -577,20 +567,43 @@ fn test_evaluate_search_result_score() {
 #[test]
 fn test_evaluate_game_score_by_depth() {
     let score = simulator::calculate_game_score(10);
-    debug_assert_eq!(evaluate_game_score_by_depth(score, 0), 51.69897000433602);
+    debug_assert_eq!(
+        evaluate_game_score_by_depth(score, 0, DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT),
+        51.69897000433602
+    );
     let score = simulator::calculate_game_score(11);
-    debug_assert_eq!(evaluate_game_score_by_depth(score, 0), 68.82607480270083);
+    debug_assert_eq!(
+        evaluate_game_score_by_depth(score, 0, DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT),
+        68.82607480270083
+    );
 
     let score = simulator::calculate_game_score(12);
-    debug_assert_eq!(evaluate_game_score_by_depth(score, 2), 76.33440779869551);
+    debug_assert_eq!(
+        evaluate_game_score_by_depth(score, 2, DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT),
+        76.33440779869551
+    );
     let score = simulator::calculate_game_score(13);
-    debug_assert_eq!(evaluate_game_score_by_depth(score, 2), 88.85604075017984);
+    debug_assert_eq!(
+        evaluate_game_score_by_depth(score, 2, DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT),
+        88.85604075017984
+    );
 
     let score = simulator::calculate_game_score(14);
-    debug_assert_eq!(evaluate_game_score_by_depth(score, 3), 81.0894512189861);
+    debug_assert_eq!(
+        evaluate_game_score_by_depth(score, 3, DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT),
+        81.0894512189861
+    );
 
-    let s1 = evaluate_game_score_by_depth(simulator::calculate_game_score(14), 11);
-    let s2 = evaluate_game_score_by_depth(simulator::calculate_game_score(12), 7);
+    let s1 = evaluate_game_score_by_depth(
+        simulator::calculate_game_score(14),
+        11,
+        DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT,
+    );
+    let s2 = evaluate_game_score_by_depth(
+        simulator::calculate_game_score(12),
+        7,
+        DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT,
+    );
     debug_assert!(s1 < s2);
 }
 
