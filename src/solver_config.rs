@@ -7,7 +7,7 @@ pub struct SolverConfig {
     pub fire_max_chain_count: u8,
 
 }
-pub const DEFAULT_BEAM_DEPTH: usize = 15;
+pub const DEFAULT_BEAM_DEPTH: usize = 13;
 pub const DEFAULT_BEAM_WIDTH: usize = 1200;
 pub const DEFAULT_FIRE_MAX_CHAIN_COUNT: u8 = 12;
 pub const DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT: u8 = 15;
