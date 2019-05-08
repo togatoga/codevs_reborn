@@ -413,14 +413,15 @@ impl Solver {
         let (max_enemy_chain_count, height) = self
             .evaluate_cache
             .estimate_with_erasing_all_max_chain_count(&mut self.simulator, &self.enemy.board());
-        let a = 1.08;
+        let a = 1.09;
         let mut target_enemy_chain_count = max_enemy_chain_count as f64;
         for i in 0..height {
             target_enemy_chain_count *= a;
         }
 
         eprintln!(
-            "Before: target_enemy_chain_count: {}",
+            "Before: height: {} target_enemy_chain_count: {}",
+			height,
             target_enemy_chain_count
         );
         let target_enemy_chain_count = std::cmp::min(17, target_enemy_chain_count as u8);
