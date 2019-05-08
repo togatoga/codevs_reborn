@@ -324,7 +324,7 @@ impl Solver {
                     return self.config.beam();
                 }
                 return (
-                    std::cmp::min(last_search_depth + 2, max_beam_depth),
+                    std::cmp::min(last_search_depth + 3, max_beam_depth),
                     max_beam_width,
                 );
             }
@@ -419,7 +419,7 @@ impl Solver {
             target_enemy_chain_count *= a;
         }
         eprintln!("Before: target_enemy_chain_count: {}", target_enemy_chain_count);
-        let target_enemy_chain_count = std::cmp::min(17, std::cmp::max(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT, target_enemy_chain_count as u8));
+        let target_enemy_chain_count = std::cmp::min(17, target_enemy_chain_count as u8);
         eprintln!("After: target_enemy_chain_count: {}", target_enemy_chain_count);
         for depth in 0..beam_depth {
             //next state
@@ -504,14 +504,18 @@ impl Solver {
                                 gain_chain_game_score,
                                 next_search_score,
                                 depth,
-                                target_enemy_chain_count
+                                std::cmp::max(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT, target_enemy_chain_count)
                             )
                         };
-                        //penalty for low chain count
-
-                        if chain_count < target_enemy_chain_count && (target_enemy_chain_count - chain_count >= 3) {
+                        /*if chain_count >= 11 && chain_count > target_enemy_chain_count {
+                            //bonus for greater than enemy
+                            let diff_chain_count = std::cmp::max(3, (chain_count - target_enemy_chain_count)) as usize;
+                            target_search_result_score.0 /= (GAME_SCORE_DEPTH_RATES[beam_depth - depth]);
+                        } else {
+                            //penalty for lower than enemy
                             let diff_chain_count = std::cmp::min(19, (target_enemy_chain_count - chain_count)) as usize;
-                            target_search_result_score.0 *= GAME_SCORE_DEPTH_RATES[diff_chain_count];
+                            target_search_result_score.0 *= (GAME_SCORE_DEPTH_RATES[diff_chain_count] * GAME_SCORE_DEPTH_RATES[beam_depth - depth]);
+                        }*/
 
                         }
                         //consider whether solver should fire at depth 0
