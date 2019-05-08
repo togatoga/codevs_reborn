@@ -262,11 +262,11 @@ impl EvaluateCache {
                 } else {
                     search_score -= y as f64 * 0.0001;
                 }*/
-                if x >= 5 {
-                    search_score += (9 - x) as f64 * 0.01;
-                } else {
-                    search_score += x as f64 * 0.01;
-                }
+                if x >= 5 {                                                                                                                                                                                       
+                    search_score += (9 - x) as f64 * 0.01;                                                                                                                                                        
+                } else {                                                                                                                                                                                          
+                    search_score += x as f64 * 0.01;                                                                                                                                                              
+                }             
                 if block == OBSTACLE_BLOCK {
                     continue;
                 }
