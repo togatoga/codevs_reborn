@@ -527,7 +527,7 @@ impl Solver {
                             target_search_result_score.0 *= (GAME_SCORE_DEPTH_RATES[diff_chain_count] * GAME_SCORE_DEPTH_RATES[beam_depth - depth]);
                         }*/
 
-                        }
+
                         //consider whether solver should fire at depth 0
                         /*let fire_right_now = if depth == 0
                             && self.should_fire_right_now(

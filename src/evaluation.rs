@@ -495,7 +495,7 @@ fn test_kera_counter() {
     let mut evaluate_cache = EvaluateCache::new();
     let (chain_count, height) = evaluate_cache
         .estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
-    assert_eq!((chain_count, height), (14, 3));
+    assert_eq!((chain_count, height), (14, 4));
 
 }
 #[test]
