@@ -270,8 +270,8 @@ impl EvaluateCache {
         // pattern match
         let (keima, jump, _) = evaluate_pattern_match_cnt(&board);
         // search_score += (three_chain * 10) as f64;
-        search_score += (keima * 2 * 10) as f64;
-        search_score += (jump * 1 * 10) as f64;
+        search_score += (keima as f64 * 2.0 * 10.0) as f64;
+        search_score += (jump as f64 * 1.0 * 10.0) as f64;
 
         for x in 0..FIELD_WIDTH {
             //height
