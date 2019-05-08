@@ -6,7 +6,10 @@ use crate::board::{
     Board, DANGER_LINE_HEIGHT, FIELD_HEIGHT, FIELD_WIDTH, INPUT_FIELD_HEIGHT, OBSTACLE_BLOCK,
 };
 use crate::command::Command;
-use crate::evaluation::{evaluate_game_score_by_depth, evaluate_game_score_for_bomber, EvaluateCache, GAME_SCORE_DEPTH_RATES, evaluate_search_result_score, evaluate_search_result_score_for_bomber};
+use crate::evaluation::{
+    evaluate_game_score_by_depth, evaluate_game_score_for_bomber, evaluate_search_result_score,
+    evaluate_search_result_score_for_bomber, EvaluateCache, GAME_SCORE_DEPTH_RATES,
+};
 use crate::game_status::GameStatus;
 use crate::pack::Pack;
 use crate::scanner;
@@ -26,6 +29,7 @@ pub struct Solver {
     simulator: Simulator,
     evaluate_cache: EvaluateCache,
     turn: usize,
+    last_best_search_result: Option<(u8, usize)>,
     seed: u64,
     debug: bool, //debug mode
 }
@@ -42,6 +46,7 @@ impl Solver {
             simulator: Simulator::default(),
             evaluate_cache: EvaluateCache::new(),
             turn: 0,
+            last_best_search_result: None,
             seed: 1024,
             debug: false,
         }
@@ -62,6 +67,7 @@ impl Solver {
             simulator: Simulator::new(),
             evaluate_cache: EvaluateCache::new(),
             turn: 0,
+            last_best_search_result: None,
             seed,
             debug,
         }
@@ -111,13 +117,16 @@ impl Solver {
         let previous_obstacle_count = self.player.obstacle_block_count();
         if previous_obstacle_count == 0 {
             //new player obstacle_block_count
-            let line_block = simulator::calculate_spawn_obstacle_line_from_obstacle_count(player.obstacle_block_count());
+            let line_block = simulator::calculate_spawn_obstacle_line_from_obstacle_count(
+                player.obstacle_block_count(),
+            );
             //enemy spawn new obstacle block
             if line_block > 0 {
                 if self.debug {
                     eprintln!("Cache Clear because board get dirty!!");
                 }
                 self.evaluate_cache.clear();
+                self.last_best_search_result = None;
                 //debug_assert!(self.evaluate_cache.empty());
             }
         }
@@ -231,7 +240,8 @@ impl Solver {
         if self.enemy.obstacle_block_count() < 10 && chain_count >= max_enemy_chain_count {
             let enemy_obstacle_count =
                 simulator::calculate_obstacle_count_from_chain_count(max_enemy_chain_count);
-            let total_enemy_obstacle_count = enemy_obstacle_count + self.enemy.obstacle_block_count();
+            let total_enemy_obstacle_count =
+                enemy_obstacle_count + self.enemy.obstacle_block_count();
             let player_obstacle_count =
                 simulator::calculate_obstacle_count_from_chain_count(chain_count);
             if player_obstacle_count > self.player.obstacle_block_count() {
@@ -301,6 +311,22 @@ impl Solver {
         let player = &self.player;
         if player.rest_time_milliseconds() >= 30000 {
             //more than 30 seconds
+            if let Some(last_search_result) = self.last_best_search_result {
+                let (last_chain_count, last_search_depth) = last_search_result;
+                let (max_beam_depth, max_beam_width) = self.config.beam();
+                //use normal beam
+                if last_search_depth == 0 {
+                    return self.config.beam();
+                }
+                //Too small chain count
+                if last_chain_count <= 10 {
+                    return self.config.beam();
+                }
+                return (
+                    std::cmp::min(last_search_depth + 2, max_beam_depth),
+                    max_beam_width,
+                );
+            }
             return self.config.beam();
         }
         if player.rest_time_milliseconds() >= 10000 {
@@ -338,6 +364,7 @@ impl Solver {
         false
     }
     pub fn think(&mut self) -> SearchResult {
+
         let current_turn = self.turn();
         let mut best_search_result = SearchResult::default();
         if self.kill_bomber_mode() {
@@ -350,6 +377,7 @@ impl Solver {
                 eprintln!("Sepll Magic!!");
             }
             best_search_result.command = Command::Spell;
+            self.last_best_search_result = None;
             return best_search_result;
         }
 
@@ -360,6 +388,7 @@ impl Solver {
 
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.beam_search_config();
+        self.last_best_search_result = None;
         if self.debug {
             eprintln!("Beam depth: {}, Beam width: {}", beam_depth, beam_width);
         }
@@ -411,7 +440,8 @@ impl Solver {
                             simulator::calculate_obstacle_count_from_chain_count(chain_count)
                                 + search_state.spawn_obstacle_block_count();
                         //create next search state from a previous state
-                        let mut next_search_state = search_state.clone()
+                        let mut next_search_state = search_state
+                            .clone()
                             .with_board(next_board)
                             .with_cumulative_game_score(next_cumulative_game_score)
                             .with_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
@@ -453,13 +483,26 @@ impl Solver {
                         }
 
                         let mut target_search_result_score = if self.kill_bomber_mode() {
-                            evaluate_search_result_score_for_bomber(chain_count, next_search_score, depth)
+                            evaluate_search_result_score_for_bomber(
+                                chain_count,
+                                next_search_score,
+                                depth,
+                            )
                         } else {
-                            evaluate_search_result_score(gain_chain_game_score, next_search_score, depth)
+                            evaluate_search_result_score(
+                                gain_chain_game_score,
+                                next_search_score,
+                                depth,
+                            )
                         };
 
                         //consider whether solver should fire at depth 0
-                        let fire_right_now = if depth == 0 && self.should_fire_right_now(chain_count, max_enemy_chain_count, need_kill_chain_count) {
+                        let fire_right_now = if depth == 0
+                            && self.should_fire_right_now(
+                                chain_count,
+                                max_enemy_chain_count,
+                                need_kill_chain_count,
+                            ) {
                             true
                         } else {
                             false
@@ -489,6 +532,10 @@ impl Solver {
             eprintln!("== Search Result ==");
             best_search_result.log();
         }
+        self.last_best_search_result = Some((
+            best_search_result.last_chain_count,
+            best_search_result.search_depth,
+        ));
         best_search_result
     }
 }
