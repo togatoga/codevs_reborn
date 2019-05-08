@@ -419,7 +419,7 @@ impl Solver {
             target_enemy_chain_count *= a;
         }
 
-        let target_enemy_chain_count = std::cmp::max(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT, std::cmp::min(20, target_enemy_chain_count as u8));
+        let target_enemy_chain_count = std::cmp::min(18, std::cmp::max(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT, target_enemy_chain_count as u8));
         eprintln!("target_enemy_chain_count: {}", target_enemy_chain_count);
         for depth in 0..beam_depth {
             //next state
@@ -508,11 +508,11 @@ impl Solver {
                             )
                         };
                         //penalty for low chain count
-                        if chain_count <= target_enemy_chain_count {
-                            let diff_chain_count = (target_enemy_chain_count - chain_count) as usize;
-                            let a = 1.09;
+
+                        if chain_count >= target_enemy_chain_count {
+                            let diff_chain_count = (chain_count - target_enemy_chain_count);
                             for _ in 0..diff_chain_count {
-                                target_search_result_score.0 /= a;
+                                target_search_result_score.0 *= a * GAME_SCORE_DEPTH_RATES[depth];
                             }
                         }
                         //consider whether solver should fire at depth 0
