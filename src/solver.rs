@@ -310,7 +310,11 @@ impl Solver {
     }
     pub fn beam_search_config(&self) -> (usize, usize) {
         let player = &self.player;
+
         if player.rest_time_milliseconds() >= 30000 {
+            if self.kill_bomber_mode() {
+                return (8, 300);
+            }
             //more than 30 seconds
             if let Some(last_search_result) = self.last_best_search_result {
                 let (last_chain_count, last_search_depth) = last_search_result;
