@@ -342,9 +342,10 @@ pub fn evaluate_search_result_score(
     chain_game_score: u32,
     search_score: f64,
     depth: usize,
+    target_chain_count: u8,
 ) -> (f64, f64) {
     (
-        evaluate_game_score_by_depth(chain_game_score, depth),
+        evaluate_game_score_by_depth(chain_game_score, depth, target_chain_count),
         search_score * GAME_SCORE_DEPTH_RATES[depth],
     )
 }
@@ -366,11 +367,11 @@ pub fn evaluate_game_score_for_bomber(chain_count: u8, depth: usize) -> f64 {
     std::cmp::min(max_score, game_score) as f64 * GAME_SCORE_DEPTH_RATES[depth]
 }
 
-pub fn evaluate_game_score_by_depth(game_score: u32, depth: usize) -> f64 {
+pub fn evaluate_game_score_by_depth(game_score: u32, depth: usize, target_chain_count: u8) -> f64 {
     debug_assert!(depth < 20);
 
     let max_fatal_gain_score =
-        simulator::calculate_obstacle_count_from_chain_count(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT);
+        simulator::calculate_obstacle_count_from_chain_count(target_chain_count);
     std::cmp::min(max_fatal_gain_score, game_score) as f64 * GAME_SCORE_DEPTH_RATES[depth]
         + (game_score as f64).log10()
 }
