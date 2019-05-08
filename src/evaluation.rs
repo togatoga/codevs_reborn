@@ -45,7 +45,7 @@ const NOT_SPAWN_MAX_CHAIN_COUNT: u8 = 7;
 
 pub struct EvaluateCache {
     cache_estimate_max_chain_count: FnvHashMap<ZobristHash, (u8, u8)>,
-    cache_estimate_with_erasing_all_max_chain_count: FnvHashMap<ZobristHash, u8>,
+    cache_estimate_with_erasing_all_max_chain_count: FnvHashMap<ZobristHash, (u8, usize)>,
 }
 
 impl EvaluateCache {
@@ -75,10 +75,18 @@ impl EvaluateCache {
         self.cache_estimate_max_chain_count.clear();
     }
 
-    pub fn estimate_with_erasing_all_max_chain_count(&mut self, simulator: &mut Simulator, board: &Board) -> u8 {
-        if let Some(chain_count) = self.cache_estimate_with_erasing_all_max_chain_count.get(&board.zobrist_hash()) {
+    pub fn estimate_with_erasing_all_max_chain_count(
+        &mut self,
+        simulator: &mut Simulator,
+        board: &Board,
+    ) -> (u8, usize) {
+        if let Some(chain_count) = self
+            .cache_estimate_with_erasing_all_max_chain_count
+            .get(&board.zobrist_hash())
+        {
             return chain_count.clone();
         }
+        let mut height = 0;
         let mut max_chain_count = 0;
         for x in 0..FIELD_WIDTH {
             for y in (0..board.heights[x]).rev() {
@@ -136,11 +144,22 @@ impl EvaluateCache {
                 simulator.erase_blocks.push((y, x));
                 simulator.apply_erase_blocks(&mut simulated_board);
                 let chain_count = simulator.calculate_chain_count(&mut simulated_board);
-                max_chain_count = std::cmp::max(max_chain_count, chain_count + 1);
+                if chain_count + 1 >= max_chain_count {
+                    max_chain_count = chain_count + 1;
+                    //left height
+                    if x - 1 >= 0 && board.heights[x] <= board.heights[x - 1] {
+                        height = std::cmp::max(height, board.heights[x - 1] - board.heights[x]);
+                    }
+                    if x + 1 < FIELD_WIDTH && board.heights[x] <= board.heights[x + 1] {
+                        height = std::cmp::max(height, board.heights[x + 1]);
+                    }
+                }
+
             }
         }
-        self.cache_estimate_with_erasing_all_max_chain_count.insert(board.zobrist_hash(), max_chain_count);
-        max_chain_count
+        self.cache_estimate_with_erasing_all_max_chain_count
+            .insert(board.zobrist_hash(), (max_chain_count, height));
+        (max_chain_count, height)
     }
     //too heavy function
     pub fn estimate_max_chain_count(
@@ -148,7 +167,10 @@ impl EvaluateCache {
         simulator: &mut Simulator,
         board: &Board,
     ) -> (u8, u8) {
-        if let Some(cache_max_chain_count) = self.cache_estimate_max_chain_count.get(&board.zobrist_hash()) {
+        if let Some(cache_max_chain_count) = self
+            .cache_estimate_max_chain_count
+            .get(&board.zobrist_hash())
+        {
             return *cache_max_chain_count;
         }
         let mut estimated_max_chain: (u8, u8) = (0, 0);
@@ -215,7 +237,8 @@ impl EvaluateCache {
                 }
             }
         }
-        self.cache_estimate_max_chain_count.insert(board.zobrist_hash(), estimated_max_chain);
+        self.cache_estimate_max_chain_count
+            .insert(board.zobrist_hash(), estimated_max_chain);
         estimated_max_chain
     }
 
@@ -262,11 +285,11 @@ impl EvaluateCache {
                 } else {
                     search_score -= y as f64 * 0.0001;
                 }*/
-                if x >= 5 {                                                                                                                                                                                       
-                    search_score += (9 - x) as f64 * 0.01;                                                                                                                                                        
-                } else {                                                                                                                                                                                          
-                    search_score += x as f64 * 0.01;                                                                                                                                                              
-                }             
+                if x >= 5 {
+                    search_score += (9 - x) as f64 * 0.01;
+                } else {
+                    search_score += x as f64 * 0.01;
+                }
                 if block == OBSTACLE_BLOCK {
                     continue;
                 }
@@ -444,7 +467,56 @@ fn test_simoid() {
     debug_assert_eq!(score, 10.0);
 }
 
+#[test]
+fn test_kera_counter() {
+    //A counter ai is very bad boy!!
+    let board = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 6, 6, 0, 0],
+        [0, 0, 0, 0, 0, 0, 2, 1, 0, 0],
+        [0, 0, 0, 0, 9, 3, 2, 1, 0, 0],
+        [0, 0, 0, 0, 2, 2, 3, 6, 0, 0],
+        [0, 0, 0, 0, 9, 3, 5, 9, 0, 0],
+        [0, 0, 0, 0, 9, 8, 9, 7, 0, 0],
+        [0, 0, 0, 0, 8, 7, 7, 9, 0, 0],
+        [0, 0, 0, 6, 7, 7, 6, 7, 0, 0],
+        [0, 0, 0, 6, 1, 8, 1, 7, 0, 0],
+    ];
+    let mut evaluate_cache = EvaluateCache::new();
+    let (chain_count, height) = evaluate_cache
+        .estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
+    assert_eq!((chain_count, height), (10, 7));
 
+
+    let board = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 7, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 8, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 4, 3, 0, 0, 0, 0, 0, 0],
+        [0, 0, 2, 2, 0, 0, 0, 0, 0, 0],
+        [0, 0, 7, 5, 0, 0, 0, 0, 0, 0],
+        [0, 0, 2, 9, 0, 2, 0, 0, 0, 0],
+        [0, 0, 9, 9, 5, 3, 0, 0, 0, 0],
+        [0, 0, 5, 8, 6, 3, 8, 1, 0, 0],
+        [0, 4, 8, 3, 9, 5, 3, 4, 0, 0],
+    ];
+    let mut evaluate_cache = EvaluateCache::new();
+    let (chain_count, height) = evaluate_cache
+        .estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
+    assert_eq!((chain_count, height), (8, 10));
+}
 #[test]
 fn test_estimate_with_erasing_all() {
     let board = [
@@ -463,10 +535,11 @@ fn test_estimate_with_erasing_all() {
         [11, 11, 4, 3, 11, 3, 3, 6, 11, 11],
         [11, 11, 1, 2, 1, 5, 11, 11, 11, 11],
         [11, 11, 2, 7, 4, 4, 2, 11, 11, 11],
-        [11, 11, 9, 9, 5, 3, 3, 11, 11, 11]
+        [11, 11, 9, 9, 5, 3, 3, 11, 11, 11],
     ];
     let mut evaluate_cache = EvaluateCache::new();
-    let chain_count = evaluate_cache.estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
+    let (chain_count, _) = evaluate_cache
+        .estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
     assert_eq!(chain_count, 11);
     let board = [
         [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
@@ -484,9 +557,10 @@ fn test_estimate_with_erasing_all() {
         [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
         [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
         [11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
-        [11, 11, 11, 11, 11, 09, 11, 11, 11, 11]
+        [11, 11, 11, 11, 11, 09, 11, 11, 11, 11],
     ];
-    let chain_count = evaluate_cache.estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
+    let (chain_count, _) = evaluate_cache
+        .estimate_with_erasing_all_max_chain_count(&mut Simulator::new(), &Board::new(board));
     assert_eq!(chain_count, 0);
 }
 
