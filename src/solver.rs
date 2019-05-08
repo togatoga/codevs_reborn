@@ -497,7 +497,7 @@ impl Solver {
                         };
 
                         //consider whether solver should fire at depth 0
-                        let fire_right_now = if depth == 0
+                        /*let fire_right_now = if depth == 0
                             && self.should_fire_right_now(
                                 chain_count,
                                 max_enemy_chain_count,
@@ -509,7 +509,7 @@ impl Solver {
                         };
                         if fire_right_now {
                             target_search_result_score.0 *= FIRE_RIGHT_NOW_BOOST_SCORE;
-                        }
+                        }*/
 
 
                         //pick highest search result score
@@ -522,7 +522,7 @@ impl Solver {
                             best_search_result.search_depth = depth;
                             best_search_result.board = next_search_state.board();
                             best_search_result.command = next_search_state.command().unwrap();
-                            best_search_result.fire_right_now = fire_right_now;
+                            // best_search_result.fire_right_now = fire_right_now;
                         }
                     }
                 }
