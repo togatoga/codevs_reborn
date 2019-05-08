@@ -147,7 +147,7 @@ impl EvaluateCache {
                 if chain_count + 1 >= max_chain_count {
                     max_chain_count = chain_count + 1;
                     //left height
-                    if x - 1 >= 0 && board.heights[x] <= board.heights[x - 1] {
+                    if x >= 1 && board.heights[x] <= board.heights[x - 1] {
                         height = std::cmp::max(height, board.heights[x - 1] - board.heights[x]);
                     }
                     if x + 1 < FIELD_WIDTH && board.heights[x] <= board.heights[x + 1] {
