@@ -418,17 +418,19 @@ impl Solver {
         for i in 0..height {
             target_enemy_chain_count *= a;
         }
-
-        eprintln!(
-            "Before: height: {} target_enemy_chain_count: {}",
-			height,
-            target_enemy_chain_count
-        );
+        if self.debug {
+            eprintln!(
+                "Before: height: {} target_enemy_chain_count: {}",
+                height, target_enemy_chain_count
+            );
+        }
         let target_enemy_chain_count = std::cmp::min(17, target_enemy_chain_count as u8);
-        eprintln!(
-            "After: target_enemy_chain_count: {}",
-            target_enemy_chain_count
-        );
+        if self.debug {
+            eprintln!(
+                "After: target_enemy_chain_count: {}",
+                target_enemy_chain_count
+            );
+        }
         for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
