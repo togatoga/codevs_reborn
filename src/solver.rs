@@ -413,19 +413,30 @@ impl Solver {
         let (max_enemy_chain_count, height) = self
             .evaluate_cache
             .estimate_with_erasing_all_max_chain_count(&mut self.simulator, &self.enemy.board());
-        let a = 1.18;
-        let mut target_enemy_chain_count = max_enemy_chain_count as f64;
-        
+
         if self.debug {
             eprintln!(
                 "Before: height: {}\nTarget_enemy_chain_count: {}",
-                height, target_enemy_chain_count
+                height, max_enemy_chain_count
             );
         }
-        for _ in 0..height {
-            target_enemy_chain_count *= a;
-        }
-        let target_enemy_chain_count = std::cmp::min(17, target_enemy_chain_count as u8);
+        //Counter ai
+        let target_enemy_chain_count = if max_enemy_chain_count >= 3 && height >= 4 {
+            17
+        } else {
+            15
+        };
+        /*for chain_count in 1..30 {
+            let obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
+            let line = simulator::calculate_spawn_obstacle_line_from_obstacle_count(obstacle_count);
+            eprintln!("line: {}, need_line: {}", line, need_line);
+            if line >= need_line {
+                target_enemy_chain_count = std::cmp::max(target_enemy_chain_count, chain_count);
+                break;
+            }
+        }*/
+
+
         if self.debug {
             eprintln!(
                 "After: target_enemy_chain_count: {}",
