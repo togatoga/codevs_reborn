@@ -421,11 +421,12 @@ impl Solver {
             );
         }
         //Counter ai
-        let target_enemy_chain_count = if max_enemy_chain_count >= 3 && height >= 4 {
-            17
-        } else {
-            15
-        };
+        let target_enemy_chain_count =
+            if self.turn() <= 20 && max_enemy_chain_count >= 3 && height >= 4 {
+                17
+            } else {
+                15
+            };
         /*for chain_count in 1..30 {
             let obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
             let line = simulator::calculate_spawn_obstacle_line_from_obstacle_count(obstacle_count);
