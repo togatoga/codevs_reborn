@@ -8,7 +8,7 @@ pub struct SolverConfig {
 
 }
 pub const DEFAULT_BEAM_DEPTH: usize = 12;
-pub const DEFAULT_BEAM_WIDTH: usize = 1000;
+pub const DEFAULT_BEAM_WIDTH: usize = 1500;
 pub const DEFAULT_FIRE_MAX_CHAIN_COUNT: u8 = 12;
 pub const DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT: u8 = 15;
 //parameters for gazing enemy
@@ -24,10 +24,23 @@ impl SolverConfig {
             beam_width: DEFAULT_BEAM_WIDTH,
             gaze_beam_depth: DEFAULT_GAZE_BEAM_DEPTH,
             gaze_beam_width: DEFAULT_BEAM_WIDTH,
-            fire_max_chain_count: DEFAULT_FIRE_MAX_CHAIN_COUNT}
+            fire_max_chain_count: DEFAULT_FIRE_MAX_CHAIN_COUNT,
+        }
     }
-    pub fn new(beam_depth: usize, beam_width: usize, gaze_beam_depth: usize, gaze_beam_width: usize, fire_max_chain_count: u8) -> SolverConfig {
-        SolverConfig {beam_depth, beam_width, gaze_beam_depth, gaze_beam_width, fire_max_chain_count}
+    pub fn new(
+        beam_depth: usize,
+        beam_width: usize,
+        gaze_beam_depth: usize,
+        gaze_beam_width: usize,
+        fire_max_chain_count: u8,
+    ) -> SolverConfig {
+        SolverConfig {
+            beam_depth,
+            beam_width,
+            gaze_beam_depth,
+            gaze_beam_width,
+            fire_max_chain_count,
+        }
     }
     pub fn with_beam(mut self, beam_depth: usize, beam_width: usize) -> SolverConfig {
         self.beam_depth = beam_depth;
