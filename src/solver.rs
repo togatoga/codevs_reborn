@@ -413,14 +413,21 @@ impl Solver {
         let (max_enemy_chain_count, height) = self
             .evaluate_cache
             .estimate_with_erasing_all_max_chain_count(&mut self.simulator, &self.enemy.board());
-        let a = 1.07;
+        let a = 1.08;
         let mut target_enemy_chain_count = max_enemy_chain_count as f64;
         for i in 0..height {
             target_enemy_chain_count *= a;
         }
-        eprintln!("Before: target_enemy_chain_count: {}", target_enemy_chain_count);
+
+        eprintln!(
+            "Before: target_enemy_chain_count: {}",
+            target_enemy_chain_count
+        );
         let target_enemy_chain_count = std::cmp::min(17, target_enemy_chain_count as u8);
-        eprintln!("After: target_enemy_chain_count: {}", target_enemy_chain_count);
+        eprintln!(
+            "After: target_enemy_chain_count: {}",
+            target_enemy_chain_count
+        );
         for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
@@ -497,14 +504,17 @@ impl Solver {
                             evaluate_search_result_score_for_bomber(
                                 chain_count,
                                 next_search_score,
-                                depth
+                                depth,
                             )
                         } else {
                             evaluate_search_result_score(
                                 gain_chain_game_score,
                                 next_search_score,
                                 depth,
-                                std::cmp::max(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT, target_enemy_chain_count)
+                                std::cmp::max(
+                                    DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT,
+                                    target_enemy_chain_count,
+                                ),
                             )
                         };
                         /*if chain_count >= 11 && chain_count > target_enemy_chain_count {
