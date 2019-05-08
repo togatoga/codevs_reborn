@@ -292,6 +292,7 @@ impl Solver {
         }
         DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT
     }
+    #[allow(dead_code)]
     fn gaze_enemy_max_chain_count_by_beam_search(&mut self, beam_depth: usize, beam_width: usize) {}
     //gaze enemy
     #[allow(dead_code)]
@@ -407,9 +408,19 @@ impl Solver {
         let mut rnd = Xorshift::with_seed(current_turn as u64 + self.seed);
 
         //gaze enemy...
-        let max_enemy_chain_count = self.gaze_enemy_max_chain_count();
-        let need_kill_chain_count = self.gaze_enemy_need_kill_chain_count();
 
+        let need_kill_chain_count = self.gaze_enemy_need_kill_chain_count();
+        let (max_enemy_chain_count, height) = self
+            .evaluate_cache
+            .estimate_with_erasing_all_max_chain_count(&mut self.simulator, &self.enemy.board());
+        let a = 1.09;
+        let mut target_enemy_chain_count = max_enemy_chain_count as f64;
+        for i in 0..height {
+            target_enemy_chain_count *= a;
+        }
+
+        let target_enemy_chain_count = std::cmp::max(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT, std::cmp::min(20, target_enemy_chain_count as u8));
+        eprintln!("target_enemy_chain_count: {}", target_enemy_chain_count);
         for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
@@ -486,18 +497,26 @@ impl Solver {
                             evaluate_search_result_score_for_bomber(
                                 chain_count,
                                 next_search_score,
-                                depth,
+                                depth
                             )
                         } else {
                             evaluate_search_result_score(
                                 gain_chain_game_score,
                                 next_search_score,
                                 depth,
+                                target_enemy_chain_count
                             )
                         };
-
+                        //penalty for low chain count
+                        if chain_count <= target_enemy_chain_count {
+                            let diff_chain_count = (target_enemy_chain_count - chain_count) as usize;
+                            let a = 1.09;
+                            for _ in 0..diff_chain_count {
+                                target_search_result_score.0 /= a;
+                            }
+                        }
                         //consider whether solver should fire at depth 0
-                        let fire_right_now = if depth == 0
+                        /*let fire_right_now = if depth == 0
                             && self.should_fire_right_now(
                                 chain_count,
                                 max_enemy_chain_count,
@@ -509,7 +528,7 @@ impl Solver {
                         };
                         if fire_right_now {
                             target_search_result_score.0 *= FIRE_RIGHT_NOW_BOOST_SCORE;
-                        }
+                        }*/
 
 
                         //pick highest search result score
@@ -522,7 +541,7 @@ impl Solver {
                             best_search_result.search_depth = depth;
                             best_search_result.board = next_search_state.board();
                             best_search_result.command = next_search_state.command().unwrap();
-                            best_search_result.fire_right_now = fire_right_now;
+                            best_search_result.fire_right_now = false;
                         }
                     }
                 }
