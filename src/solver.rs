@@ -557,7 +557,7 @@ impl Solver {
                             best_search_result.search_depth = depth;
                             best_search_result.board = next_search_state.board();
                             best_search_result.command = next_search_state.command().unwrap();
-                            best_search_result.fire_right_now = false;
+                            // best_search_result.fire_right_now = fire_right_now;
                         }
                     }
                 }
