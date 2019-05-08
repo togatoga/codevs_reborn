@@ -413,14 +413,14 @@ impl Solver {
         let (max_enemy_chain_count, height) = self
             .evaluate_cache
             .estimate_with_erasing_all_max_chain_count(&mut self.simulator, &self.enemy.board());
-        let a = 1.09;
+        let a = 1.07;
         let mut target_enemy_chain_count = max_enemy_chain_count as f64;
         for i in 0..height {
             target_enemy_chain_count *= a;
         }
-
-        let target_enemy_chain_count = std::cmp::min(18, std::cmp::max(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT, target_enemy_chain_count as u8));
-        eprintln!("target_enemy_chain_count: {}", target_enemy_chain_count);
+        eprintln!("Before: target_enemy_chain_count: {}", target_enemy_chain_count);
+        let target_enemy_chain_count = std::cmp::min(17, std::cmp::max(DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT, target_enemy_chain_count as u8));
+        eprintln!("After: target_enemy_chain_count: {}", target_enemy_chain_count);
         for depth in 0..beam_depth {
             //next state
             let search_turn = current_turn + depth;
@@ -509,11 +509,10 @@ impl Solver {
                         };
                         //penalty for low chain count
 
-                        if chain_count >= target_enemy_chain_count {
-                            let diff_chain_count = (chain_count - target_enemy_chain_count);
-                            for _ in 0..diff_chain_count {
-                                target_search_result_score.0 *= a * GAME_SCORE_DEPTH_RATES[depth];
-                            }
+                        if chain_count < target_enemy_chain_count && (target_enemy_chain_count - chain_count >= 3) {
+                            let diff_chain_count = std::cmp::min(19, (target_enemy_chain_count - chain_count)) as usize;
+                            target_search_result_score.0 *= GAME_SCORE_DEPTH_RATES[diff_chain_count];
+
                         }
                         //consider whether solver should fire at depth 0
                         /*let fire_right_now = if depth == 0
