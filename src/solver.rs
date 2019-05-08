@@ -215,124 +215,18 @@ impl Solver {
             }
         }
     }
-    #[allow(dead_code)]
-    fn gaze_enemy_max_chain_count_after_attacking(
-        &mut self,
-        spawn_obstacle_count: u32,
-        beam_depth: usize,
-        beam_width: usize,
-    ) -> u8 {
-        let current_turn = self.turn();
-        let mut max_chain_count = 0;
-        let mut search_state_heap: Vec<MinMaxHeap<SearchState>> =
-            (0..beam_depth + 1).map(|_| MinMaxHeap::new()).collect();
-        let mut searched_state = fnv::FnvHashSet::default();
 
-        //Create an initial state
-        let root_search_state = SearchState::default()
-            .with_board(self.enemy.board())
-            .with_obstacle_block_count(self.enemy.obstacle_block_count())
-            .with_spawn_obstacle_block_count(self.player.obstacle_block_count())
-            .with_cumulative_game_score(self.enemy.cumulative_game_score());
-        //push an initial search state
-        search_state_heap[0].push(root_search_state);
-        let mut rnd = Xorshift::with_seed(current_turn as u64 + self.seed);
-
-        for depth in 0..beam_depth {
-            let search_turn = self.turn() + depth;
-            while let Some(search_state) = &mut search_state_heap[depth].pop_max() {
-                search_state.update_obstacle_block_and_drop();
-                if depth == 1 {
-                    let total_obstacle_block_count =
-                        search_state.obstacle_block_count() + spawn_obstacle_count;
-                    search_state.set_spawn_obstacle_block_count(total_obstacle_block_count);
-                }
-                for (pack, _) in self.packs[search_turn].clone().iter() {
-                    for point in 0..9 {
-                        let mut board = self.enemy.board().clone();
-                        let chain_count = self.simulator.simulate(&mut board, point, &pack);
-                        //Next board is dead and not to put it in state heap
-                        if board.is_game_over() {
-                            continue;
-                        }
-                        max_chain_count = std::cmp::max(max_chain_count, chain_count);
-                        let estimated_max_chain_count = self
-                            .evaluate_cache
-                            .estimate_with_erasing_all_max_chain_count(
-                                &mut Simulator::new(),
-                                &board,
-                            );
-                        max_chain_count = std::cmp::max(max_chain_count, estimated_max_chain_count);
-                        //update these values
-                        let gain_chain_game_score = simulator::calculate_game_score(chain_count);
-                        let next_board = board;
-                        let next_cumulative_game_score =
-                            gain_chain_game_score + search_state.cumulative_game_score();
-                        let next_spawn_obstacle_block_count =
-                            simulator::calculate_obstacle_count_from_chain_count(chain_count)
-                                + search_state.spawn_obstacle_block_count();
-                        //create next search state from a previous state
-                        let mut next_search_state = search_state
-                            .clone()
-                            .with_board(next_board)
-                            .with_cumulative_game_score(next_cumulative_game_score)
-                            .with_spawn_obstacle_block_count(next_spawn_obstacle_block_count);
-                        next_search_state.update_obstacle_block();
-
-
-                        //remove duplication
-                        if searched_state.contains(&next_search_state.zobrist_hash()) {
-                            continue;
-                        }
-                        //push it to hash set
-                        searched_state.insert(next_search_state.zobrist_hash());
-                        debug_assert_eq!(
-                            search_state.cumulative_game_score() + gain_chain_game_score,
-                            next_search_state.cumulative_game_score()
-                        );
-
-                        // Add a tiny value(0.0 ~ 1.0) to search score
-                        // To randomize search score for the diversity of search
-                        let next_search_score = self
-                            .evaluate_cache
-                            .evaluate_search_score(&mut self.simulator, &next_search_state)
-                            + rnd.randf();
-                        next_search_state.set_search_score(next_search_score);
-
-                        //push it to next beam
-                        //prune fire state
-                        if chain_count <= 10 {
-                            search_state_heap[depth + 1].push(next_search_state);
-                            //The number of next beam is over beam_width; pop minimum state
-                            while search_state_heap[depth + 1].len() > beam_width {
-                                search_state_heap[depth + 1].pop_min();
-                            }
-                            debug_assert!(search_state_heap[depth + 1].len() <= beam_width);
-                        }
-                    }
-                }
-            }
-        }
-        eprintln!("max_enemy_chain_count: {}", max_chain_count);
-        max_chain_count
-    }
     fn should_fire_right_now(
-        &mut self,
+        &self,
         chain_count: u8,
         max_enemy_chain_count: u8,
         need_kill_chain_count: u8,
     ) -> bool {
-
-        if chain_count <= max_enemy_chain_count {
+        if chain_count > max_enemy_chain_count {
             return false;
         }
-
-        if chain_count <= 9 {
-            return false;
-        }
-
         //chain count is fatal max chain count
-        /*if chain_count >= need_kill_chain_count {
+        if chain_count >= need_kill_chain_count {
             if self.debug {
                 eprintln!(
                     "Fire!!: A chain count is over to kill enemy!!: {} {}",
@@ -340,38 +234,37 @@ impl Solver {
                 );
             }
             return true;
-        }*/
+        }
 
-        if self.player.obstacle_block_count() < 10 {
-            let player_spawned_obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count) - self.player.obstacle_block_count();
-            let enemy_spawned_obstacle_count = simulator::calculate_obstacle_count_from_chain_count(max_enemy_chain_count);
-            if player_spawned_obstacle_count <= enemy_spawned_obstacle_count {
-                return false;
-            }
 
-            let spawned_obstacle_count = player_spawned_obstacle_count - enemy_spawned_obstacle_count;
-            let line_block = simulator::calculate_spawn_obstacle_line_from_obstacle_count(
-                spawned_obstacle_count,
-            );
-
-            if line_block >= 1 {
-                let max_gaze_chain_count =
-                    self.gaze_enemy_max_chain_count_after_attacking(spawned_obstacle_count, 8, 20);
-                eprintln!("max_gaze_chain_count: {}", max_gaze_chain_count);
-                if chain_count > max_gaze_chain_count {
-                    eprintln!("Fire!! right now {} {}", chain_count, max_gaze_chain_count);
+        if self.enemy.obstacle_block_count() < 10 && chain_count >= max_enemy_chain_count {
+            let enemy_obstacle_count =
+                simulator::calculate_obstacle_count_from_chain_count(max_enemy_chain_count);
+            let total_enemy_obstacle_count =
+                enemy_obstacle_count + self.enemy.obstacle_block_count();
+            let player_obstacle_count =
+                simulator::calculate_obstacle_count_from_chain_count(chain_count);
+            if player_obstacle_count > self.player.obstacle_block_count() {
+                let player_spawned_obstacle_count =
+                    player_obstacle_count - self.player.obstacle_block_count();
+                if player_spawned_obstacle_count <= total_enemy_obstacle_count {
+                    return false;
+                }
+                let spawned_obstacle_count =
+                    player_spawned_obstacle_count - total_enemy_obstacle_count;
+                let line_block = simulator::calculate_spawn_obstacle_line_from_obstacle_count(
+                    spawned_obstacle_count,
+                );
+                if line_block >= 3 {
+                    if self.debug {
+                        eprintln!(
+                            "Fire!!: Must spawn three line!! {}",
+                            player_spawned_obstacle_count
+                        );
+                    }
                     return true;
                 }
             }
-            /*if line_block >= 3 {
-                if self.debug {
-                    eprintln!(
-                        "Fire!!: Must spawn three line!! {}",
-                        player_spawned_obstacle_count
-                    );
-                }
-                return true;
-            }*/
         }
 
         false
@@ -410,7 +303,6 @@ impl Solver {
                 let mut board = self.enemy.board().clone();
                 let chain_count = self.simulator.simulate(&mut board, point, &pack);
                 max_chain_count = std::cmp::max(max_chain_count, chain_count);
-
             }
         }
         max_chain_count
@@ -517,10 +409,9 @@ impl Solver {
         //gaze enemy...
         let max_enemy_chain_count = self.gaze_enemy_max_chain_count();
         let need_kill_chain_count = self.gaze_enemy_need_kill_chain_count();
-        eprintln!("max_enemy_chain_count: {}", max_enemy_chain_count);
+
         for depth in 0..beam_depth {
             //next state
-
             let search_turn = current_turn + depth;
             if best_search_result.fire_right_now {
                 eprintln!("Fire right now!!");
@@ -531,7 +422,7 @@ impl Solver {
                 search_state.update_obstacle_block_and_drop();
                 //skip duplicate
 
-                for (pack, rotate_count) in self.packs[search_turn].clone().iter() {
+                for (pack, rotate_count) in self.packs[search_turn].iter() {
                     for point in 0..9 {
                         let mut board = search_state.board();
                         let chain_count = self.simulator.simulate(&mut board, point, &pack);
@@ -637,10 +528,10 @@ impl Solver {
                 }
             }
         }
-        /*if self.debug {
+        if self.debug {
             eprintln!("== Search Result ==");
             best_search_result.log();
-        }*/
+        }
         self.last_best_search_result = Some((
             best_search_result.last_chain_count,
             best_search_result.search_depth,
