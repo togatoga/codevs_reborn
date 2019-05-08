@@ -109,6 +109,9 @@ impl SearchState {
     pub fn spawn_obstacle_block_count(&self) -> u32 {
         self.spawn_obstacle_block_count
     }
+    pub fn set_spawn_obstacle_block_count(&mut self, spawn_obstacle_block_count: u32) {
+        self.spawn_obstacle_block_count = spawn_obstacle_block_count;
+    }
     pub fn with_spawn_obstacle_block_count(mut self, count: u32) -> Self {
         self.spawn_obstacle_block_count += count;
         self
