@@ -254,10 +254,9 @@ impl EvaluateCache {
         let mut search_score: f64 = 0.0;
 
         let mut board = search_state.board();
-        let mut fallen = false;
         if search_state.obstacle_block_count() >= 10 {
             board.drop_obstacles();
-            fallen = true;
+
         }
         // game score
         // max chain count
