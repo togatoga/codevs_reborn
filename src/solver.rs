@@ -30,6 +30,7 @@ pub struct Solver {
     evaluate_cache: EvaluateCache,
     turn: usize,
     last_best_search_result: Option<(u8, usize)>,
+    last_kill_bomber: bool,
     seed: u64,
     debug: bool, //debug mode
 }
@@ -47,6 +48,7 @@ impl Solver {
             evaluate_cache: EvaluateCache::new(),
             turn: 0,
             last_best_search_result: None,
+            last_kill_bomber: false,
             seed: 1024,
             debug: false,
         }
@@ -68,6 +70,7 @@ impl Solver {
             evaluate_cache: EvaluateCache::new(),
             turn: 0,
             last_best_search_result: None,
+            last_kill_bomber: false,
             seed,
             debug,
         }
@@ -311,34 +314,61 @@ impl Solver {
     pub fn beam_search_config(&self) -> (usize, usize) {
         let player = &self.player;
 
-        if player.rest_time_milliseconds() >= 30000 {
-            if self.kill_bomber_mode() {
+        if player.rest_time_milliseconds() >= 45000 {
+            if self.kill_bomber_mode() || self.last_kill_bomber {
                 return (5, 300);
             }
             //more than 30 seconds
-            if let Some(last_search_result) = self.last_best_search_result {
-                let (last_chain_count, last_search_depth) = last_search_result;
-                let (max_beam_depth, max_beam_width) = self.config.beam();
-                //use normal beam
-                if last_search_depth == 0 {
-                    return self.config.beam();
+            if !self.last_kill_bomber {
+                if let Some(last_search_result) = self.last_best_search_result {
+                    let (last_chain_count, last_search_depth) = last_search_result;
+                    let (max_beam_depth, max_beam_width) = self.config.beam();
+                    //use normal beam
+                    if last_search_depth == 0 {
+                        return self.config.beam();
+                    }
+                    //Too small chain count
+                    if last_chain_count <= 10 {
+                        return (max_beam_depth + 1, max_beam_width + 300);
+                    }
+                    return (
+                        std::cmp::min(last_search_depth + 2, max_beam_depth),
+                        max_beam_width,
+                    );
                 }
-                //Too small chain count
-                if last_chain_count <= 10 {
-                    return (max_beam_depth + 2, max_beam_width + 300);
-                }
-                return (
-                    std::cmp::min(last_search_depth + 2, max_beam_depth),
-                    max_beam_width,
-                );
             }
             return self.config.beam();
         }
-        if player.rest_time_milliseconds() >= 10000 {
-            //more thatn 10 seconds
-            return (12, 50);
+
+        if player.rest_time_milliseconds() >= 30000 {
+            if self.kill_bomber_mode() || self.last_kill_bomber {
+                return (5, 100);
+            }
+            if !self.last_kill_bomber {
+                if let Some(last_search_result) = self.last_best_search_result {
+                    let (_, last_search_depth) = last_search_result;
+                    let (max_beam_depth, max_beam_width) = (12, 400);
+
+                    //use normal beam
+                    if last_search_depth == 0 {
+                        return (max_beam_depth, max_beam_width);
+                    }
+                    return (
+                        std::cmp::min(last_search_depth + 2, max_beam_depth),
+                        max_beam_width,
+                    );
+                }
+            }
+            return (12, 400);
         }
-        (3, 20)
+        if player.rest_time_milliseconds() >= 10000 {
+            if self.kill_bomber_mode() || self.last_kill_bomber {
+                return (5, 50);
+            }
+            //more thatn 10 seconds
+            return (9, 30);
+        }
+        (3, 100)
     }
 
     fn kill_bomber_mode(&self) -> bool {
@@ -369,10 +399,11 @@ impl Solver {
         false
     }
     pub fn think(&mut self) -> SearchResult {
-
+        self.last_kill_bomber = false;
         let current_turn = self.turn();
         let mut best_search_result = SearchResult::default();
         if self.kill_bomber_mode() {
+            self.last_kill_bomber = true;
             if self.debug {
                 eprintln!("Kill Bomber!!");
             }
