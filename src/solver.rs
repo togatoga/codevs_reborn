@@ -426,8 +426,8 @@ impl Solver {
         }
         //Counter ai
         let target_enemy_chain_count =
-            if self.turn() <= 20 && max_enemy_chain_count >= 3 && height >= 4 {
-                std::cmp::max(17, max_enemy_chain_count)
+            if self.turn() <= 23 && max_enemy_chain_count >= 3 && height >= 4 {
+                std::cmp::max(18, max_enemy_chain_count)
             } else {
                 std::cmp::max(15, max_enemy_chain_count)
             };
