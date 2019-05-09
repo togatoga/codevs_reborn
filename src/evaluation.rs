@@ -1,6 +1,7 @@
-use crate::board::{Board, EMPTY_BLOCK, ERASING_SUM, FIELD_HEIGHT, FIELD_WIDTH, OBSTACLE_BLOCK};
+use crate::board::{
+    Board, DANGER_LINE_HEIGHT, EMPTY_BLOCK, ERASING_SUM, FIELD_HEIGHT, FIELD_WIDTH, OBSTACLE_BLOCK,
+};
 use crate::pack::Pack;
-
 use crate::search_state::SearchState;
 use crate::simulator;
 use crate::simulator::{Simulator, DIRECTION_YXS};
@@ -282,7 +283,10 @@ impl EvaluateCache {
         for x in 0..FIELD_WIDTH {
             //height
             search_score += 0.01 * board.heights[x] as f64;
-
+            if board.heights[x] >= DANGER_LINE_HEIGHT - 4 {
+                let x = board.heights[x] - (DANGER_LINE_HEIGHT - 4);
+                search_score -= x as f64 * 5000.0;
+            }
             for y in 0..board.heights[x] {
                 let block = board.get(y, x);
                 debug_assert_ne!(block, EMPTY_BLOCK);
