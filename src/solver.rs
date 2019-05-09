@@ -336,9 +336,9 @@ impl Solver {
         }
         if player.rest_time_milliseconds() >= 10000 {
             //more thatn 10 seconds
-            return (5, 100);
+            return (12, 50);
         }
-        (3, 100)
+        (3, 20)
     }
 
     fn kill_bomber_mode(&self) -> bool {
