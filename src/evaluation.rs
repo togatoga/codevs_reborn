@@ -75,7 +75,47 @@ impl EvaluateCache {
         self.cache_estimate_with_erasing_all_max_chain_count.clear();
         self.cache_estimate_max_chain_count.clear();
     }
-
+    fn is_erasable(y: usize, x: usize, board: &Board) -> bool {
+        //top
+        if y + 1 < FIELD_HEIGHT {
+            //top
+            if board.get(y + 1, x) == EMPTY_BLOCK {
+                return true;
+            }
+            //top right
+            if x + 1 < FIELD_WIDTH && board.get(y + 1, x + 1) == EMPTY_BLOCK {
+                return true;
+            }
+            //top left
+            if x >= 1 && board.get(y + 1, x - 1) == EMPTY_BLOCK {
+                return true;
+            }
+        }
+        //right
+        if x + 1 < FIELD_WIDTH && board.get(y, x + 1) == EMPTY_BLOCK {
+            return true;
+        }
+        //left
+        if x >= 1 && board.get(y, x - 1) == EMPTY_BLOCK {
+            return true;
+        }
+        //down
+        if y >= 1 {
+            //down
+            if board.get(y - 1, x) == EMPTY_BLOCK {
+                return true;
+            }
+            //down right
+            if x + 1 < FIELD_WIDTH && board.get(y - 1, x + 1) == EMPTY_BLOCK {
+                return true;
+            }
+            //down left
+            if x >= 1 && board.get(y - 1, x - 1) == EMPTY_BLOCK {
+                return true;
+            }
+        }
+        false
+    }
     pub fn estimate_with_erasing_all_max_chain_count(
         &mut self,
         simulator: &mut Simulator,
@@ -95,49 +135,8 @@ impl EvaluateCache {
                 if block == OBSTACLE_BLOCK || block == EMPTY_BLOCK {
                     continue;
                 }
-                let erasable: bool = {
-                    let mut ok = false;
-                    //top
-                    if y + 1 < FIELD_HEIGHT {
-                        //top
-                        if board.get(y + 1, x) == EMPTY_BLOCK {
-                            ok = true;
-                        }
-                        //top right
-                        if x + 1 < FIELD_WIDTH && board.get(y + 1, x + 1) == EMPTY_BLOCK {
-                            ok = true;
-                        }
-                        //top left
-                        if x >= 1 && board.get(y + 1, x - 1) == EMPTY_BLOCK {
-                            ok = true;
-                        }
-                    }
-                    //right
-                    if x + 1 < FIELD_WIDTH && board.get(y, x + 1) == EMPTY_BLOCK {
-                        ok = true;
-                    }
-                    //left
-                    if x >= 1 && board.get(y, x - 1) == EMPTY_BLOCK {
-                        ok = true;
-                    }
-                    //down
-                    if y >= 1 {
-                        //down
-                        if board.get(y - 1, x) == EMPTY_BLOCK {
-                            ok = true;
-                        }
-                        //down right
-                        if x + 1 < FIELD_WIDTH && board.get(y - 1, x + 1) == EMPTY_BLOCK {
-                            ok = true;
-                        }
-                        //down left
-                        if x >= 1 && board.get(y - 1, x - 1) == EMPTY_BLOCK {
-                            ok = true;
-                        }
-                    }
-                    ok
-                };
-                if !erasable {
+
+                if !EvaluateCache::is_erasable(y, x, &board) {
                     break;
                 }
                 simulator.init();
