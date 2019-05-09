@@ -531,7 +531,7 @@ impl Solver {
                                 gain_chain_game_score,
                                 next_search_score,
                                 depth,
-                                std::cmp::min(20, target_enemy_chain_count),
+                                std::cmp::min(25, target_enemy_chain_count),
                             )
                         };
                         /*if chain_count >= 11 && chain_count > target_enemy_chain_count {
