@@ -314,8 +314,8 @@ impl Solver {
     pub fn beam_search_config(&self) -> (usize, usize) {
         let player = &self.player;
 
-        if player.rest_time_milliseconds() >= 30000 {
-            if self.kill_bomber_mode() {
+        if player.rest_time_milliseconds() >= 45000 {
+            if self.kill_bomber_mode() || self.last_kill_bomber {
                 return (5, 300);
             }
             //more than 30 seconds
@@ -329,7 +329,7 @@ impl Solver {
                     }
                     //Too small chain count
                     if last_chain_count <= 10 {
-                        return (max_beam_depth + 2, max_beam_width + 300);
+                        return (max_beam_depth + 1, max_beam_width + 300);
                     }
                     return (
                         std::cmp::min(last_search_depth + 2, max_beam_depth),
@@ -339,11 +339,36 @@ impl Solver {
             }
             return self.config.beam();
         }
-        if player.rest_time_milliseconds() >= 10000 {
-            //more thatn 10 seconds
-            return (12, 50);
+
+        if player.rest_time_milliseconds() >= 30000 {
+            if self.kill_bomber_mode() || self.last_kill_bomber {
+                return (5, 100);
+            }
+            if !self.last_kill_bomber {
+                if let Some(last_search_result) = self.last_best_search_result {
+                    let (_, last_search_depth) = last_search_result;
+                    let (max_beam_depth, max_beam_width) = (12, 400);
+
+                    //use normal beam
+                    if last_search_depth == 0 {
+                        return (max_beam_depth, max_beam_width);
+                    }
+                    return (
+                        std::cmp::min(last_search_depth + 2, max_beam_depth),
+                        max_beam_width,
+                    );
+                }
+            }
+            return (12, 400);
         }
-        (3, 20)
+        if player.rest_time_milliseconds() >= 10000 {
+            if self.kill_bomber_mode() || self.last_kill_bomber {
+                return (5, 50);
+            }
+            //more thatn 10 seconds
+            return (9, 30);
+        }
+        (3, 100)
     }
 
     fn kill_bomber_mode(&self) -> bool {
@@ -433,7 +458,7 @@ impl Solver {
         //Counter ai
         let target_enemy_chain_count =
             if self.turn() <= 25 && max_enemy_chain_count >= 3 && height >= 3 {
-                std::cmp::max(18, max_enemy_chain_count + height as u8)
+                std::cmp::max(19, max_enemy_chain_count + height as u8)
             } else {
                 std::cmp::max(15, max_enemy_chain_count + height as u8)
             };
