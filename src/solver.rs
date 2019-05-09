@@ -313,7 +313,7 @@ impl Solver {
 
         if player.rest_time_milliseconds() >= 30000 {
             if self.kill_bomber_mode() {
-                return (8, 300);
+                return (5, 300);
             }
             //more than 30 seconds
             if let Some(last_search_result) = self.last_best_search_result {
@@ -427,9 +427,9 @@ impl Solver {
         //Counter ai
         let target_enemy_chain_count =
             if self.turn() <= 20 && max_enemy_chain_count >= 3 && height >= 4 {
-                17
+                std::cmp::max(17, max_enemy_chain_count)
             } else {
-                15
+                std::cmp::max(15, max_enemy_chain_count)
             };
         /*for chain_count in 1..30 {
             let obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
@@ -520,7 +520,7 @@ impl Solver {
                             debug_assert!(search_state_heap[depth + 1].len() <= beam_width);
                         }
 
-                        let mut target_search_result_score = if self.kill_bomber_mode() {
+                        let target_search_result_score = if self.kill_bomber_mode() {
                             evaluate_search_result_score_for_bomber(
                                 chain_count,
                                 next_search_score,
@@ -531,10 +531,7 @@ impl Solver {
                                 gain_chain_game_score,
                                 next_search_score,
                                 depth,
-                                std::cmp::max(
-                                    DEFAULT_FATAL_FIRE_MAX_CHAIN_COUNT,
-                                    target_enemy_chain_count,
-                                ),
+                                std::cmp::min(20, target_enemy_chain_count),
                             )
                         };
                         /*if chain_count >= 11 && chain_count > target_enemy_chain_count {
