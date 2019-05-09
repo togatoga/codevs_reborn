@@ -260,13 +260,12 @@ impl EvaluateCache {
         }
         // game score
         // max chain count
-        /*if !fallen {
-            let (estimated_max_chain_count, _) = self.estimate_max_chain_count(simulator, &board);
-            search_score += estimated_max_chain_count as f64 * 10e5;
-        } else {*/
-        let estimated_max_erasing_chain_count =
+
+        let (estimated_max_chain_count, _) = self.estimate_max_chain_count(simulator, &board);
+        search_score += estimated_max_chain_count as f64 * 10e5;
+        /*let estimated_max_erasing_chain_count =
             self.estimate_with_erasing_all_max_chain_count(simulator, &search_state.board());
-        search_score += estimated_max_erasing_chain_count.0 as f64 * 10e5;
+        search_score += estimated_max_erasing_chain_count.0 as f64 * 10e5;*/
 
         // count live block
         let (live_block_count, obstacle_block_count) = board.count_blocks();
