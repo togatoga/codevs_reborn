@@ -328,7 +328,7 @@ impl Solver {
                     return (max_beam_depth + 2, max_beam_width + 300);
                 }
                 return (
-                    std::cmp::min(last_search_depth + 3, max_beam_depth),
+                    std::cmp::min(last_search_depth + 2, max_beam_depth),
                     max_beam_width,
                 );
             }
