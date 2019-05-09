@@ -426,10 +426,10 @@ impl Solver {
         }
         //Counter ai
         let target_enemy_chain_count =
-            if self.turn() <= 23 && max_enemy_chain_count >= 3 && height >= 4 {
-                std::cmp::max(18, max_enemy_chain_count)
+            if self.turn() <= 25 && max_enemy_chain_count >= 3 && height >= 3 {
+                std::cmp::max(19, max_enemy_chain_count + height as u8)
             } else {
-                std::cmp::max(15, max_enemy_chain_count)
+                std::cmp::max(15, max_enemy_chain_count + height as u8)
             };
         /*for chain_count in 1..30 {
             let obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
@@ -531,7 +531,7 @@ impl Solver {
                                 gain_chain_game_score,
                                 next_search_score,
                                 depth,
-                                std::cmp::min(20, target_enemy_chain_count),
+                                std::cmp::min(21, target_enemy_chain_count),
                             )
                         };
                         /*if chain_count >= 11 && chain_count > target_enemy_chain_count {
