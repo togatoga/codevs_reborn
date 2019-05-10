@@ -329,7 +329,7 @@ impl Solver {
                     }
                     //Too small chain count
                     if last_chain_count <= 10 {
-                        return (max_beam_depth + 1, max_beam_width + 300);
+                        return (max_beam_depth + 5, 1000);
                     }
                     return (
                         std::cmp::min(last_search_depth + 2, max_beam_depth),
