@@ -452,7 +452,7 @@ impl Solver {
             if player_score >= 50 {
                 if player_score >= enemy_score {
                     let diff_score = player_score - enemy_score;
-                    if diff_score >= 90 {
+                    if diff_score >= 150 {
                         base_fire = 13;
                     }
                 } else {
@@ -461,7 +461,7 @@ impl Solver {
             }
             base_fire
         };
-        let beam_depth = std::cmp::min(15, beam_depth + plus_depth);
+        let beam_depth = std::cmp::min(12, beam_depth + plus_depth);
         self.last_best_search_result = None;
         if self.debug {
             eprintln!("Beam depth: {}, Beam width: {}", beam_depth, beam_width);
