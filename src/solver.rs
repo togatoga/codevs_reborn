@@ -464,8 +464,20 @@ impl Solver {
         {
             std::cmp::max(18, max_enemy_chain_count)
         } else {
-            let base_fire = if self.turn() >= 18 { 14 } else { 15 };
-            std::cmp::max(base_fire, max_enemy_chain_count)
+            let player_score = self.player.cumulative_game_score();
+            let enemy_score = self.enemy.cumulative_game_score();
+            let mut base_fire = 15;
+            if player_score >= 50 {
+                if player_score >= enemy_score {
+                    let diff_score = player_score - enemy_score;
+                    if diff_score >= 90 {
+                        base_fire = 13;
+                    }
+                } else {
+                    base_fire = 14;
+                }
+            }
+            base_fire
         };
         /*for chain_count in 1..30 {
             let obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
