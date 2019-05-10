@@ -457,13 +457,16 @@ impl Solver {
             );
         }
         //Counter ai
-        let target_enemy_chain_count =
-            if self.turn() >= 50 && self.turn() <= 20 && max_enemy_chain_count >= 3 && height >= 3 {
-                std::cmp::max(18, max_enemy_chain_count)
-            } else {
-                let base_fire = if self.turn() >= 18 { 14 } else { 15 };
-                std::cmp::max(base_fire, max_enemy_chain_count)
-            };
+        let target_enemy_chain_count = if self.player.cumulative_game_score() <= 50
+            && self.turn() <= 20
+            && max_enemy_chain_count >= 3
+            && height >= 3
+        {
+            std::cmp::max(18, max_enemy_chain_count)
+        } else {
+            let base_fire = if self.turn() >= 18 { 14 } else { 15 };
+            std::cmp::max(base_fire, max_enemy_chain_count)
+        };
         /*for chain_count in 1..30 {
             let obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
             let line = simulator::calculate_spawn_obstacle_line_from_obstacle_count(obstacle_count);
