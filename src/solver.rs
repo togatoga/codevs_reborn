@@ -537,7 +537,6 @@ impl Solver {
             let player_score = self.player.cumulative_game_score();
             let enemy_score = self.enemy.cumulative_game_score();
             let mut base_fire = 15;
-            eprintln!("player_score: {} enemy_score: {}", player_score, enemy_score);
             if player_score >= 50 {
                 if player_score >= enemy_score {
                     let diff_score = player_score - enemy_score;
