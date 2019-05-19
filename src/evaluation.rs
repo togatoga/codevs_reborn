@@ -274,8 +274,8 @@ impl EvaluateCache {
         // search_score -= (obstacle_block_count as f64 * 0.1) as f64;
 
         // pattern match
-        let (keima, jump, three_chain) = evaluate_pattern_match_cnt(&board);
-        search_score += (three_chain as f64 * 3.0 * 10.0) as f64;
+        let (keima, jump, _) = evaluate_pattern_match_cnt(&board);
+        //search_score += (three_chain as f64 * 3.0 * 10.0) as f64;
         search_score += (keima as f64 * 2.0 * 10.0) as f64;
         search_score += (jump as f64 * 1.0 * 10.0) as f64;
 
