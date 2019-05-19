@@ -449,6 +449,7 @@ impl Solver {
             let player_score = self.player.cumulative_game_score();
             let enemy_score = self.enemy.cumulative_game_score();
             let mut base_fire = 15;
+            eprintln!("player_score: {} enemy_score: {}", player_score, enemy_score);
             if player_score >= 50 {
                 if player_score >= enemy_score {
                     let diff_score = player_score - enemy_score;
@@ -481,18 +482,6 @@ impl Solver {
         let mut rnd = Xorshift::with_seed(current_turn as u64 + self.seed);
 
         //gaze enemy...
-
-        let need_kill_chain_count = self.gaze_enemy_need_kill_chain_count();
-
-        /*for chain_count in 1..30 {
-            let obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
-            let line = simulator::calculate_spawn_obstacle_line_from_obstacle_count(obstacle_count);
-            eprintln!("line: {}, need_line: {}", line, need_line);
-            if line >= need_line {
-                target_enemy_chain_count = std::cmp::max(target_enemy_chain_count, chain_count);
-                break;
-            }
-        }*/
 
 
         if self.debug {
@@ -587,32 +576,6 @@ impl Solver {
                                 std::cmp::min(20, target_enemy_chain_count),
                             )
                         };
-                        /*if chain_count >= 11 && chain_count > target_enemy_chain_count {
-                            //bonus for greater than enemy
-                            let diff_chain_count = std::cmp::max(3, (chain_count - target_enemy_chain_count)) as usize;
-                            target_search_result_score.0 /= (GAME_SCORE_DEPTH_RATES[beam_depth - depth]);
-                        } else {
-                            //penalty for lower than enemy
-                            let diff_chain_count = std::cmp::min(19, (target_enemy_chain_count - chain_count)) as usize;
-                            target_search_result_score.0 *= (GAME_SCORE_DEPTH_RATES[diff_chain_count] * GAME_SCORE_DEPTH_RATES[beam_depth - depth]);
-                        }*/
-
-
-                        //consider whether solver should fire at depth 0
-                        /*let fire_right_now = if depth == 0
-                            && self.should_fire_right_now(
-                                chain_count,
-                                max_enemy_chain_count,
-                                need_kill_chain_count,
-                            ) {
-                            true
-                        } else {
-                            false
-                        };
-                        if fire_right_now {
-                            target_search_result_score.0 *= FIRE_RIGHT_NOW_BOOST_SCORE;
-                        }*/
-
 
                         //pick highest search result score
                         if target_search_result_score > best_search_result.search_result_score {
@@ -633,7 +596,6 @@ impl Solver {
         if self.debug {
             eprintln!("== Search Result ==");
             best_search_result.log();
-            eprintln!("need_kill_chain_count: {}", need_kill_chain_count);
         }
 
         self.last_best_search_result = Some((
