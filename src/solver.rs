@@ -453,7 +453,7 @@ impl Solver {
             if player_score >= 50 {
                 if player_score >= enemy_score {
                     let diff_score = player_score - enemy_score;
-                    if diff_score >= 150 {
+                    if diff_score >= 90 {
                         base_fire = 13;
                     }
                 } else {
