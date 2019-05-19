@@ -3,7 +3,7 @@ use crate::command::Command;
 
 use crate::search_result::SearchResult;
 use crate::xorshift::Xorshift;
-use crate::zobrist_hash_table::ZobristHash;
+use crate::zobrist_hash_table::{ZobristHash, ZOBRIST_HASH_TABLE_SCORE};
 use std::cmp::Ordering;
 use crate::pack::Pack;
 use std::hash::Hash;
@@ -183,8 +183,7 @@ impl SearchState {
     }
     #[inline]
     pub fn zobrist_hash(&self) -> ZobristHash {
-        let mut rnd = Xorshift::with_seed(self.cumulative_game_score as u64);
-        self.board.zobrist_hash() ^ rnd.next()
+        self.board.zobrist_hash() ^ ZOBRIST_HASH_TABLE_SCORE[std::cmp::min(ZOBRIST_HASH_TABLE_SCORE.len() - 1,  self.cumulative_game_score() as usize)]
     }
     #[inline]
     pub fn transition_zobrist_hash(&self) -> ZobristHash {
