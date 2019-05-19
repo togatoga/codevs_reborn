@@ -102,6 +102,9 @@ impl SearchState {
     pub fn obstacle_block_count(&self) -> u32 {
         self.obstacle_block_count
     }
+    pub fn set_obstacle_block_count(&mut self, count: u32) {
+        self.obstacle_block_count = count;
+    }
     pub fn with_obstacle_block_count(mut self, count: u32) -> Self {
         self.obstacle_block_count = count;
         self
