@@ -329,7 +329,7 @@ impl Solver {
                     }
                     //Too small chain count
                     if last_chain_count <= 10 {
-                        return (max_beam_depth + 2, max_beam_width + 300);
+                        return (max_beam_depth + 5, 1000);
                     }
                     return (
                         std::cmp::min(last_search_depth + 2, max_beam_depth),
@@ -424,6 +424,44 @@ impl Solver {
 
         // beam search for a command
         let (beam_depth, beam_width): (usize, usize) = self.beam_search_config();
+
+        let (max_enemy_chain_count, height) = self
+            .evaluate_cache
+            .estimate_with_erasing_all_max_chain_count(&mut self.simulator, &self.enemy.board());
+
+        if self.debug {
+            eprintln!(
+                "Before: height: {}\nTarget_enemy_chain_count: {}",
+                height, max_enemy_chain_count
+            );
+        }
+
+        let mut plus_depth = 0;
+        //Counter ai
+        let target_enemy_chain_count = if self.player.cumulative_game_score() <= 50
+            && self.turn() <= 20
+            && max_enemy_chain_count >= 3
+            && height >= 3
+        {
+            plus_depth = 3;
+            std::cmp::max(19, max_enemy_chain_count)
+        } else {
+            let player_score = self.player.cumulative_game_score();
+            let enemy_score = self.enemy.cumulative_game_score();
+            let mut base_fire = 15;
+            if player_score >= 50 {
+                if player_score >= enemy_score {
+                    let diff_score = player_score - enemy_score;
+                    if diff_score >= 150 {
+                        base_fire = 13;
+                    }
+                } else {
+                    base_fire = 14;
+                }
+            }
+            base_fire
+        };
+        let beam_depth = std::cmp::min(12, beam_depth + plus_depth);
         self.last_best_search_result = None;
         if self.debug {
             eprintln!("Beam depth: {}, Beam width: {}", beam_depth, beam_width);
@@ -444,24 +482,8 @@ impl Solver {
 
         //gaze enemy...
 
-        //let need_kill_chain_count = self.gaze_enemy_need_kill_chain_count();
-        let (max_enemy_chain_count, height) = self
-            .evaluate_cache
-            .estimate_with_erasing_all_max_chain_count(&mut self.simulator, &self.enemy.board());
+        let need_kill_chain_count = self.gaze_enemy_need_kill_chain_count();
 
-        if self.debug {
-            eprintln!(
-                "Before: height: {}\nTarget_enemy_chain_count: {}",
-                height, max_enemy_chain_count
-            );
-        }
-        //Counter ai
-        let target_enemy_chain_count =
-            if self.turn() <= 25 && max_enemy_chain_count >= 3 && height >= 3 {
-                std::cmp::max(18, max_enemy_chain_count + height as u8)
-            } else {
-                std::cmp::max(14, max_enemy_chain_count)
-            };
         /*for chain_count in 1..30 {
             let obstacle_count = simulator::calculate_obstacle_count_from_chain_count(chain_count);
             let line = simulator::calculate_spawn_obstacle_line_from_obstacle_count(obstacle_count);
@@ -611,7 +633,9 @@ impl Solver {
         if self.debug {
             eprintln!("== Search Result ==");
             best_search_result.log();
+            eprintln!("need_kill_chain_count: {}", need_kill_chain_count);
         }
+
         self.last_best_search_result = Some((
             best_search_result.last_chain_count,
             best_search_result.search_depth,
